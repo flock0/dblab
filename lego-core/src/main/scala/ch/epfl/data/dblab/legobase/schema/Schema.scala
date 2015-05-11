@@ -6,85 +6,188 @@ import sc.pardis.types._
 import scala.language.implicitConversions
 
 case class Catalog(schemata: Map[String, Schema]) {
-    case class DDTablesRecord(schemaName: String, tableId: Int, name: String)
-    case class DDAttributesRecord(schemaName: String, tableId: Int, attributeId: Int, name: String, dataType: Tpe)
-    case class DDRowsRecord(schemaName: String, tableId: Int, rowId: Int)
-    case class DDFieldsRecord(schemaName: String, tableId: Int, attributeId: Int, rowId: Int, value: FieldValue)
+    
+    /* Case classes for the tables in the data dictionary */
+    case class DDTablesRecord(schemaName: String, name: String, tableId: Int = getSequence(DataDictionarySchemaName + "DD_TABLES_TABLE_ID_SEQ"))
+    case class DDAttributesRecord(tableId: Int, name: String, dataType: Tpe, attributeId: Int = getSequence(DataDictionarySchemaName + "DD_ATTRIBUTES_ATTRIBUTE_ID_SEQ"))
+    case class DDFieldsRecord(tableId: Int, attributeId: Int, rowId: Int, value: Any)
+    case class DDRowsRecord(tableId: Int, rowId: Int = getSequence(DataDictionarySchemaName + "DD_ROWS_ROW_ID_SEQ"))
+    case class DDConstraintsRecord(tableId: Int, constraintType: Char, attributes: List[Int], refTableID: Int, refAttributes: List[Int])
+    case class DDSequencesRecord(startValue: Int, endValue: Int, : incrementBy: Int, sequenceName: String, sequenceId: Int = getSequence(DataDictionarySchemaName + "DD_SEQUENCES_SEQUENCE_ID_SEQ")) {
+
+      //TODO Catch invalid start/end/increment combination
+
+      private var next = startValue
+
+      /**
+       * Returns the next value of the sequence
+       * 
+       * @return The next value of the sequence
+       * @throws Exception when the sequence has been exhausted
+       */
+      private def nextVal: Int = {
+        if (next > maxValue)
+          throw new Exception (s"Sequence $sequenceId has reached it's maximum value $maxValue")
+        val value = next
+        next += incrementBy
+        value
+      }
+    }
+    
+    /** The default name of the schema for the data dictionary itself */
     val DataDictionarySchemaName = "DD"
 
-    val dataDictionary: List[Table] = {
+    /** The tables that comprise the data dictionary */
+    private val dataDictionary: List[Table] = {
         val tablesTable = {
           val schemaName: Attribute = "SCHEMA_NAME" -> StringType
           val tableId: Attribute = "TABLE_ID" -> IntType
 
           new Table("DD_TABLES", List(
             schemaName,
+            "NAME" -> StringType,
             tableId,
-            "NAME" -> StringType
             List(PrimaryKey(List(schemaName, tableId))))
         }
         val attributesTable = {
-          val schemaName: Attribute = "SCHEMA_NAME" -> StringType
           val tableId: Attribute = "TABLE_ID" -> IntType
           val attributeId: Attribute = "ATTRIBUTE_ID" -> IntType
           
           new Table("DD_ATTRIBUTES", List(
-            schemaName,
             tableId,
-            attributeId,
             "NAME" -> StringType,
-            "DATATYPE" -> Tpe
-            List(PrimaryKey(List(schemaName, tableId, attributeId)),
-                ForeignKey("DD_ATTRIBUTES", "DD_TABLES", List(("SCHEMA_NAME", "SCHEMA_NAME"), ("TABLE_ID", "TABLE_ID"))))))
+            "DATATYPE" -> Tpe,
+            attributeId,
+            List(PrimaryKey(List(tableId, attributeId)),
+                ForeignKey("DD_ATTRIBUTES", "DD_TABLES", List(("TABLE_ID", "TABLE_ID"))))))
         }
         val rowsTable = {
-          val schemaName: Attribute = "SCHEMA_NAME" -> StringType
           val tableId: Attribute = "TABLE_ID" -> IntType
           val rowId: Attribute = "ROW_ID" -> IntType
           
           new Table("DD_ROWS", List(
-            schemaName,
             tableId,
             rowId
             List(PrimaryKey(List(schemaName, tableId, rowId)),
-                ForeignKey("DD_ROWS", "DD_TABLES", List(("SCHEMA_NAME", "SCHEMA_NAME"), ("TABLE_ID", "TABLE_ID"))))))
+                ForeignKey("DD_ROWS", "DD_TABLES", List(("TABLE_ID", "TABLE_ID"))))))
         }
         val fieldsTable = {
-          val schemaName: Attribute = "SCHEMA_NAME" -> StringType
           val tableId: Attribute = "TABLE_ID" -> IntType
           val attributeId: Attribute = "ATTRIBUTE_ID" -> IntType
           val rowId: Attribute = "ROW_ID" -> IntType
           
           new Table("DD_FIELDS", List(
-            schemaName,
             tableId,
             attributeId,
             rowId,
-            "VALUE" -> 
-            List(PrimaryKey(List(schemaName, tableId, attributeId, rowId)),
-                ForeignKey("DD_FIELDS", "DD_ATTRIBUTES", List(("SCHEMA_NAME", "SCHEMA_NAME"), ("TABLE_ID", "TABLE_ID"), ("ATTRIBUTE_ID", "ATTRIBUTE_ID"))),
-                ForeignKey("DD_FIELDS", "DD_ROWS", List(("SCHEMA_NAME", "SCHEMA_NAME"), ("TABLE_ID", "TABLE_ID"), ("ROW_ID", "ROW_ID"))))))
+            "VALUE" -> AnyType
+            List(PrimaryKey(List(tableId, attributeId, rowId)),
+                ForeignKey("DD_FIELDS", "DD_ATTRIBUTES", List(("TABLE_ID", "TABLE_ID"), ("ATTRIBUTE_ID", "ATTRIBUTE_ID"))),
+                ForeignKey("DD_FIELDS", "DD_ROWS", List(("TABLE_ID", "TABLE_ID"), ("ROW_ID", "ROW_ID"))))))
+        }
+        val constraintsTable = {
+          val tableId: Attribute = "TABLE_ID" -> IntType
+          
+          new Table("DD_CONSTRAINTS", List(
+            tableId,
+            "CONSTRAINT_TYPE" -> CharType /* f = foreign key constraint, p = primary key constraint, u = unique constraint, n = notnull constraint */
+            "ATTRIBUTES" -> SeqType[IntType],
+            "REF_TABLE_ID" -> Option[IntType],
+            "REF_ATTRIBUTES" -> Option[SeqType[IntType]],
+            List(ForeignKey("DD_CONSTRAINTS", "DD_ATTRIBUTES", List(("TABLE_ID", "TABLE_ID"), ("ATTRIBUTES", "ATTRIBUTE_ID"))),
+                ForeignKey("DD_CONSTRAINTS", "DD_ATTRIBUTES", List(("REF_TABLE_ID", "TABLE_ID"), ("REF_ATTRIBUTES", "ATTRIBUTE_ID"))))))
+        }
+        val sequencesTable = {
+          val sequenceId: Attribute = "SEQUENCE_ID" -> IntType
+          
+          new Table("DD_SEQUENCES", List(
+            "START_VALUE" -> IntType,
+            "END_VALUE" -> IntType,
+            "INCREMENT_BY" -> IntType,
+            "NAME" -> StringType,
+            sequenceId,
+            List(PrimaryKey(sequenceId), 
+                Unique("NAME"))))
         }
 
-        List(tablesTable, attributesTable, rowsTable, fieldsTable)
+        List(tablesTable, attributesTable, rowsTable, fieldsTable, constraintsTable, sequencesTable)
     }
 
-    var ddTables: Set[DDTablesRecord] = Set.empty
-    var ddAttributes: Set[DDAttributesRecord] = Set.empty
-    var ddRows: Set[DDAttributesRecord] = Set.empty
-    var ddFields: Set[DDFieldsRecord] = Set.empty
+    /* Lists that contain the data in the data dictionary*/
+    var ddTables: List[DDTablesRecord] = List.empty
+    var ddAttributes: List[DDAttributesRecord] = List.empty
+    var ddRows: List[DDAttributesRecord] = List.empty
+    var ddFields: List[DDFieldsRecord] = List.empty
+    var ddConstraints: List[DDConstraintsRecord] = List.empty
+    var ddSequences: List[DDSequencesRecord] = List.empty
 
-    private def addTableToDD(schemaName: String, tbl: Table)) = {
-        val newTableId = Random.nextInt //TODO Get tableID from sequences, not Random
-        ddTables += DDTablesRecord(schemaName, newTableId, tbl.name)
-        tbl.attributes.foreach { attr =>
-            ddAttributes += DDAttributesRecord(schemaName, newTableId, Random.nextInt, attr.name, attr.dataType) //TODO Get attributeID from sequences, not Random
+    /** Initializes the data dictionary with itself */
+    private def initializeDD() = {
+
+      /* Create initial sequences for the DD relations */
+      ddSequences += DDSequencesRecord(1, Int.MaxValue, 1, DataDictionarySchemaName + "DD_SEQUENCES_SEQUENCE_ID_SEQ", 0)
+      ddSequences += DDSequencesRecord(0, Int.MaxValue, 1, DataDictionarySchemaName + "DD_TABLES_TABLE_ID_SEQ")
+      ddSequences += DDSequencesRecord(0, Int.MaxValue, 1, DataDictionarySchemaName + "DD_ATTRIBUTES_ATTRIBUTE_ID_SEQ")
+      ddSequences += DDSequencesRecord(0, Int.MaxValue, 1, DataDictionarySchemaName + "DD_ROWS_ROW_ID_SEQ")
+
+      /* Fill DD_TABLES */
+      (0 until dataDictionary.size) foreach { i =>
+        val tbl = dataDictionary(i)
+        ddTables += DDTablesRecord(DataDictionarySchemaName, tbl.name)
+      }
+      
+      /* Fill DD_ROWS with tables and DD_ATTRIBUTES for each table */
+      (0 until dataDictionary.size) foreach { i =>
+        val tbl = dataDictionary(i)
+        ddRows += DDRowsRecord(i)
+
+        (0 until tbl.attributes.size) foreach { j =>
+          ddAttributes += DDAttributesRecord(i, attr.name, attr.dataType)
+          ddRows += DDRowsRecord(1)
         }
-        
-        //TODO add entries to rows
+      }
+      
+      //TODO Fill ddRows with data from all the DD relations
+      //TODO Fill ddFields with data from all the DD relations
+      //TODO Fill ddConstraints
+      //TODO Fill ddSequences
     }
-    //TODO Populate DD with schemata
-    //TODO Implement Unique constraint and AutoIncrement constraint / Sequences
+
+    /** Adds a table to the given schema */
+    private def addTableToDD(schemaName: String, tbl: Table) = {
+        if (tableExistsAlready(schemaName, tbl)) {
+          throw new Exception("Table " + tbl.name + " already exists in schema" + schemaName + ".")
+        }
+
+        /* Add entry to DD_TABLES*/
+        val newTableId = getSequence(DataDictionarySchemaName + "DD_TABLES_TABLE_ID_SEQ").nextVal
+        ddTables += DDTablesRecord(schemaName, tbl.name, newTableId)
+        val newRow = DDRowsRecord(0)
+        ddRows += newRow
+        ddFields ++= for ( (att, val) <- getAttributes(DataDictionarySchemaName, "DD_TABLES").zip(Seq(schemaName, tbl.name, newTableId))) 
+                      yield DDFieldsRecord(newTableId, att.attributeId, newRow.rowId, val)
+
+        /* Add entries to DD_ATTRIBUTES */
+        val newAttributes = for (attr <- tbl.attributes) yield DDAttributesRecord(newTableId, attr.name, attr.dataType)
+        ddAttributes ++= newAttributes
+        //TODO Add rows for attributes
+        //TODO Add values for attributes
+        val newConstraints = for (cst <- tbl.constraints) yield cst.toDDRecord
+        ddConstraints ++= newConstraints
+        //TODO Add rows for constraints
+        //TODO Add values for constraints
+
+        //TODO Add sequences
+        //TODO Add rows for sequences
+        //TODO Add values for sequences
+    }
+
+    /* Populate DD with schemata that have been passed to the constructor */
+    schemata.foreach{  
+      case (name, Schema(tables)) => tables.foreach { t =>
+        addTableToDD(name, t)
+      }
+    }
 }
 
 case class Schema(tables: List[Table])

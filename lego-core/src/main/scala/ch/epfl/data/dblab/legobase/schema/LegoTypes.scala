@@ -18,3 +18,10 @@ case class VarCharType(maxLength: Int) extends PardisType[String] {
   val typeArguments = Nil
   val typeTag = tag[String]
 }
+
+case class AnyType extends PardisType[Any] {
+  def rebuild(newArguments: PardisType[_]*) = AnyType
+  val name = "Any"
+  val typeArguments = Nil
+  val typeTag = tag[Any]
+}
