@@ -7,13 +7,14 @@ import scala.language.implicitConversions
 
 case class Catalog(schemata: Map[String, Schema]) {
 
+  //TODO Push case classes out and pass the catalog to them
   /* Case classes for the tables in the data dictionary */
-  case class DDTablesRecord(schemaName: String, name: String, tableId: Int = getSequence(DataDictionarySchemaName + "_DD_TABLES_TABLE_ID_SEQ").nextVal)
-  case class DDAttributesRecord(tableId: Int, name: String, dataType: Tpe, attributeId: Int = getSequence(DataDictionarySchemaName + "_DD_ATTRIBUTES_ATTRIBUTE_ID_SEQ").nextVal)
+  case class DDTablesRecord(schemaName: String, name: String, tableId: Int = getSequenceNext(DataDictionarySchemaName + "_DD_TABLES_TABLE_ID_SEQ"))
+  case class DDAttributesRecord(tableId: Int, name: String, dataType: Tpe, attributeId: Int = getSequenceNext(DataDictionarySchemaName + "_DD_ATTRIBUTES_ATTRIBUTE_ID_SEQ"))
   case class DDFieldsRecord(tableId: Int, attributeId: Int, rowId: Int, value: Any)
-  case class DDRowsRecord(tableId: Int, rowId: Int = getSequence(DataDictionarySchemaName + "_DD_ROWS_ROW_ID_SEQ").nextVal)
+  case class DDRowsRecord(tableId: Int, rowId: Int = getSequenceNext(DataDictionarySchemaName + "_DD_ROWS_ROW_ID_SEQ"))
   case class DDConstraintsRecord(tableId: Int, constraintType: Char, attributes: List[Int], refTableID: Int, refAttributes: List[Int])
-  case class DDSequencesRecord(startValue: Int, endValue: Int, incrementBy: Int, sequenceName: String, sequenceId: Int = getSequence(DataDictionarySchemaName + "_DD_SEQUENCES_SEQUENCE_ID_SEQ").nextVal) {
+  case class DDSequencesRecord(startValue: Int, endValue: Int, incrementBy: Int, sequenceName: String, sequenceId: Int = getSequenceNext(DataDictionarySchemaName + "_DD_SEQUENCES_SEQUENCE_ID_SEQ")) {
 
     /* Catch invalid start/end/incrementBy values*/
     if (incrementBy == 0)
@@ -40,7 +41,7 @@ case class Catalog(schemata: Map[String, Schema]) {
       if (next > endValue)
         throw new Exception(s"Sequence $sequenceId has reached it's maximum value $endValue")
       val value = next
-      next += incrementBy 
+      next += incrementBy
       //TODO Update field value in DD_FIELD for this sequence
       value
     }
@@ -53,22 +54,22 @@ case class Catalog(schemata: Map[String, Schema]) {
   private val dataDictionary: List[Table] = {
     val tablesTable = {
       val schemaName: Attribute = "SCHEMA_NAME" -> StringType
-      val name: Attribute = "NAME" -> StringType,
+      val name: Attribute = "NAME" -> StringType
       val tableId: Attribute = "TABLE_ID" -> IntType
 
       new Table("DD_TABLES", List(
         schemaName,
-        name
+        name,
         tableId),
         List(PrimaryKey(List(schemaName, tableId)),
-             NotNull(schemaName),
-             NotNull(name),
-             AutoIncrement(tableId)))
+          NotNull(schemaName),
+          NotNull(name),
+          AutoIncrement(tableId)))
     }
     val attributesTable = {
       val tableId: Attribute = "TABLE_ID" -> IntType
       val name: Attribute = "NAME" -> StringType
-      val datatype: Attribute = "DATATYPE" -> Tpe
+      val datatype: Attribute = "DATATYPE" -> TpeType
       val attributeId: Attribute = "ATTRIBUTE_ID" -> IntType
 
       new Table("DD_ATTRIBUTES", List(
@@ -89,7 +90,7 @@ case class Catalog(schemata: Map[String, Schema]) {
       new Table("DD_ROWS", List(
         tableId,
         rowId),
-        List(PrimaryKey(List(schemaName, tableId, rowId)),
+        List(PrimaryKey(List(tableId, rowId)),
           ForeignKey("DD_ROWS", "DD_TABLES", List(("TABLE_ID", "TABLE_ID"))),
           AutoIncrement(rowId)))
     }
@@ -111,34 +112,35 @@ case class Catalog(schemata: Map[String, Schema]) {
     }
     val constraintsTable = {
       val tableId: Attribute = "TABLE_ID" -> IntType
-      val constraintType: Attribute = "CONSTRAINT_TYPE" -> CharType, /* f = foreign key constraint, p = primary key constraint, u = unique constraint, n = notnull constraint */
-      val attributes: Attribute = "ATTRIBUTES" -> SeqType[IntType],
+      val constraintType: Attribute = "CONSTRAINT_TYPE" -> CharType /* f = foreign key constraint, p = primary key constraint, u = unique constraint, n = notnull constraint */
+      val attributes: Attribute = "ATTRIBUTES" -> SeqType(IntType)
 
       new Table("DD_CONSTRAINTS", List(
         tableId,
         constraintType,
         attributes,
-        "REF_TABLE_ID" -> Option[IntType],
-        "REF_ATTRIBUTES" -> Option[SeqType[IntType]]),
+        "REF_TABLE_ID" -> OptionType(IntType),
+        "REF_ATTRIBUTES" -> OptionType(SeqType(IntType))),
         List(ForeignKey("DD_CONSTRAINTS", "DD_ATTRIBUTES", List(("TABLE_ID", "TABLE_ID"), ("ATTRIBUTES", "ATTRIBUTE_ID"))),
           ForeignKey("DD_CONSTRAINTS", "DD_ATTRIBUTES", List(("REF_TABLE_ID", "TABLE_ID"), ("REF_ATTRIBUTES", "ATTRIBUTE_ID"))),
           NotNull(constraintType),
           NotNull(attributes)))
     }
-    val sequencesTable = {  
+    val sequencesTable = {
+      val startValue: Attribute = "START_VALUE" -> IntType
+      val endValue: Attribute = "END_VALUE" -> IntType
+      val incrementBy: Attribute = "INCREMENT_BY" -> IntType
+      val name: Attribute = "NAME" -> StringType
       val sequenceId: Attribute = "SEQUENCE_ID" -> IntType
-      val startValue: Attribute = "START_VALUE" -> IntType,
-      val endValue: Attribute = "END_VALUE" -> IntType,
-      val incrementBy: Attribute = "INCREMENT_BY" -> IntType,
 
       new Table("DD_SEQUENCES", List(
-        "START_VALUE" -> IntType,
-        "END_VALUE" -> IntType,
-        "INCREMENT_BY" -> IntType,
-        "NAME" -> StringType,
+        startValue,
+        endValue,
+        incrementBy,
+        name,
         sequenceId),
-        List(PrimaryKey(sequenceId),
-          Unique("NAME"),
+        List(PrimaryKey(List(sequenceId)),
+          Unique(name),
           NotNull(startValue),
           NotNull(endValue),
           NotNull(incrementBy)))
@@ -150,7 +152,7 @@ case class Catalog(schemata: Map[String, Schema]) {
   /* Lists that contain the data in the data dictionary*/
   var ddTables: List[DDTablesRecord] = List.empty
   var ddAttributes: List[DDAttributesRecord] = List.empty
-  var ddRows: List[DDAttributesRecord] = List.empty
+  var ddRows: List[DDRowsRecord] = List.empty
   var ddFields: List[DDFieldsRecord] = List.empty
   var ddConstraints: List[DDConstraintsRecord] = List.empty
   var ddSequences: List[DDSequencesRecord] = List.empty
@@ -159,25 +161,25 @@ case class Catalog(schemata: Map[String, Schema]) {
   private def initializeDD() = {
 
     /* Create initial sequences for the DD relations */
-    ddSequences += DDSequencesRecord(1, Int.MaxValue, 1, DataDictionarySchemaName + "_DD_SEQUENCES_SEQUENCE_ID_SEQ", 0)
-    ddSequences += DDSequencesRecord(0, Int.MaxValue, 1, DataDictionarySchemaName + "_DD_TABLES_TABLE_ID_SEQ")
-    ddSequences += DDSequencesRecord(0, Int.MaxValue, 1, DataDictionarySchemaName + "_DD_ATTRIBUTES_ATTRIBUTE_ID_SEQ")
-    ddSequences += DDSequencesRecord(0, Int.MaxValue, 1, DataDictionarySchemaName + "_DD_ROWS_ROW_ID_SEQ")
+    ddSequences :+= DDSequencesRecord(1, Int.MaxValue, 1, DataDictionarySchemaName + "_DD_SEQUENCES_SEQUENCE_ID_SEQ", 0)
+    ddSequences :+= DDSequencesRecord(0, Int.MaxValue, 1, DataDictionarySchemaName + "_DD_TABLES_TABLE_ID_SEQ")
+    ddSequences :+= DDSequencesRecord(0, Int.MaxValue, 1, DataDictionarySchemaName + "_DD_ATTRIBUTES_ATTRIBUTE_ID_SEQ")
+    ddSequences :+= DDSequencesRecord(0, Int.MaxValue, 1, DataDictionarySchemaName + "_DD_ROWS_ROW_ID_SEQ")
 
     /* Fill DD_TABLES */
     (0 until dataDictionary.size) foreach { i =>
       val tbl = dataDictionary(i)
-      ddTables += DDTablesRecord(DataDictionarySchemaName, tbl.name)
+      ddTables :+= DDTablesRecord(DataDictionarySchemaName, tbl.name)
     }
 
     /* Fill DD_ROWS with tables and DD_ATTRIBUTES for each table */
     (0 until dataDictionary.size) foreach { i =>
       val tbl = dataDictionary(i)
-      ddRows += DDRowsRecord(i)
+      ddRows :+= DDRowsRecord(i)
 
       (0 until tbl.attributes.size) foreach { j =>
-        ddAttributes += DDAttributesRecord(i, attr.name, attr.dataType)
-        ddRows += DDRowsRecord(1)
+        ddAttributes :+= DDAttributesRecord(i, attr.name, attr.dataType)
+        ddRows :+= DDRowsRecord(1)
       }
     }
 
@@ -189,28 +191,36 @@ case class Catalog(schemata: Map[String, Schema]) {
 
   /** Adds a table to the given schema */
   private def addTableToDD(schemaName: String, tbl: Table) = {
-    if (tableExistsAlready(schemaName, tbl)) {
+    if (tableExistsAlreadyInDD(schemaName, tbl.name)) {
       throw new Exception("Table " + tbl.name + " already exists in schema" + schemaName + ".")
     }
 
     /* Add entry to DD_TABLES*/
-    val newTableId = getSequence(DataDictionarySchemaName + "_DD_TABLES_TABLE_ID_SEQ").nextVal
-    ddTables += DDTablesRecord(schemaName, tbl.name, newTableId)
+    val newTableId = getSequenceNext(DataDictionarySchemaName + "_DD_TABLES_TABLE_ID_SEQ")
+    ddTables :+= DDTablesRecord(schemaName, tbl.name, newTableId)
     addRowAndFieldsToDD(DataDictionarySchemaName, "DD_TABLES", Seq(schemaName, tbl.name, newTableId))
 
     /* Add entries to DD_ATTRIBUTES */
-    val newAttributes = for (attr <- tbl.attributes) yield DDAttributesRecord(newTableId, attr.name, attr.dataType)
+    val newAttributes: List[DDAttributesRecord] = for (attr <- tbl.attributes) yield DDAttributesRecord(newTableId, attr.name, attr.dataType)
     ddAttributes ++= newAttributes
-    newAttributes.foreach(att => addRowAndFieldsToDD(DataDictionarySchemaName, "DD_ATTRIBUTES", Seq(newTableId, attr.name, attr.dataType, attr.attributeId)))
+    newAttributes.foreach(attr => addRowAndFieldsToDD(DataDictionarySchemaName, "DD_ATTRIBUTES", Seq(newTableId, attr.name, attr.dataType, attr.attributeId)))
 
     /* Add entries to DD_CONSTRAINTS */
-    val newConstraints = for (cstr <- tbl.constraints.filter { case c: AutoIncrement => False case _ => True }) yield cstr.toDDRecord
+    def filterAutoIncrement(cstr: Constraint): Boolean = {
+      cstr match {
+        case _: AutoIncrement => true
+        case _                => false
+      }
+    }
+    def filterNotAutoIncrement(cstr: Constraint) = !filterAutoIncrement
+
+    val newConstraints = for (cstr <- tbl.constraints.filter(filterNotAutoIncrement)) yield cstr.toDDRecord
     ddConstraints ++= newConstraints
     //TODO How to handle SeqTypes or options like in DD_CONSTRAINTS
     newConstraints.foreach(cstr => addRowAndFieldsToDD(DataDictionarySchemaName, "DD_CONSTRAINTS", Seq()))
 
     /* Add entries to DD_SEQUENCES */
-    val newSequences = for (cstr <- tbl.constraints.filter { case c: AutoIncrement => True case _ => False })
+    val newSequences = for (cstr <- tbl.constraints.filter(filterAutoIncrement))
       yield DDSequencesRecord(0, Int.MaxValue, 1, constructSequenceName(DataDictionarySchemaName, tbl.Name, cstr.attribute))
     ddSequences ++= newSequences
     newSequences.foreach(seq => addRowAndFieldsToDD(DataDictionarySchemaName, "DD_SEQUENCES", Seq(seq.startValue, seq.endValue, seq.incrementBy, seq.sequenceName, seq.sequenceId)))
@@ -223,19 +233,33 @@ case class Catalog(schemata: Map[String, Schema]) {
     }
   }
 
-  /** Returns the sequence with the given name */
-  private def getSequence(sequenceName: String): DDSequencesRecord = ??? //TODO When there's a way to fetch data from the DB, replace this
+  /** Returns the next value of the sequence with the given name */
+  private def getSequenceNext(sequenceName: String): Int = //TODO When there's a way to fetch data from the DB, replace this
+    ddSequences.find(s => s.sequenceName == sequenceName) match {
+      case Some(seq) => seq.nextVal
+      case None      => throw new Exception(s"Sequence $sequenceName not found")
+    }
 
   /** Returns whether a table with the given name already exists in the given schema */
-  private def tableExistsAlready(schemaName: String, tableName: String): Boolean = ???
+  private def tableExistsAlreadyInDD(schemaName: String, tableName: String): Boolean =
+    ddTables.find(t => t.schemaName == schemaName && t.name == tableName) match {
+      case None => False
+      case _    => True
+    }
 
   /**
    * Retrieve a List of attributes of a table
    *
    * The attributes are ordered the same way they have been added to DD_ATTRIBUTES
    */
-  private def getAttributes(schemaName: String, tableName: String): List[Attributes] = ???
+  private def getAttributes(schemaName: String, tableName: String): List[Attributes] = {
+    val tableId = ddTables.find(t => t.schemaName == schemaName && t.name == tableName) match {
+      case Some(tbl) => tbl.tableId
+      case None      => throw new Exception(s"Table $tableName does not exist in schema $schemaName")
+    }
 
+    ddAttributes.filter(a => a.tableId == tableId)
+  }
   /**
    * Adds a row and it's field values to the database
    *
