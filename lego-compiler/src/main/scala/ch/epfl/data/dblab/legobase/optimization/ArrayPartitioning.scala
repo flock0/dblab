@@ -11,6 +11,8 @@ import sc.pardis.types._
 import sc.pardis.types.PardisTypeImplicits._
 import sc.pardis.shallow.utils.DefaultValue
 
+// TODO there should be no need for queryNumber thanks to Schema information
+
 /**
  * A transformer for partitioning and indexing the arrays whenever possible.
  *
@@ -107,15 +109,15 @@ class ArrayPartitioning(override val IR: LoweringLegoBase, queryNumber: Int) ext
 
   object ConstraintExtract {
     def unapply[T](node: Def[T]): Option[(Rep[Unit], Constraint)] = node match {
-      case Int$less3(elemField, upperBound) if rangeElemField.exists(_._2 == elemField) =>
+      case Int$less1(elemField, upperBound) if rangeElemField.exists(_._2 == elemField) =>
         // System.out.println(s"< $upperBound")
         val rangeForeach = rangeElemField.find(_._2 == elemField).get._1
         Some((rangeForeach, LessThan(elemField, upperBound)))
-      case Int$greater$eq3(elemField, upperBound) if rangeElemField.exists(_._2 == elemField) =>
+      case Int$greater$eq1(elemField, upperBound) if rangeElemField.exists(_._2 == elemField) =>
         // System.out.println(s"< $upperBound")
         val rangeForeach = rangeElemField.find(_._2 == elemField).get._1
         Some((rangeForeach, GreaterThan(elemField, upperBound)))
-      case Int$greater3(elemField, lowerBound) if rangeElemFieldConstraints.exists(_._2.exists(c => c.bound == lowerBound)) =>
+      case Int$greater1(elemField, lowerBound) if rangeElemFieldConstraints.exists(_._2.exists(c => c.bound == lowerBound)) =>
         // System.out.println(s"> $lowerBound")
         val rangeForeach = rangeElemFieldConstraints.find(_._2.exists(c => c.bound == lowerBound)).get._1
         Some((rangeForeach, GreaterThan(elemField, lowerBound)))
@@ -145,16 +147,19 @@ class ArrayPartitioning(override val IR: LoweringLegoBase, queryNumber: Int) ext
 
   def shouldBePartitioned[T](arrayInfo: ArrayInfo[T]): Boolean = arrayInfo.tpe.name match {
     case "ORDERSRecord" if queryNumber == 3 || queryNumber == 10 => true
+    case "LINEITEMRecord" if queryNumber == 6 || queryNumber == 14 => true
     case _ => false
   }
 
   def partitioningField[T](tpe: TypeRep[T]): Option[String] = tpe.name match {
     case "ORDERSRecord" if queryNumber == 3 || queryNumber == 10 => Some("O_ORDERDATE")
+    case "LINEITEMRecord" if queryNumber == 6 || queryNumber == 14 => Some("L_SHIPDATE")
     case _ => None
   }
 
   def bucketSize[T](arrayInfo: ArrayInfo[T]): Rep[Int] = arrayInfo.tpe.name match {
     case "ORDERSRecord" if queryNumber == 3 || queryNumber == 10 => (arrayInfo.arraySize / arrayInfo.buckets) * unit(4)
+    case "LINEITEMRecord" if queryNumber == 6 || queryNumber == 14 => (arrayInfo.arraySize / arrayInfo.buckets) * unit(4)
     case _ => unit(1 << 10)
   }
 
@@ -181,6 +186,9 @@ class ArrayPartitioning(override val IR: LoweringLegoBase, queryNumber: Int) ext
 
   def partitioningFunction[T](arrayInfo: ArrayInfo[T]): (Rep[Int] => Rep[Int]) = arrayInfo.tpe.name match {
     case "ORDERSRecord" if queryNumber == 3 || queryNumber == 10 => (x: Rep[Int]) => {
+      convertDateToIndex(x)
+    }
+    case "LINEITEMRecord" if queryNumber == 6 || queryNumber == 14 => (x: Rep[Int]) => {
       convertDateToIndex(x)
     }
     case _ => ???
