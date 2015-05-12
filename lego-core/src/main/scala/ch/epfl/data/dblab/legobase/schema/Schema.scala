@@ -4,48 +4,69 @@ package schema
 
 import sc.pardis.types._
 import scala.language.implicitConversions
+import Catalog._
 
-case class Catalog(schemata: Map[String, Schema]) {
-
-  //TODO Push case classes out and pass the catalog to them
-  /* Case classes for the tables in the data dictionary */
-  case class DDTablesRecord(schemaName: String, name: String, tableId: Int = getSequenceNext(DataDictionarySchemaName + "_DD_TABLES_TABLE_ID_SEQ"))
-  case class DDAttributesRecord(tableId: Int, name: String, dataType: Tpe, attributeId: Int = getSequenceNext(DataDictionarySchemaName + "_DD_ATTRIBUTES_ATTRIBUTE_ID_SEQ"))
-  case class DDFieldsRecord(tableId: Int, attributeId: Int, rowId: Int, value: Any)
-  case class DDRowsRecord(tableId: Int, rowId: Int = getSequenceNext(DataDictionarySchemaName + "_DD_ROWS_ROW_ID_SEQ"))
-  case class DDConstraintsRecord(tableId: Int, constraintType: Char, attributes: List[Int], refTableID: Int, refAttributes: List[Int])
-  case class DDSequencesRecord(startValue: Int, endValue: Int, incrementBy: Int, sequenceName: String, sequenceId: Int = getSequenceNext(DataDictionarySchemaName + "_DD_SEQUENCES_SEQUENCE_ID_SEQ")) {
-
-    /* Catch invalid start/end/incrementBy values*/
-    if (incrementBy == 0)
-      throw new Exception("incrementBy must not be 0")
-    if (startValue < endValue) {
-      if (incrementBy < 0) {
-        throw new Exception("Sequence can never reach the end value")
-      }
-    } else {
-      if (incrementBy > 0) {
-        throw new Exception("Sequence can never reach the end value")
-      }
+/* Case classes for the tables in the data dictionary */
+case class DDTablesRecord(schemaName: String, name: String, catalog: Catalog, private val _tableId: Option[Int] = None) {
+  val tableId = _tableId match {
+    case Some(id) => id
+    case None     => catalog.getSequenceNext(constructSequenceName(DataDictionarySchemaName, "DD_TABLES", "TABLE_ID"))
+  }
+}
+case class DDAttributesRecord(tableId: Int, name: String, dataType: Tpe, catalog: Catalog, _attributeId: Option[Int] = None) {
+  val attributeId = _attributeId match {
+    case Some(id) => id
+    case None     => catalog.getSequenceNext(constructSequenceName(DataDictionarySchemaName, "DD_ATTRIBUTES", "ATTRIBUTE_ID"))
+  }
+}
+case class DDFieldsRecord(tableId: Int, attributeId: Int, rowId: Int, value: Any)
+case class DDRowsRecord(tableId: Int, catalog: Catalog, _rowId: Option[Int] = None) {
+  val rowId = _rowId match {
+    case Some(id) => id
+    case None     => catalog.getSequenceNext(constructSequenceName(DataDictionarySchemaName, "DD_ROWS", "ROW_ID"))
+  }
+}
+case class DDConstraintsRecord(tableId: Int, constraintType: Char, attributes: List[Int], refTableID: Int, refAttributes: List[Int])
+case class DDSequencesRecord(startValue: Int, endValue: Int, incrementBy: Int, sequenceName: String, catalog: Catalog, _sequenceId: Option[Int] = None) {
+  val sequenceId = _sequenceId match {
+    case Some(id) => id
+    case None     => catalog.getSequenceNext(constructSequenceName(DataDictionarySchemaName, "DD_SEQUENCES", "SEQUENCE_ID"))
+  }
+  /* Catch invalid start/end/incrementBy values*/
+  if (incrementBy == 0)
+    throw new Exception("incrementBy must not be 0")
+  if (startValue < endValue) {
+    if (incrementBy < 0) {
+      throw new Exception("Sequence can never reach the end value")
     }
-
-    private var next = startValue
-
-    /**
-     * Returns the next value of the sequence
-     *
-     * @return The next value of the sequence
-     * @throws Exception when the sequence has been exhausted
-     */
-    private def nextVal: Int = {
-      if (next > endValue)
-        throw new Exception(s"Sequence $sequenceId has reached it's maximum value $endValue")
-      val value = next
-      next += incrementBy
-      //TODO Update field value in DD_FIELD for this sequence
-      value
+  } else {
+    if (incrementBy > 0) {
+      throw new Exception("Sequence can never reach the end value")
     }
   }
+
+  private var next = startValue
+
+  /**
+   * Returns the next value of the sequence
+   *
+   * @return The next value of the sequence
+   * @throws Exception when the sequence has been exhausted
+   */
+  private def nextVal: Int = {
+    if (next > endValue)
+      throw new Exception(s"Sequence $sequenceId has reached it's maximum value $endValue")
+    val value = next
+    next += incrementBy
+    //TODO Update field value in DD_FIELD for this sequence
+    value
+  }
+}
+
+object Catalog {
+  /** Returns the standardized sequence name */
+  def constructSequenceName(schemaName: String, tableName: String, attributeName: String) =
+    schemaName + "_" + tableName + "_" + attributeName + "_SEQ"
 
   /** The default name of the schema for the data dictionary itself */
   val DataDictionarySchemaName = "DD"
@@ -148,7 +169,10 @@ case class Catalog(schemata: Map[String, Schema]) {
 
     List(tablesTable, attributesTable, rowsTable, fieldsTable, constraintsTable, sequencesTable)
   }
-  
+}
+
+case class Catalog(schemata: Map[String, Schema]) {
+
   /* Lists that contain the data in the data dictionary*/
   var ddTables: List[DDTablesRecord] = List.empty
   var ddAttributes: List[DDAttributesRecord] = List.empty
@@ -160,26 +184,27 @@ case class Catalog(schemata: Map[String, Schema]) {
   /** Initializes the data dictionary with itself */
   private def initializeDD() = {
 
+    //TODO Use constructSequenceName
     /* Create initial sequences for the DD relations */
-    ddSequences :+= DDSequencesRecord(1, Int.MaxValue, 1, DataDictionarySchemaName + "_DD_SEQUENCES_SEQUENCE_ID_SEQ", 0)
-    ddSequences :+= DDSequencesRecord(0, Int.MaxValue, 1, DataDictionarySchemaName + "_DD_TABLES_TABLE_ID_SEQ")
-    ddSequences :+= DDSequencesRecord(0, Int.MaxValue, 1, DataDictionarySchemaName + "_DD_ATTRIBUTES_ATTRIBUTE_ID_SEQ")
-    ddSequences :+= DDSequencesRecord(0, Int.MaxValue, 1, DataDictionarySchemaName + "_DD_ROWS_ROW_ID_SEQ")
+    ddSequences :+= DDSequencesRecord(1, Int.MaxValue, 1, DataDictionarySchemaName + "_DD_SEQUENCES_SEQUENCE_ID_SEQ", this, Some(0))
+    ddSequences :+= DDSequencesRecord(0, Int.MaxValue, 1, DataDictionarySchemaName + "_DD_TABLES_TABLE_ID_SEQ", this)
+    ddSequences :+= DDSequencesRecord(0, Int.MaxValue, 1, DataDictionarySchemaName + "_DD_ATTRIBUTES_ATTRIBUTE_ID_SEQ", this)
+    ddSequences :+= DDSequencesRecord(0, Int.MaxValue, 1, DataDictionarySchemaName + "_DD_ROWS_ROW_ID_SEQ", this)
 
     /* Fill DD_TABLES */
     (0 until dataDictionary.size) foreach { i =>
       val tbl = dataDictionary(i)
-      ddTables :+= DDTablesRecord(DataDictionarySchemaName, tbl.name)
+      ddTables :+= DDTablesRecord(DataDictionarySchemaName, tbl.name, this)
     }
 
     /* Fill DD_ROWS with tables and DD_ATTRIBUTES for each table */
     (0 until dataDictionary.size) foreach { i =>
       val tbl = dataDictionary(i)
-      ddRows :+= DDRowsRecord(i)
+      ddRows :+= DDRowsRecord(i, this)
 
       (0 until tbl.attributes.size) foreach { j =>
-        ddAttributes :+= DDAttributesRecord(i, attr.name, attr.dataType)
-        ddRows :+= DDRowsRecord(1)
+        ddAttributes :+= DDAttributesRecord(i, attr.name, attr.dataType, this)
+        ddRows :+= DDRowsRecord(1, this)
       }
     }
 
@@ -196,12 +221,12 @@ case class Catalog(schemata: Map[String, Schema]) {
     }
 
     /* Add entry to DD_TABLES*/
-    val newTableId = getSequenceNext(DataDictionarySchemaName + "_DD_TABLES_TABLE_ID_SEQ")
-    ddTables :+= DDTablesRecord(schemaName, tbl.name, newTableId)
+    val newTableId = getSequenceNext(constructSequenceName(DataDictionarySchemaName, "DD_TABLES", "TABLE_ID"))
+    ddTables :+= DDTablesRecord(schemaName, tbl.name, this, Some(newTableId))
     addRowAndFieldsToDD(DataDictionarySchemaName, "DD_TABLES", Seq(schemaName, tbl.name, newTableId))
 
     /* Add entries to DD_ATTRIBUTES */
-    val newAttributes: List[DDAttributesRecord] = for (attr <- tbl.attributes) yield DDAttributesRecord(newTableId, attr.name, attr.dataType)
+    val newAttributes: List[DDAttributesRecord] = for (attr <- tbl.attributes) yield DDAttributesRecord(newTableId, attr.name, attr.dataType, this)
     ddAttributes ++= newAttributes
     newAttributes.foreach(attr => addRowAndFieldsToDD(DataDictionarySchemaName, "DD_ATTRIBUTES", Seq(newTableId, attr.name, attr.dataType, attr.attributeId)))
 
@@ -214,14 +239,14 @@ case class Catalog(schemata: Map[String, Schema]) {
     }
     def filterNotAutoIncrement(cstr: Constraint) = !filterAutoIncrement
 
-    val newConstraints = for (cstr <- tbl.constraints.filter(filterNotAutoIncrement)) yield cstr.toDDRecord
+    val newConstraints = for (cstr <- tbl.constraints.filter(filterNotAutoIncrement)) yield cstr.toDDConstraintRecord
     ddConstraints ++= newConstraints
     //TODO How to handle SeqTypes or options like in DD_CONSTRAINTS
     newConstraints.foreach(cstr => addRowAndFieldsToDD(DataDictionarySchemaName, "DD_CONSTRAINTS", Seq()))
 
     /* Add entries to DD_SEQUENCES */
     val newSequences = for (cstr <- tbl.constraints.filter(filterAutoIncrement))
-      yield DDSequencesRecord(0, Int.MaxValue, 1, constructSequenceName(DataDictionarySchemaName, tbl.Name, cstr.attribute))
+      yield DDSequencesRecord(0, Int.MaxValue, 1, constructSequenceName(DataDictionarySchemaName, tbl.Name, cstr.attribute), this)
     ddSequences ++= newSequences
     newSequences.foreach(seq => addRowAndFieldsToDD(DataDictionarySchemaName, "DD_SEQUENCES", Seq(seq.startValue, seq.endValue, seq.incrementBy, seq.sequenceName, seq.sequenceId)))
   }
@@ -234,7 +259,7 @@ case class Catalog(schemata: Map[String, Schema]) {
   }
 
   /** Returns the next value of the sequence with the given name */
-  private def getSequenceNext(sequenceName: String): Int = //TODO When there's a way to fetch data from the DB, replace this
+  def getSequenceNext(sequenceName: String): Int = //TODO When there's a way to fetch data from the DB, replace this
     ddSequences.find(s => s.sequenceName == sequenceName) match {
       case Some(seq) => seq.nextVal
       case None      => throw new Exception(s"Sequence $sequenceName not found")
@@ -275,6 +300,7 @@ case class Catalog(schemata: Map[String, Schema]) {
                       yield DDFieldsRecord(newTableId, att.attributeId, newRow.rowId, val)
      */
   //TODO How to handle SeqTypes or options like in DD_CONSTRAINTS
+
 }
 
 case class Schema(tables: List[Table])
