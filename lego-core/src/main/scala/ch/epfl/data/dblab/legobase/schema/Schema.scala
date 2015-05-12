@@ -15,7 +15,18 @@ case class Catalog(schemata: Map[String, Schema]) {
   case class DDConstraintsRecord(tableId: Int, constraintType: Char, attributes: List[Int], refTableID: Int, refAttributes: List[Int])
   case class DDSequencesRecord(startValue: Int, endValue: Int, incrementBy: Int, sequenceName: String, sequenceId: Int = getSequence(DataDictionarySchemaName + "_DD_SEQUENCES_SEQUENCE_ID_SEQ").nextVal) {
 
-    //TODO Catch invalid start/end/increment combination
+    /* Catch invalid start/end/incrementBy values*/
+    if (incrementBy == 0)
+      throw new Exception("incrementBy must not be 0")
+    if (startValue < endValue) {
+      if (incrementBy < 0) {
+        throw new Exception("Sequence can never reach the end value")
+      }
+    } else {
+      if (incrementBy > 0) {
+        throw new Exception("Sequence can never reach the end value")
+      }
+    }
 
     private var next = startValue
 
@@ -135,7 +146,7 @@ case class Catalog(schemata: Map[String, Schema]) {
 
     List(tablesTable, attributesTable, rowsTable, fieldsTable, constraintsTable, sequencesTable)
   }
-
+  
   /* Lists that contain the data in the data dictionary*/
   var ddTables: List[DDTablesRecord] = List.empty
   var ddAttributes: List[DDAttributesRecord] = List.empty
