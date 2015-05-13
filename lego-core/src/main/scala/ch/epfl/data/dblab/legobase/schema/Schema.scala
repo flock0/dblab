@@ -53,7 +53,7 @@ case class DDSequencesRecord(startValue: Int, endValue: Int, incrementBy: Int, s
    * @return The next value of the sequence
    * @throws Exception when the sequence has been exhausted
    */
-  private def nextVal: Int = {
+  def nextVal: Int = {
     if (next > endValue)
       throw new Exception(s"Sequence $sequenceId has reached it's maximum value $endValue")
     val value = next
