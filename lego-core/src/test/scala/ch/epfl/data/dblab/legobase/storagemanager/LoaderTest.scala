@@ -18,8 +18,7 @@ class LoaderTest extends FlatSpec {
   val DATAPATH = System.getenv("LEGO_DATA_FOLDER")
   if (DATAPATH != null) {
     "Loader" should "load PART table with SF0.1 correctly" in {
-      // Change path to test
-      val partTable = TPCHSchema.getSchema(s"$DATAPATH/sf0.1", 0.1).tables.find(t => t.name == "PART").get
+      val partTable = TPCHSchema.getSchema(s"$DATAPATH/sf0.1/", 0.1).tables.find(t => t.name == "PART").get
       val records = Loader.loadTable[PARTRecord](partTable)
 
       assert(records.size == 20000)
@@ -27,7 +26,7 @@ class LoaderTest extends FlatSpec {
       assert(records(19999).P_RETAILPRICE == 920.00)
     }
   } else {
-    println("Tests could not run because the environment variable `LEGO_DATA_FOLDER` does not exist.")
+    fail("Tests could not run because the environment variable `LEGO_DATA_FOLDER` does not exist.")
   }
 
 }

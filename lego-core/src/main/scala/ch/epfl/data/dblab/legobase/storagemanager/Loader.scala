@@ -97,19 +97,23 @@ object Loader {
     //TODO update statistics
   }
 
-  def loadTable(catalog: Catalog, schemaName: String, tableName: String)(implicit t: TypeTag[R]): Unit =
-    val table = ddTables.find(t => t.schemaName == schemaName && t.name == tableName) match {
+  def loadTable(catalog: Catalog, schemaName: String, tableName: String): Unit = {
+    val table = catalog.ddTables.find(t => t.schemaName == schemaName && t.name == tableName) match {
       case Some(t) => t
-      case None => throw new Exception(s"No attribute found with the name `$name` in the table ${table.name}")
+      case None    => throw new Exception(s"No table found with the name `$tableName`")
     }
-    val attributes = ddAttributes.filter(a => table.tableId == a.tableId)
-    val size = fileLineCount(table.resourceLocator)
-    val ldr = new K2DBScanner(table.resourceLocator)
+    val fileName = table.fileName match {
+      case Some(fn) => fn
+      case None     => throw new Exception("No filename available to load data from")
+    }
+    val attributes = catalog.ddAttributes.filter(a => table.tableId == a.tableId)
+    val size = fileLineCount(fileName)
+    val ldr = new K2DBScanner(fileName)
 
     var i = 0
     while (i < size && ldr.hasNext()) {
       val values = attributes.map { at =>
-        at.attributeId -> at.dataType match {
+        at.attributeId -> (at.dataType match {
           case IntType          => ldr.next_int
           case DoubleType       => ldr.next_double
           case CharType         => ldr.next_char
@@ -122,4 +126,5 @@ object Loader {
 
       i += 1
     }
+  }
 }

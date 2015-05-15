@@ -200,12 +200,11 @@ case class Catalog(schemata: Map[String, Schema]) {
   private def initializeDD() = {
     val dd = dataDictionary
     /* Create initial sequences for the DD relations */
-    val initialSequences = List(
-      DDSequencesRecord(1, Int.MaxValue, 1, constructSequenceName(DDSchemaName, "DD_SEQUENCES", "SEQUENCE_ID"), this, Some(0)),
-      DDSequencesRecord(0, Int.MaxValue, 1, constructSequenceName(DDSchemaName, "DD_TABLES", "TABLE_ID"), this),
-      DDSequencesRecord(0, Int.MaxValue, 1, constructSequenceName(DDSchemaName, "DD_ATTRIBUTES", "ATTRIBUTE_ID"), this),
-      DDSequencesRecord(0, Int.MaxValue, 1, constructSequenceName(DDSchemaName, "DD_ROWS", "ROW_ID"), this))
-    ddSequences ++= initialSequences
+    ddSequences :+= DDSequencesRecord(1, Int.MaxValue, 1, constructSequenceName(DDSchemaName, "DD_SEQUENCES", "SEQUENCE_ID"), this, Some(0))
+    ddSequences :+= DDSequencesRecord(0, Int.MaxValue, 1, constructSequenceName(DDSchemaName, "DD_TABLES", "TABLE_ID"), this)
+    ddSequences :+= DDSequencesRecord(0, Int.MaxValue, 1, constructSequenceName(DDSchemaName, "DD_ATTRIBUTES", "ATTRIBUTE_ID"), this)
+    ddSequences :+= DDSequencesRecord(0, Int.MaxValue, 1, constructSequenceName(DDSchemaName, "DD_ROWS", "ROW_ID"), this)
+    val initialSequences = ddSequences
 
     /* Fill DD_TABLES */
     (0 until dataDictionary.size) foreach { i =>
@@ -238,6 +237,11 @@ case class Catalog(schemata: Map[String, Schema]) {
           ddFields :+= DDFieldsRecord(1, newAttribute.attributeId, attributesRow.rowId, newAttribute.productElement(attrIndex))
         }
       }
+    }
+
+    (0 until dd.size) foreach { i =>
+      val tbl = dd(i)
+      val tblRecord = ddTables(i)
 
       val constraints = tbl.constraints.filter(filterNotAutoIncrement)
       (0 until constraints.size) foreach { j =>
@@ -279,7 +283,7 @@ case class Catalog(schemata: Map[String, Schema]) {
     val newTableId = getSequenceNext(constructSequenceName(DDSchemaName, "DD_TABLES", "TABLE_ID"))
     ddTables :+= DDTablesRecord(schemaName, tbl.name, this, Some(tbl.resourceLocator), Some(newTableId))
     addTuple(DDSchemaName, "DD_TABLES", Seq(schemaName, tbl.name, newTableId))
-
+    
     /* Add entries to DD_ATTRIBUTES */
     val newAttributes: List[DDAttributesRecord] = for (attr <- tbl.attributes) yield DDAttributesRecord(newTableId, attr.name, attr.dataType, this)
     ddAttributes ++= newAttributes
@@ -315,7 +319,7 @@ case class Catalog(schemata: Map[String, Schema]) {
   /** Returns the next value of the sequence with the given name */
   def getSequenceNext(sequenceName: String): Int = //TODO When there's a way to fetch data from the DB, replace this
     ddSequences.find(s => s.sequenceName == sequenceName) match {
-      case Some(seq) => seq.nextVal //TODO Fix 'self-referencing' problem with default value for sequences
+      case Some(seq) => seq.nextVal
       case None      => throw new Exception(s"Sequence $sequenceName not found")
     }
 
@@ -326,34 +330,39 @@ case class Catalog(schemata: Map[String, Schema]) {
       case _    => true
     }
 
+  private def getTableId(schemaName: String, tableName: String): Int = {
+    ddTables.find(t => t.schemaName == schemaName && t.name == tableName) match {
+      case Some(t) => t.tableId
+      case None    => throw new Exception(s"Table $tableName does not exist in schema $schemaName")
+    }
+  }
+
   /**
    * Adds a row and it's field values to the database
    *
-   * @param values A sequence of values that should be stored. 
+   * @param values A sequence of values that should be stored.
    * The order of the sequence correspond to the order of the attributes in the data dictionary
    */
-  def addTuple(schemaName: String, tableName: String, values: Seq[Any]) = 
-    addTuple(schemaName, tableName, getAttributes(tableId) zip values)
-  
+  def addTuple(schemaName: String, tableName: String, values: Seq[Any]): Unit = {
+
+    def getAttributeIds(tId: Int) = ddAttributes.filter(a => a.tableId == tId).map(_.attributeId)
+    val tableId = getTableId(schemaName, tableName)
+    addTuple(tableId, getAttributeIds(tableId) zip values)
+  }
+
   /**
    * Adds a row and it's field values to the database
    *
-   * @param values A map from the attributeId to the value to be stored.
+   * @param values n iterable with the attributeId and the value to be stored for that attribute.
    */
-  def addTuple(schemaName: String, tableName: String, values: Map[Int, Any]) = {
-    private def getTableId(schemaName: String, tableName: String): Int = {
-      ddTables.find(t => t.schemaName == schemaName && t.name == tableName) match {
-        case Some(t) => t.tableId
-        case None      => throw new Exception(s"Table $tableName does not exist in schema $schemaName")
-      }
-    }
-    def getAttributeIds(tId: Int): Seq[DDAttributesRecord] = ddAttributes.filter(a => a.tableId == tId).map(_.attributeID)
-    val tableId = getTableId(schemaName, tableName)
+  def addTuple(tableId: Int, values: Seq[(Int, Any)]): Unit = {
+
     val row = DDRowsRecord(tableId, this)
     ddRows :+= row
 
-    ddFields ++= for((attrId, value) <- values) 
-                 yield DDFieldsRecord(tableId, at.attributeId, newRow.rowId, val)
+    val records: Seq[DDFieldsRecord] = for ((attrId, value) <- values)
+      yield DDFieldsRecord(tableId, attrId, row.rowId, value)
+    ddFields ++= records
   }
 }
 
@@ -385,9 +394,9 @@ case class PrimaryKey(attributes: List[Attribute]) extends Constraint {
 case class ForeignKey(ownTable: String, referencedTable: String, attributes: List[(String, String)], var selectivity: Double = 1) extends Constraint {
   def toDDConstraintsRecord(catalog: Catalog, tableId: Int) = {
     def findAttributeId(tID: Int, attributeName: String) =
-      catalog.ddAttributes.find(at => at.tableId == tableId && attributeName == at.name) match {
+      catalog.ddAttributes.find(at => at.tableId == tID && attributeName == at.name) match {
         case Some(a) => a.attributeId
-        case None    => throw new Exception("Couldn't find attribute " + attributeName)
+        case None    => throw new Exception("Couldn't find attribute " + attributeName + " in table " + tID) //TODO Edit message
       }
     val schemaName = catalog.ddTables.find(_.tableId == tableId) match {
       case Some(t) => t.schemaName
