@@ -7,7 +7,7 @@ import scala.language.implicitConversions
 import Catalog._
 
 /* Case classes for the tables in the data dictionary */
-case class DDTablesRecord(schemaName: String, name: String, private val catalog: Catalog, private val _tableId: Option[Int] = None) {
+case class DDTablesRecord(schemaName: String, name: String, private val catalog: Catalog, val fileName: Option[String] = None, private val _tableId: Option[Int] = None) {
   val tableId = _tableId match {
     case Some(id) => id
     case None     => catalog.getSequenceNext(constructSequenceName(DDSchemaName, "DD_TABLES", "TABLE_ID"))
@@ -28,10 +28,6 @@ case class DDRowsRecord(tableId: Int, private val catalog: Catalog, private val 
 }
 case class DDConstraintsRecord(tableId: Int, constraintType: Char, attributes: List[Int], refTableId: Option[Int], refAttributes: Option[List[Int]])
 case class DDSequencesRecord(startValue: Int, endValue: Int, incrementBy: Int, sequenceName: String, private val catalog: Catalog, private val _sequenceId: Option[Int] = None) {
-  val sequenceId = _sequenceId match {
-    case Some(id) => id
-    case None     => catalog.getSequenceNext(constructSequenceName(DDSchemaName, "DD_SEQUENCES", "SEQUENCE_ID"))
-  }
   /* Catch invalid start/end/incrementBy values*/
   if (incrementBy == 0)
     throw new Exception("incrementBy must not be 0")
@@ -44,6 +40,11 @@ case class DDSequencesRecord(startValue: Int, endValue: Int, incrementBy: Int, s
       throw new Exception("Sequence can never reach the end value")
 
     }
+  }
+
+  val sequenceId = _sequenceId match {
+    case Some(id) => id
+    case None     => catalog.getSequenceNext(constructSequenceName(DDSchemaName, "DD_SEQUENCES", "SEQUENCE_ID"))
   }
 
   private var next = startValue
@@ -82,6 +83,7 @@ object Catalog {
       new Table("DD_TABLES", List(
         schemaName,
         name,
+        "FILENAME" -> StringType,
         tableId),
         List(PrimaryKey(List(tableId)),
           NotNull(schemaName),
@@ -189,7 +191,7 @@ case class Catalog(schemata: Map[String, Schema]) {
       addTableToDD(name, t)
     }
   }
-  
+
   /**
    * Initializes the data dictionary with itself
    *
@@ -275,18 +277,18 @@ case class Catalog(schemata: Map[String, Schema]) {
 
     /* Add entry to DD_TABLES*/
     val newTableId = getSequenceNext(constructSequenceName(DDSchemaName, "DD_TABLES", "TABLE_ID"))
-    ddTables :+= DDTablesRecord(schemaName, tbl.name, this, Some(newTableId))
-    addRowAndFieldsToDD(DDSchemaName, "DD_TABLES", Seq(schemaName, tbl.name, newTableId))
+    ddTables :+= DDTablesRecord(schemaName, tbl.name, this, Some(tbl.resourceLocator), Some(newTableId))
+    addTuple(DDSchemaName, "DD_TABLES", Seq(schemaName, tbl.name, newTableId))
 
     /* Add entries to DD_ATTRIBUTES */
     val newAttributes: List[DDAttributesRecord] = for (attr <- tbl.attributes) yield DDAttributesRecord(newTableId, attr.name, attr.dataType, this)
     ddAttributes ++= newAttributes
-    newAttributes.foreach(attr => addRowAndFieldsToDD(DDSchemaName, "DD_ATTRIBUTES", Seq(newTableId, attr.name, attr.dataType, attr.attributeId)))
+    newAttributes.foreach(attr => addTuple(DDSchemaName, "DD_ATTRIBUTES", Seq(newTableId, attr.name, attr.dataType, attr.attributeId)))
 
     /* Add entries to DD_CONSTRAINTS */
     val newConstraints = for (cstr <- tbl.constraints.filter(filterNotAutoIncrement)) yield cstr.toDDConstraintsRecord(this, newTableId)
     ddConstraints ++= newConstraints
-    newConstraints.foreach(cstr => addRowAndFieldsToDD(DDSchemaName, "DD_CONSTRAINTS", Seq(newTableId, cstr.constraintType, cstr.attributes, cstr.refTableId, cstr.refAttributes)))
+    newConstraints.foreach(cstr => addTuple(DDSchemaName, "DD_CONSTRAINTS", Seq(newTableId, cstr.constraintType, cstr.attributes, cstr.refTableId, cstr.refAttributes)))
 
     /* Add entries to DD_SEQUENCES */
     val newSequences: Seq[DDSequencesRecord] = for (cstr <- tbl.constraints.filter(filterAutoIncrement)) yield {
@@ -297,7 +299,7 @@ case class Catalog(schemata: Map[String, Schema]) {
 
     }
     ddSequences ++= newSequences
-    newSequences.foreach(seq => addRowAndFieldsToDD(DDSchemaName, "DD_SEQUENCES", Seq(seq.startValue, seq.endValue, seq.incrementBy, seq.sequenceName, seq.sequenceId)))
+    newSequences.foreach(seq => addTuple(DDSchemaName, "DD_SEQUENCES", Seq(seq.startValue, seq.endValue, seq.incrementBy, seq.sequenceName, seq.sequenceId)))
   }
 
   /** Indicates whether a constraint is an AutoIncrement as theye are handled seperately */
@@ -325,35 +327,34 @@ case class Catalog(schemata: Map[String, Schema]) {
     }
 
   /**
-   * Retrieve a List of attributes of a table
+   * Adds a row and it's field values to the database
    *
-   * The attributes are ordered the same way they have been added to DD_ATTRIBUTES
+   * @param values A sequence of values that should be stored. 
+   * The order of the sequence correspond to the order of the attributes in the data dictionary
    */
-  /*private def getAttributes(schemaName: String, tableName: String): List[Attribute] = {
-    val tableId = ddTables.find(t => t.schemaName == schemaName && t.name == tableName) match {
-      case Some(tbl) => tbl.tableId
-      case None      => throw new Exception(s"Table $tableName does not exist in schema $schemaName")
-    }
-
-    ddAttributes.filter(a => a.tableId == tableId)
-  }*/
-
+  def addTuple(schemaName: String, tableName: String, values: Seq[Any]) = 
+    addTuple(schemaName, tableName, getAttributes(tableId) zip values)
+  
   /**
    * Adds a row and it's field values to the database
    *
-   * @param values A sequence of values that should be stored.
-   * The order must be the same as the attributes returned by the getAttributes-function.
+   * @param values A map from the attributeId to the value to be stored.
    */
-  private def addRowAndFieldsToDD(schemaName: String, tableName: String, values: Seq[Any]) = ???
-  /* 
-     * Take this as inspiration:
-     val newRow = DDRowsRecord(0)
-        ddRows += newRow
-        ddFields ++= for ( (att, val) <- getAttributes(DDSchemaName, "DD_TABLES").zip(Seq(schemaName, tbl.name, newTableId))) 
-                      yield DDFieldsRecord(newTableId, att.attributeId, newRow.rowId, val)
-     */
-  //TODO How to handle SeqTypes or options like in DD_CONSTRAINTS
+  def addTuple(schemaName: String, tableName: String, values: Map[Int, Any]) = {
+    private def getTableId(schemaName: String, tableName: String): Int = {
+      ddTables.find(t => t.schemaName == schemaName && t.name == tableName) match {
+        case Some(t) => t.tableId
+        case None      => throw new Exception(s"Table $tableName does not exist in schema $schemaName")
+      }
+    }
+    def getAttributeIds(tId: Int): Seq[DDAttributesRecord] = ddAttributes.filter(a => a.tableId == tId).map(_.attributeID)
+    val tableId = getTableId(schemaName, tableName)
+    val row = DDRowsRecord(tableId, this)
+    ddRows :+= row
 
+    ddFields ++= for((attrId, value) <- values) 
+                 yield DDFieldsRecord(tableId, at.attributeId, newRow.rowId, val)
+  }
 }
 
 case class Schema(tables: List[Table])

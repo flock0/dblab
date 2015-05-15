@@ -54,9 +54,6 @@ object Loader {
   //   2. Invokes the other method
   // def loadTable[R](implicit t: TypeTag[R]): Array[R]
 
-  // TODO
-  // def loadTable[R](schema: Schema)(implicit t: TypeTag[R]): Array[R] = {
-
   @dontInline
   def loadTable[R](table: Table)(implicit c: ClassTag[R]): Array[R] = {
     val size = fileLineCount(table.resourceLocator)
@@ -99,4 +96,30 @@ object Loader {
 
     //TODO update statistics
   }
+
+  def loadTable(catalog: Catalog, schemaName: String, tableName: String)(implicit t: TypeTag[R]): Unit =
+    val table = ddTables.find(t => t.schemaName == schemaName && t.name == tableName) match {
+      case Some(t) => t
+      case None => throw new Exception(s"No attribute found with the name `$name` in the table ${table.name}")
+    }
+    val attributes = ddAttributes.filter(a => table.tableId == a.tableId)
+    val size = fileLineCount(table.resourceLocator)
+    val ldr = new K2DBScanner(table.resourceLocator)
+
+    var i = 0
+    while (i < size && ldr.hasNext()) {
+      val values = attributes.map { at =>
+        at.attributeId -> at.dataType match {
+          case IntType          => ldr.next_int
+          case DoubleType       => ldr.next_double
+          case CharType         => ldr.next_char
+          case DateType         => ldr.next_date
+          case VarCharType(len) => loadString(len, ldr)
+        })
+      }
+
+      catalog.addTuple(table.tableId, values)
+
+      i += 1
+    }
 }
