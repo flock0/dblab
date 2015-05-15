@@ -181,50 +181,89 @@ case class Catalog(schemata: Map[String, Schema]) {
   var ddConstraints: List[DDConstraintsRecord] = List.empty
   var ddSequences: List[DDSequencesRecord] = List.empty
 
-  /** Initializes the data dictionary with itself */
+  initializeDD()
+  /* Populate DD with schemata that have been passed to the constructor */
+  schemata.foreach {
+    case (name, Schema(tables)) => tables.foreach { t =>
+      addTableToDD(name, t)
+    }
+  }
+  
+  /**
+   * Initializes the data dictionary with itself
+   *
+   * We avoid self-referencing entries in the DD_ROWS and DD_FIELDS relations.
+   */
   private def initializeDD() = {
+    val dd = dataDictionary
     /* Create initial sequences for the DD relations */
-    ddSequences :+= DDSequencesRecord(1, Int.MaxValue, 1, constructSequenceName(DDSchemaName, "DD_SEQUENCES", "SEQUENCE_ID"), this, Some(0))
-    ddSequences :+= DDSequencesRecord(0, Int.MaxValue, 1, constructSequenceName(DDSchemaName, "DD_TABLES", "TABLE_ID"), this)
-    ddSequences :+= DDSequencesRecord(0, Int.MaxValue, 1, constructSequenceName(DDSchemaName, "DD_ATTRIBUTES", "ATTRIBUTE_ID"), this)
-    ddSequences :+= DDSequencesRecord(0, Int.MaxValue, 1, constructSequenceName(DDSchemaName, "DD_ROWS", "ROW_ID"), this)
+    val initialSequences = List(
+        DDSequencesRecord(1, Int.MaxValue, 1, constructSequenceName(DDSchemaName, "DD_SEQUENCES", "SEQUENCE_ID"), this, Some(0)),
+        DDSequencesRecord(0, Int.MaxValue, 1, constructSequenceName(DDSchemaName, "DD_TABLES", "TABLE_ID"), this),
+        DDSequencesRecord(0, Int.MaxValue, 1, constructSequenceName(DDSchemaName, "DD_ATTRIBUTES", "ATTRIBUTE_ID"), this),
+        DDSequencesRecord(0, Int.MaxValue, 1, constructSequenceName(DDSchemaName, "DD_ROWS", "ROW_ID"), this)
+      )
+    ddSequences ::+= initialSequences
+    
 
     /* Fill DD_TABLES */
     (0 until dataDictionary.size) foreach { i =>
-      val tbl = dataDictionary(i)
+      val tbl = dd(i)
       ddTables :+= DDTablesRecord(DDSchemaName, tbl.name, this)
-    }
 
-    /* Fill DD_ROWS with tables and DD_ATTRIBUTES for each table */
-    (0 until dataDictionary.size) foreach { i =>
-      val tbl = dataDictionary(i)
-      /* Fill rows for DD_TABLES */
+      /* For each table in the DD, add a row in DD_TABLES */
       val tableRow = DDRowsRecord(0, this)
       ddRows :+= tableRow
 
-      (0 until tbl.attributes.size) foreach { j =>
-        ddFields :+= DDFieldsRecord(0, j, tableRow.rowId, /*TODO Get the j-th field of ddTables(i)*/) /* Fill values for DD_TABLES */
-        val newAttribute = DDAttributesRecord(i, attr.name, attr.dataType, this) /* Fill attributes for all tables */
-        ddAttributes :+= newAttribute
-        /* Fill rows for DD_ATTRIBUTES */
-        val attributesRow = DDRowsRecord(1, this) 
-        ddRows :+= attributesRow
-        (tbl.attributes.size until tbl.attributes.size + dataDictionary(2).attributes.size) foreach { attrId =>
-          ddFields :+= DDFieldsRecord(1, attrId, attributesRow.rowId, /* TODO Get the (attrId - tbl.attributes.size)-th field from newAttribute */)
-        }
+      /* Insert values for all rows in DD_TABLES */
+      (0 until dd(0)attributes.size) foreach { j =>
+        ddFields :+= DDFieldsRecord(0, j, tableRow.rowId, ddTables(i).productElement(j))
       }
     }
 
-    /*
-     * TODO:
-     * DD_CONSTRAINTS:
-     *   fill constraints from all tables
-     *   fill rows for constraints
-     *   fill values for constraints
-     * DD_SEQUENCES:
-     *   fill rows for sequences
-     *   fill values for sequences
-     */
+    (0 until dd.size) foreach { i =>
+      val tbl = dd(i)
+
+      (0 until tbl.attributes.size) foreach { j =>
+        /* Insert attributes for all tables */
+        val newAttribute = DDAttributesRecord(i, attr.name, attr.dataType, this) 
+        ddAttributes :+= newAttribute
+        /* Insert rows for DD_ATTRIBUTES */
+        val attributesRow = DDRowsRecord(1, this) 
+        ddRows :+= attributesRow
+        /* Insert records for each attribute into DD_VALUES */
+        (0 until dd(2).attributes.size) foreach { attrIndex =>
+          ddFields :+= DDFieldsRecord(1, newAttribute.attributeId, attributesRow.rowId, newAttribute.productElement(attrIndex))
+        }
+      }
+
+      (0 until tbl.constraints.filter(filterNotAutoIncrement)) foreach { j =>
+        /* Insert constraints for all tables */
+        val newConstraint = tbl.constraints(j).toDDConstraintsRecord
+        ddConstraints :+= newConstraint
+        /* Insert rows for DD_CONSTRAINTS */
+        val constraintRow = DDRowsRecord(4, this) 
+        ddRows :+= constraintRow
+
+        /* Insert records for each constraint into DD_VALUES */
+        val constraintAttributes = ddAttributes.filter(_.tableId == 4)
+        (0 until constraintAttributes.size) foreach { k =>
+          ddFields :+= DDFieldsRecord(4, constraintAttributes(k).attributeId, constraintRow.rowId, newConstraint.productElement(k))
+        }
+      }
+
+      initialSequences foreach { seq =>
+        /* Insert rows for DD_SEQUENCES */
+        val sequenceRow = DDRowsRecord(5, this) 
+        ddRows :+= sequenceRow
+
+        /* Insert records for each sequence into DD_VALUES */
+        val sequenceAttributes = ddAttributes.filter(_.tableId == 5)
+        (0 until sequenceAttributes.size) foreach { k =>
+          ddFields :+= DDFieldsRecord(5, sequenceAttributes(k).attributeId, sequenceRow.rowId, seq.productElement(k))
+        }
+      }
+    }
   }
 
   /** Adds a table to the given schema */
@@ -244,14 +283,6 @@ case class Catalog(schemata: Map[String, Schema]) {
     newAttributes.foreach(attr => addRowAndFieldsToDD(DDSchemaName, "DD_ATTRIBUTES", Seq(newTableId, attr.name, attr.dataType, attr.attributeId)))
 
     /* Add entries to DD_CONSTRAINTS */
-    def filterAutoIncrement(cstr: Constraint): Boolean = {
-      cstr match {
-        case _: AutoIncrement => true
-        case _                => false
-      }
-    }
-    def filterNotAutoIncrement(cstr: Constraint) = !filterAutoIncrement(cstr)
-
     val newConstraints = for (cstr <- tbl.constraints.filter(filterNotAutoIncrement)) yield cstr.toDDConstraintRecord(this)
     ddConstraints ++= newConstraints
     newConstraints.foreach(cstr => addRowAndFieldsToDD(DDSchemaName, "DD_CONSTRAINTS", Seq(newTableId, cstr.constraintType, cstr.attributes, cstr.refTableId, cstr.refAttributes)))
@@ -268,12 +299,15 @@ case class Catalog(schemata: Map[String, Schema]) {
     newSequences.foreach(seq => addRowAndFieldsToDD(DDSchemaName, "DD_SEQUENCES", Seq(seq.startValue, seq.endValue, seq.incrementBy, seq.sequenceName, seq.sequenceId)))
   }
 
-  /* Populate DD with schemata that have been passed to the constructor */
-  schemata.foreach {
-    case (name, Schema(tables)) => tables.foreach { t =>
-      addTableToDD(name, t)
+  /** Indicates whether a constraint is an AutoIncrement as theye are handled seperately */
+  private def filterAutoIncrement(cstr: Constraint): Boolean = {
+      cstr match {
+        case _: AutoIncrement => true
+        case _                => false
+      }
     }
-  }
+
+  private def filterNotAutoIncrement(cstr: Constraint) = !filterAutoIncrement(cstr)
 
   /** Returns the next value of the sequence with the given name */
   def getSequenceNext(sequenceName: String): Int = //TODO When there's a way to fetch data from the DB, replace this
