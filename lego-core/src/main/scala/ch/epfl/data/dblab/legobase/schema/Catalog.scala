@@ -312,4 +312,24 @@ case class Catalog(schemata: Map[String, Schema]) {
       yield DDFieldsRecord(tableId, attrId, row.rowId, value)
     ddFields ++= records
   }
+
+  /** Returns whether the given row exists in the given table */
+  def rowExists(tableId: Int, rowId: Int): Boolean =
+    ddRows.find(r => r.rowId == rowId && r.tableId == tableId) match {
+      case None => false
+      case _    => true
+    }
+
+  /** Returns an Option[DDAttributesRecord] for the given parameters */
+  def getAttribute(tableId: Int, attributeName: String) = ddAttributes.find(a => a.tableId == tableId && a.name == attributeName)
+
+  /**
+   * Returns the field identified by the given IDs.
+   * Throws an exception if no field could be found.
+   */
+  def getField(tableId: Int, attributeId: Int, rowId: Int) =
+    ddFields.find(f => f.tableId == tableId && f.attributeId == attributeId && f.rowId == rowId) match {
+      case Some(rec) => rec.value
+      case None      => throw new Exception("No field found for table $tableId, attribute $attributeId, row $rowId")
+    }
 }
