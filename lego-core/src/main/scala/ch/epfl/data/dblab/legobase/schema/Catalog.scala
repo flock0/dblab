@@ -84,10 +84,11 @@ object Catalog {
         tableId,
         constraintType,
         attributes,
-        "REF_TABLE_ID" -> OptionType(IntType),
+        "REF_TABLE_NAME" -> OptionType(IntType),
         "REF_ATTRIBUTES" -> OptionType(SeqType(IntType))),
         List(ForeignKey("DD_CONSTRAINTS", "DD_ATTRIBUTES", List(("TABLE_ID", "TABLE_ID"), ("ATTRIBUTES", "ATTRIBUTE_ID"))),
-          ForeignKey("DD_CONSTRAINTS", "DD_ATTRIBUTES", List(("REF_TABLE_ID", "TABLE_ID"), ("REF_ATTRIBUTES", "ATTRIBUTE_ID"))),
+          ForeignKey("DD_CONSTRAINTS", "DD_TABLES", List(("REF_TABLE_NAME", "NAME"))),
+          ForeignKey("DD_CONSTRAINTS", "DD_ATTRIBUTES", List(("REF_ATTRIBUTES", "ATTRIBUTE_ID"))),
           NotNull(constraintType),
           NotNull(attributes)))
     }
@@ -157,9 +158,10 @@ case class Catalog(schemata: Map[String, Schema]) {
       ddRows :+= tableRow
 
       /* Insert values for all rows in DD_TABLES */
-      (0 until dd(0).attributes.size) foreach { j =>
-        ddFields :+= DDFieldsRecord(0, j, tableRow.rowId, ddTables(i).productElement(j))
-      }
+      ddFields :+= DDFieldsRecord(0, 0, tableRow.rowId, ddTables(i).schemaName)
+      ddFields :+= DDFieldsRecord(0, 1, tableRow.rowId, ddTables(i).name)
+      ddFields :+= DDFieldsRecord(0, 2, tableRow.rowId, ddTables(i).fileName)
+      ddFields :+= DDFieldsRecord(0, 3, tableRow.rowId, ddTables(i).tableId)
     }
 
     (0 until dd.size) foreach { i =>
@@ -173,10 +175,11 @@ case class Catalog(schemata: Map[String, Schema]) {
         /* Insert rows for DD_ATTRIBUTES */
         val attributesRow = DDRowsRecord(1, this)
         ddRows :+= attributesRow
-        /* Insert records for each attribute into DD_VALUES */
-        (0 until dd(2).attributes.size) foreach { attrIndex =>
-          ddFields :+= DDFieldsRecord(1, newAttribute.attributeId, attributesRow.rowId, newAttribute.productElement(attrIndex))
-        }
+        /* Insert records for each attribute into DD_FIELDS */
+        ddFields :+= DDFieldsRecord(1, newAttribute.attributeId, attributesRow.rowId, newAttribute.tableId)
+        ddFields :+= DDFieldsRecord(1, newAttribute.attributeId, attributesRow.rowId, newAttribute.name)
+        ddFields :+= DDFieldsRecord(1, newAttribute.attributeId, attributesRow.rowId, newAttribute.dataType)
+        ddFields :+= DDFieldsRecord(1, newAttribute.attributeId, attributesRow.rowId, newAttribute.attributeId)
       }
     }
 
@@ -193,31 +196,35 @@ case class Catalog(schemata: Map[String, Schema]) {
         val constraintRow = DDRowsRecord(4, this)
         ddRows :+= constraintRow
 
-        /* Insert records for each constraint into DD_VALUES */
+        /* Insert records for each constraint into DD_FIELDS */
         val constraintAttributes = ddAttributes.filter(_.tableId == 4)
-        (0 until constraintAttributes.size) foreach { k =>
-          ddFields :+= DDFieldsRecord(4, constraintAttributes(k).attributeId, constraintRow.rowId, newConstraint.productElement(k))
-        }
+        ddFields :+= DDFieldsRecord(4, constraintAttributes(0).attributeId, constraintRow.rowId, newConstraint.tableId)
+        ddFields :+= DDFieldsRecord(4, constraintAttributes(1).attributeId, constraintRow.rowId, newConstraint.constraintType)
+        ddFields :+= DDFieldsRecord(4, constraintAttributes(2).attributeId, constraintRow.rowId, newConstraint.attributes)
+        ddFields :+= DDFieldsRecord(4, constraintAttributes(3).attributeId, constraintRow.rowId, newConstraint.refTableName)
+        ddFields :+= DDFieldsRecord(4, constraintAttributes(4).attributeId, constraintRow.rowId, newConstraint.refAttributes)
       }
+    }
 
-      initialSequences foreach { seq =>
-        /* Insert rows for DD_SEQUENCES */
-        val sequenceRow = DDRowsRecord(5, this)
-        ddRows :+= sequenceRow
+    initialSequences foreach { seq =>
+      /* Insert rows for DD_SEQUENCES */
+      val sequenceRow = DDRowsRecord(5, this)
+      ddRows :+= sequenceRow
 
-        /* Insert records for each sequence into DD_VALUES */
-        val sequenceAttributes = ddAttributes.filter(_.tableId == 5)
-        (0 until sequenceAttributes.size) foreach { k =>
-          ddFields :+= DDFieldsRecord(5, sequenceAttributes(k).attributeId, sequenceRow.rowId, seq.productElement(k))
-        }
-      }
+      /* Insert records for each sequence into DD_FIELDS */
+      val sequenceAttributes = ddAttributes.filter(_.tableId == 5)
+      ddFields :+= DDFieldsRecord(5, sequenceAttributes(0).attributeId, sequenceRow.rowId, seq.startValue)
+      ddFields :+= DDFieldsRecord(5, sequenceAttributes(0).attributeId, sequenceRow.rowId, seq.endValue)
+      ddFields :+= DDFieldsRecord(5, sequenceAttributes(0).attributeId, sequenceRow.rowId, seq.incrementBy)
+      ddFields :+= DDFieldsRecord(5, sequenceAttributes(0).attributeId, sequenceRow.rowId, seq.sequenceName)
+      ddFields :+= DDFieldsRecord(5, sequenceAttributes(0).attributeId, sequenceRow.rowId, seq.sequenceId)
     }
   }
 
   /** Adds a table to the given schema */
   private def addTableToDD(schemaName: String, tbl: Table) = {
     if (tableExistsAlreadyInDD(schemaName, tbl.name)) {
-      throw new Exception("Table " + tbl.name + " already exists in schema" + schemaName + ".")
+      throw new Exception(s"Table ${tbl.name} already exists in schema $schemaName.")
     }
 
     /* Add entry to DD_TABLES*/
@@ -233,7 +240,7 @@ case class Catalog(schemata: Map[String, Schema]) {
     /* Add entries to DD_CONSTRAINTS */
     val newConstraints = for (cstr <- tbl.constraints.filter(filterNotAutoIncrement)) yield cstr.toDDConstraintsRecord(this, newTableId)
     ddConstraints ++= newConstraints
-    newConstraints.foreach(cstr => addTuple(DDSchemaName, "DD_CONSTRAINTS", Seq(newTableId, cstr.constraintType, cstr.attributes, cstr.refTableId, cstr.refAttributes)))
+    newConstraints.foreach(cstr => addTuple(DDSchemaName, "DD_CONSTRAINTS", Seq(newTableId, cstr.constraintType, cstr.attributes, cstr.refTableName, cstr.refAttributes)))
 
     /* Add entries to DD_SEQUENCES */
     val newSequences: Seq[DDSequencesRecord] = for (cstr <- tbl.constraints.filter(filterAutoIncrement)) yield {

@@ -25,7 +25,7 @@ case class DDRowsRecord(tableId: Int, private val catalog: Catalog, private val 
     case None     => catalog.getSequenceNext(constructSequenceName(DDSchemaName, "DD_ROWS", "ROW_ID"))
   }
 }
-case class DDConstraintsRecord(tableId: Int, constraintType: Char, attributes: List[Int], refTableId: Option[Int], refAttributes: Option[List[Int]])
+case class DDConstraintsRecord(tableId: Int, constraintType: Char, attributes: List[Int], refTableName: Option[String], refAttributes: Option[List[String]])
 case class DDSequencesRecord(startValue: Int, endValue: Int, incrementBy: Int, sequenceName: String, private val catalog: Catalog, private val _sequenceId: Option[Int] = None) {
   /* Catch invalid start/end/incrementBy values*/
   if (incrementBy == 0)

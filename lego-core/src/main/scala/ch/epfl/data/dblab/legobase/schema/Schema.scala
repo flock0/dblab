@@ -35,25 +35,16 @@ case class ForeignKey(ownTable: String, referencedTable: String, attributes: Lis
     def findAttributeId(tID: Int, attributeName: String) =
       catalog.ddAttributes.find(at => at.tableId == tID && attributeName == at.name) match {
         case Some(a) => a.attributeId
-        case None    => throw new Exception("Couldn't find attribute " + attributeName + " in table " + tID) //TODO Edit message
+        case None    => throw new Exception(s"Couldn't find attribute $attributeName in table $tID")
       }
-    val schemaName = catalog.ddTables.find(_.tableId == tableId) match {
-      case Some(t) => t.schemaName
-      case None    => throw new Exception(s"Couldn't find schema of table with ID $tableId")
-    }
 
-    val refTableId = catalog.ddTables.find(t => t.name == referencedTable && t.schemaName == schemaName) match {
-      case Some(t) => t.tableId
-      case None    => throw new Exception(s"Couldn't find schema of table with ID $tableId")
-    }
-
-    val attributeIds: List[(Int, Int)] = attributes map { case (loc: String, ref: String) => findAttributeId(tableId, loc) -> findAttributeId(refTableId, ref) }
-    val (attributesList, refAttributesList) = attributeIds.unzip
+    val fks: List[(Int, String)] = attributes map { case (loc: String, ref: String) => findAttributeId(tableId, loc) -> ref }
+    val (attributesList, refAttributesList) = fks.unzip
     DDConstraintsRecord(
       tableId,
       'f',
       attributesList,
-      Some(refTableId),
+      Some(referencedTable),
       Some(refAttributesList))
   }
   def foreignTable(implicit s: Schema): Option[Table] = s.tables.find(t => t.name == referencedTable)
@@ -64,7 +55,7 @@ case class NotNull(attribute: Attribute) extends Constraint {
   def toDDConstraintsRecord(catalog: Catalog, tableId: Int) = {
     val attributeId = catalog.ddAttributes.find(at => at.tableId == tableId && attribute.name == at.name) match {
       case Some(a) => a.attributeId
-      case None    => throw new Exception("Couldn't find attribute " + attribute.name)
+      case None    => throw new Exception(s"Couldn't find attribute ${attribute.name}")
     }
 
     DDConstraintsRecord(
@@ -79,7 +70,7 @@ case class Unique(attribute: Attribute) extends Constraint {
   def toDDConstraintsRecord(catalog: Catalog, tableId: Int) = {
     val attributeId = catalog.ddAttributes.find(at => at.tableId == tableId && attribute.name == at.name) match {
       case Some(a) => a.attributeId
-      case None    => throw new Exception("Couldn't find attribute " + attribute.name)
+      case None    => throw new Exception(s"Couldn't find attribute ${attribute.name}")
     }
 
     DDConstraintsRecord(
