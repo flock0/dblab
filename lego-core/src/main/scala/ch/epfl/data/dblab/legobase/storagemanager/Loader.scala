@@ -48,12 +48,13 @@ object Loader {
     Integer.parseInt(((("wc -l " + file) #| "awk {print($1)}").!!).replaceAll("\\s+$", ""))
   }
 
-  // TODO implement the loader method with the following signature.
-  // This method works as follows:
-  //   1. Converts typeTag[R] into a table
-  //   2. Invokes the other method
-  // def loadTable[R](implicit t: TypeTag[R]): Array[R]
-
+  /**
+   * Loads a table from disk
+   *
+   * @tparam R The class of the tuples to load
+   * @param table The table to load data for
+   * @return An array of tuples loaded from disk
+   */
   @dontInline
   def loadTable[R](table: Table)(implicit c: ClassTag[R]): Array[R] = {
     val size = fileLineCount(table.resourceLocator)
@@ -97,6 +98,13 @@ object Loader {
     //TODO update statistics
   }
 
+  /**
+   * Loads a table into the in-memory DB
+   *
+   * @param catalog The catalog that should store the data
+   * @param schemaName The name of the schema in the catalog
+   * @param tableName The name of the table in the schema
+   */
   def loadTable(catalog: Catalog, schemaName: String, tableName: String): Unit = {
     val table = catalog.ddTables.find(t => t.schemaName == schemaName && t.name == tableName) match {
       case Some(t) => t
