@@ -13,7 +13,7 @@ case class Record(private val catalog: Catalog, private val tableId: Int, privat
     if (!catalog.rowExists(tableId, rowId))
       throw new Exception(s"Row $rowId doesn't exist in table $tableId")
     catalog.getAttribute(tableId, name) match {
-      case Some(at) => catalog.getField(tableId, at.attributeId, rowId)
+      case Some(at) => catalog.getField[T](tableId, at.attributeId, rowId)
       case None     => throw new Exception(s"Attribute $name doesn't exist in table $schema.$table")
     }
   }

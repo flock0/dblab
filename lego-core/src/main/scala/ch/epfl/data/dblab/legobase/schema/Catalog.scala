@@ -346,6 +346,14 @@ case class Catalog(schemata: Map[String, Schema]) {
   def getAttribute(tableId: Int, attributeName: String) = ddAttributes.find(a => a.tableId == tableId && a.name == attributeName)
 
   /**
+   * Returns the table for a given tableId.
+   * Throws an exception if no field could be found.
+   */
+  def getTableRecord(tableId: Int) = ddTables.find(tbl => tbl.tableId == tableId) match {
+    case Some(t) => t
+    case None    => throw new Exception(s"Table with ID $tableId doesn't exist in this catalog")
+  }
+  /**
    * Returns the field identified by the given IDs.
    * Throws an exception if no field could be found.
    */
