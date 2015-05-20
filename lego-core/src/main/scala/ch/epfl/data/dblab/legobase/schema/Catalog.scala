@@ -359,7 +359,7 @@ case class Catalog(schemata: Map[String, Schema]) {
    */
   def getField[T](tableId: Int, attributeId: Int, rowId: Int): T =
     ddFields.find(f => f.tableId == tableId && f.attributeId == attributeId && f.rowId == rowId) match {
-      case Some(rec) => rec.value
+      case Some(rec) => rec.value.asInstanceOf[T]
       case None      => throw new Exception("No field found for table $tableId, attribute $attributeId, row $rowId")
     }
 }
