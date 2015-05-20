@@ -4,15 +4,12 @@ package schema
 
 import scala.language.dynamics
 
-class Record(private val catalog: Catalog, private val tableId: Int, private val rowId: Int) extends Dynamic {
-  private val tableRecord = catalog.ddTables.find(tbl => tbl.tableId == tableId) match {
-    case Some(t) => t
-    case None    => throw new Exception(s"Table with ID $tableId doesn't exist in this catalog")
-  }
+case class Record(private val catalog: Catalog, private val tableId: Int, private val rowId: Int) extends Dynamic {
+  private val tableRecord = catalog.getTableRecord(tableId)
   val schema = tableRecord.schemaName
   val table = tableRecord.name
 
-  def selectDynamic(name: String) = {
+  def selectDynamic[T](name: String): T = {
     if (!catalog.rowExists(tableId, rowId))
       throw new Exception(s"Row $rowId doesn't exist in table $tableId")
     catalog.getAttribute(tableId, name) match {

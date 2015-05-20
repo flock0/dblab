@@ -313,6 +313,28 @@ case class Catalog(schemata: Map[String, Schema]) {
     ddFields ++= records
   }
 
+  /**
+   * Returns all tuples for the requested table
+   *
+   * @param schemaName The name of the schema where this table resides
+   * @param tableName The name of the table
+   * @return An array of all records for this table
+   */
+  def getTuples(schemaName: String, tableName: String): Array[Record] =
+    ddTables.find(tbl => tbl.schemaName == schemaName && tbl.name == tableName) match {
+      case Some(tbl) => getTuples(tbl.tableId)
+      case None      => throw new Exception(s"$schemaName.$tableName doesn't exist in this catalog")
+    }
+
+  /**
+   * Returns all tuples for the requested table
+   *
+   * @param tableId The id of the table to get the tuples from
+   * @return An array of all records for this table
+   */
+  def getTuples(tableId: Int): Array[Record] =
+    ddRows.filter(row => row.tableId == tableId).map(row => Record(this, tableId, row.rowId)).toArray
+
   /** Returns whether the given row exists in the given table */
   def rowExists(tableId: Int, rowId: Int): Boolean =
     ddRows.find(r => r.rowId == rowId && r.tableId == tableId) match {
@@ -327,7 +349,7 @@ case class Catalog(schemata: Map[String, Schema]) {
    * Returns the field identified by the given IDs.
    * Throws an exception if no field could be found.
    */
-  def getField(tableId: Int, attributeId: Int, rowId: Int) =
+  def getField[T](tableId: Int, attributeId: Int, rowId: Int): T =
     ddFields.find(f => f.tableId == tableId && f.attributeId == attributeId && f.rowId == rowId) match {
       case Some(rec) => rec.value
       case None      => throw new Exception("No field found for table $tableId, attribute $attributeId, row $rowId")
