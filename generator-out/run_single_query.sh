@@ -1,17 +1,19 @@
 #!/bin/bash
 ## Path to scala binaries
-SCALA_PATH=$5
+SCALA_PATH=/home/florian/Downloads/scala-2.11.6/bin
+## The location of the UnsafeArray.jar
+# LOCATION_UNSAFE_ARRAY=/home/legobase/dblab/generator-out/UnsafeArray.jar
 QUERY=$3
 ITERATIONS=$4
-if [ $# -ne 5 ]; then
+if [ $# -ne 4 ]; then
     echo "Invalid number of command line arguments."
-    echo "USAGE: ./run_single_query.sh <DATA_FOLDER> <SF> <query> <iterations> <scala_path>"
+    echo "USAGE: ./run_scala.sh <DATA_FOLDER> <SF> <query> <iterations>"
     exit
 fi
 
 rm -rf bin
 mkdir bin
-CPATH=$HOME/ivy2/local/lego-core/lego-core_2.11/0.1-SNAPSHOT/jars/lego-core_2.11.jar:$HOME/ivy2/local/ch.epfl.data/pardis-library_2.11/0.1-SNAPSHOT/jars/pardis-library_2.11.jar:$HOME/ivy2/local/ch.epfl.data/pardis-core_2.11/0.1-SNAPSHOT/jars/pardis-core_2.11.jar
+CPATH=$HOME/.ivy2/local/lego-core/lego-core_2.11/0.1-SNAPSHOT/jars/lego-core_2.11.jar:$HOME/.ivy2/local/ch.epfl.data/pardis-library_2.11/0.1-SNAPSHOT/jars/pardis-library_2.11.jar:$HOME/.ivy2/local/ch.epfl.data/pardis-core_2.11/0.1-SNAPSHOT/jars/pardis-core_2.11.jar #:$LOCATION_UNSAFE_ARRAY
     mkdir bin/Q$QUERY
     echo "Compiling Q"$QUERY
     $SCALA_PATH/scalac "Q"${QUERY}".scala" -classpath $CPATH -d bin/Q$QUERY
