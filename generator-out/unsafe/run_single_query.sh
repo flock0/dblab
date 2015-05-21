@@ -16,7 +16,7 @@ mkdir bin
 CPATH=$HOME/.ivy2/local/lego-core/lego-core_2.11/0.1-SNAPSHOT/jars/lego-core_2.11.jar:$HOME/.ivy2/local/ch.epfl.data/sc-pardis-library_2.11/0.1-SNAPSHOT/jars/sc-pardis-library_2.11.jar:$HOME/.ivy2/local/ch.epfl.data/sc-pardis-core_2.11/0.1-SNAPSHOT/jars/sc-pardis-core_2.11.jar:$LOCATION_UNSAFE_ARRAY
     mkdir bin/Q$QUERY
     echo "Compiling Q"$QUERY
-    $SCALA_PATH/scalac "Q"${QUERY}".scala" -classpath $CPATH -d bin/Q$QUERY
+    $SCALA_PATH/scalac "unsafe/Q"${QUERY}".scala" -classpath $CPATH -d bin/Q$QUERY
 cd ..
 echo "Now running them"
 for (( i = 1; i <= $ITERATIONS; i+=1 )); do
