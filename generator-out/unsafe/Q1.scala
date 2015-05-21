@@ -11,6 +11,7 @@ import storagemanager.Loader
 import queryengine.GenericEngine
 import sc.pardis.shallow.OptimalString
 import sc.pardis.shallow.scalalib.collection.Cont
+import ch.epfl.data.UnsafeArray
 
 class MultiMap[T, S] extends HashMap[T, Set[S]] with scala.collection.mutable.MultiMap[T, S]
 
@@ -33,7 +34,7 @@ object Q1 extends LegoRunner {
   def main() = 
   {
     val x1 = Loader.fileLineCount("/home/florian/Documents/tpch_testdata/sf0.1/lineitem.tbl")
-    val x2 = new Array[LINEITEMRecord](x1)
+    val x2 = new UnsafeArray[LINEITEMRecord](classOf[LINEITEMRecord], x1)
     val x3 = new K2DBScanner("/home/florian/Documents/tpch_testdata/sf0.1/lineitem.tbl")
     var x4: Int = 0
     val x52 = while({
@@ -88,7 +89,7 @@ object Q1 extends LegoRunner {
       val x45 = new OptimalString(x44)
       val x46 = LINEITEMRecord(x13, x14, x15, x16, x17, x18, x19)
       val x47 = x4
-      val x48 = x2.update(x47, x46)
+      val x48 = x2.copyAndSet(x46, x47)
       val x49 = x4
       val x50 = x49.+(1)
       val x51 = x4 = x50
@@ -140,7 +141,7 @@ object Q1 extends LegoRunner {
           })
           {
             val x1204 = x381
-            val x172 = x2.apply(x1204)
+            val x172 = x2.get(x1204)
             val x174 = x172.L_SHIPDATE
             val x175 = x174.<=(x55)
             val x258 = if(x175) 

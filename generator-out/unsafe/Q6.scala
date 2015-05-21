@@ -31,7 +31,7 @@ object Q6 extends LegoRunner {
   def main() = 
   {
     val x1 = Loader.fileLineCount("/home/florian/Documents/tpch_testdata/sf0.1/lineitem.tbl")
-    val x2 = new Array[LINEITEMRecord](x1)
+    val x2 = new UnsafeArray[LINEITEMRecord](classOf[LINEITEMRecord], x1)
     val x3 = new K2DBScanner("/home/florian/Documents/tpch_testdata/sf0.1/lineitem.tbl")
     var x4: Int = 0
     val x52 = while({
@@ -86,7 +86,7 @@ object Q6 extends LegoRunner {
       val x45 = new OptimalString(x44)
       val x46 = LINEITEMRecord(x13, x14, x15, x19)
       val x47 = x4
-      val x48 = x2.update(x47, x46)
+      val x48 = x2.update(x46, x47)
       val x49 = x4
       val x50 = x49.+(1)
       val x51 = x4 = x50
@@ -111,7 +111,7 @@ object Q6 extends LegoRunner {
           })
           {
             val x633 = x223
-            val x99 = x2.apply(x633)
+            val x99 = x2.get(x633)
             val x101 = x99.L_SHIPDATE
             val x102 = x101.>=(x55)
             val x113 = x102.&&({
