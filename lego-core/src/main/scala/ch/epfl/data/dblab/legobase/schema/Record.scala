@@ -4,7 +4,7 @@ package schema
 
 import scala.language.dynamics
 
-case class Record(private val catalog: Catalog, private val tableId: Int, private val rowId: Int) extends Dynamic {
+case class Record(private val catalog: Catalog, private val tableId: Int, private val rowId: Int) extends sc.pardis.shallow.Record with Dynamic {
   private val tableRecord = catalog.getTableRecord(tableId)
   val schema = tableRecord.schemaName
   val table = tableRecord.name
@@ -20,4 +20,6 @@ case class Record(private val catalog: Catalog, private val tableId: Int, privat
       case None => throw new Exception(s"Attribute $name doesn't exist in table $schema.$table")
     }
   }
+
+  def getField(key: String): Option[Any] = ???
 }
