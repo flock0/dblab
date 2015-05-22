@@ -2,6 +2,7 @@ package ch.epfl.data
 package dblab.legobase
 package schema
 
+import scala.collection.mutable.ArrayBuffer
 import sc.pardis.types._
 import schema._
 import Catalog._
@@ -119,12 +120,12 @@ object Catalog {
 case class Catalog(schemata: Map[String, Schema]) {
 
   /* Lists that contain the data in the data dictionary*/
-  var ddTables: List[DDTablesRecord] = List.empty
-  var ddAttributes: List[DDAttributesRecord] = List.empty
-  var ddRows: List[DDRowsRecord] = List.empty
-  var ddFields: List[DDFieldsRecord] = List.empty
-  var ddConstraints: List[DDConstraintsRecord] = List.empty
-  var ddSequences: List[DDSequencesRecord] = List.empty
+  val ddTables: ArrayBuffer[DDTablesRecord] = ArrayBuffer.empty
+  val ddAttributes: ArrayBuffer[DDAttributesRecord] = ArrayBuffer.empty
+  val ddRows: ArrayBuffer[DDRowsRecord] = ArrayBuffer.empty
+  val ddFields: ArrayBuffer[DDFieldsRecord] = ArrayBuffer.empty
+  val ddConstraints: ArrayBuffer[DDConstraintsRecord] = ArrayBuffer.empty
+  val ddSequences: ArrayBuffer[DDSequencesRecord] = ArrayBuffer.empty
 
   initializeDD()
   /* Populate DD with schemata that have been passed to the constructor */
@@ -142,26 +143,26 @@ case class Catalog(schemata: Map[String, Schema]) {
   private def initializeDD() = {
     val dd = dataDictionary
     /* Create initial sequences for the DD relations */
-    ddSequences :+= DDSequencesRecord(1, Int.MaxValue, 1, constructSequenceName(DDSchemaName, "DD_SEQUENCES", "SEQUENCE_ID"), this, Some(0))
-    ddSequences :+= DDSequencesRecord(0, Int.MaxValue, 1, constructSequenceName(DDSchemaName, "DD_TABLES", "TABLE_ID"), this)
-    ddSequences :+= DDSequencesRecord(0, Int.MaxValue, 1, constructSequenceName(DDSchemaName, "DD_ATTRIBUTES", "ATTRIBUTE_ID"), this)
-    ddSequences :+= DDSequencesRecord(0, Int.MaxValue, 1, constructSequenceName(DDSchemaName, "DD_ROWS", "ROW_ID"), this)
+    ddSequences += DDSequencesRecord(1, Int.MaxValue, 1, constructSequenceName(DDSchemaName, "DD_SEQUENCES", "SEQUENCE_ID"), this, Some(0))
+    ddSequences += DDSequencesRecord(0, Int.MaxValue, 1, constructSequenceName(DDSchemaName, "DD_TABLES", "TABLE_ID"), this)
+    ddSequences += DDSequencesRecord(0, Int.MaxValue, 1, constructSequenceName(DDSchemaName, "DD_ATTRIBUTES", "ATTRIBUTE_ID"), this)
+    ddSequences += DDSequencesRecord(0, Int.MaxValue, 1, constructSequenceName(DDSchemaName, "DD_ROWS", "ROW_ID"), this)
     val initialSequences = ddSequences
 
     /* Fill DD_TABLES */
     (0 until dataDictionary.size) foreach { i =>
       val tbl = dd(i)
-      ddTables :+= DDTablesRecord(DDSchemaName, tbl.name, this)
+      ddTables += DDTablesRecord(DDSchemaName, tbl.name, this)
 
       /* For each table in the DD, add a row in DD_TABLES */
       val tableRow = DDRowsRecord(0, this)
-      ddRows :+= tableRow
+      ddRows += tableRow
 
       /* Insert values for all rows in DD_TABLES */
-      ddFields :+= DDFieldsRecord(0, 0, tableRow.rowId, ddTables(i).schemaName)
-      ddFields :+= DDFieldsRecord(0, 1, tableRow.rowId, ddTables(i).name)
-      ddFields :+= DDFieldsRecord(0, 2, tableRow.rowId, ddTables(i).fileName)
-      ddFields :+= DDFieldsRecord(0, 3, tableRow.rowId, ddTables(i).tableId)
+      ddFields += DDFieldsRecord(0, 0, tableRow.rowId, ddTables(i).schemaName)
+      ddFields += DDFieldsRecord(0, 1, tableRow.rowId, ddTables(i).name)
+      ddFields += DDFieldsRecord(0, 2, tableRow.rowId, ddTables(i).fileName)
+      ddFields += DDFieldsRecord(0, 3, tableRow.rowId, ddTables(i).tableId)
     }
 
     (0 until dd.size) foreach { i =>
@@ -171,15 +172,15 @@ case class Catalog(schemata: Map[String, Schema]) {
       tbl.attributes foreach { attr =>
         /* Insert attributes for all tables */
         val newAttribute = DDAttributesRecord(i, attr.name, attr.dataType, this)
-        ddAttributes :+= newAttribute
+        ddAttributes += newAttribute
         /* Insert rows for DD_ATTRIBUTES */
         val attributesRow = DDRowsRecord(1, this)
-        ddRows :+= attributesRow
+        ddRows += attributesRow
         /* Insert records for each attribute into DD_FIELDS */
-        ddFields :+= DDFieldsRecord(1, newAttribute.attributeId, attributesRow.rowId, newAttribute.tableId)
-        ddFields :+= DDFieldsRecord(1, newAttribute.attributeId, attributesRow.rowId, newAttribute.name)
-        ddFields :+= DDFieldsRecord(1, newAttribute.attributeId, attributesRow.rowId, newAttribute.dataType)
-        ddFields :+= DDFieldsRecord(1, newAttribute.attributeId, attributesRow.rowId, newAttribute.attributeId)
+        ddFields += DDFieldsRecord(1, newAttribute.attributeId, attributesRow.rowId, newAttribute.tableId)
+        ddFields += DDFieldsRecord(1, newAttribute.attributeId, attributesRow.rowId, newAttribute.name)
+        ddFields += DDFieldsRecord(1, newAttribute.attributeId, attributesRow.rowId, newAttribute.dataType)
+        ddFields += DDFieldsRecord(1, newAttribute.attributeId, attributesRow.rowId, newAttribute.attributeId)
       }
     }
 
@@ -191,33 +192,33 @@ case class Catalog(schemata: Map[String, Schema]) {
       (0 until constraints.size) foreach { j =>
         /* Insert constraints for all tables */
         val newConstraint = constraints(j).toDDConstraintsRecord(this, tblRecord.tableId)
-        ddConstraints :+= newConstraint
+        ddConstraints += newConstraint
         /* Insert rows for DD_CONSTRAINTS */
         val constraintRow = DDRowsRecord(4, this)
-        ddRows :+= constraintRow
+        ddRows += constraintRow
 
         /* Insert records for each constraint into DD_FIELDS */
         val constraintAttributes = ddAttributes.filter(_.tableId == 4)
-        ddFields :+= DDFieldsRecord(4, constraintAttributes(0).attributeId, constraintRow.rowId, newConstraint.tableId)
-        ddFields :+= DDFieldsRecord(4, constraintAttributes(1).attributeId, constraintRow.rowId, newConstraint.constraintType)
-        ddFields :+= DDFieldsRecord(4, constraintAttributes(2).attributeId, constraintRow.rowId, newConstraint.attributes)
-        ddFields :+= DDFieldsRecord(4, constraintAttributes(3).attributeId, constraintRow.rowId, newConstraint.refTableName)
-        ddFields :+= DDFieldsRecord(4, constraintAttributes(4).attributeId, constraintRow.rowId, newConstraint.refAttributes)
+        ddFields += DDFieldsRecord(4, constraintAttributes(0).attributeId, constraintRow.rowId, newConstraint.tableId)
+        ddFields += DDFieldsRecord(4, constraintAttributes(1).attributeId, constraintRow.rowId, newConstraint.constraintType)
+        ddFields += DDFieldsRecord(4, constraintAttributes(2).attributeId, constraintRow.rowId, newConstraint.attributes)
+        ddFields += DDFieldsRecord(4, constraintAttributes(3).attributeId, constraintRow.rowId, newConstraint.refTableName)
+        ddFields += DDFieldsRecord(4, constraintAttributes(4).attributeId, constraintRow.rowId, newConstraint.refAttributes)
       }
     }
 
     initialSequences foreach { seq =>
       /* Insert rows for DD_SEQUENCES */
       val sequenceRow = DDRowsRecord(5, this)
-      ddRows :+= sequenceRow
+      ddRows += sequenceRow
 
       /* Insert records for each sequence into DD_FIELDS */
       val sequenceAttributes = ddAttributes.filter(_.tableId == 5)
-      ddFields :+= DDFieldsRecord(5, sequenceAttributes(0).attributeId, sequenceRow.rowId, seq.startValue)
-      ddFields :+= DDFieldsRecord(5, sequenceAttributes(1).attributeId, sequenceRow.rowId, seq.endValue)
-      ddFields :+= DDFieldsRecord(5, sequenceAttributes(2).attributeId, sequenceRow.rowId, seq.incrementBy)
-      ddFields :+= DDFieldsRecord(5, sequenceAttributes(3).attributeId, sequenceRow.rowId, seq.sequenceName)
-      ddFields :+= DDFieldsRecord(5, sequenceAttributes(4).attributeId, sequenceRow.rowId, seq.sequenceId)
+      ddFields += DDFieldsRecord(5, sequenceAttributes(0).attributeId, sequenceRow.rowId, seq.startValue)
+      ddFields += DDFieldsRecord(5, sequenceAttributes(1).attributeId, sequenceRow.rowId, seq.endValue)
+      ddFields += DDFieldsRecord(5, sequenceAttributes(2).attributeId, sequenceRow.rowId, seq.incrementBy)
+      ddFields += DDFieldsRecord(5, sequenceAttributes(3).attributeId, sequenceRow.rowId, seq.sequenceName)
+      ddFields += DDFieldsRecord(5, sequenceAttributes(4).attributeId, sequenceRow.rowId, seq.sequenceId)
     }
   }
 
@@ -229,7 +230,7 @@ case class Catalog(schemata: Map[String, Schema]) {
 
     /* Add entry to DD_TABLES*/
     val newTableId = getSequenceNext(constructSequenceName(DDSchemaName, "DD_TABLES", "TABLE_ID"))
-    ddTables :+= DDTablesRecord(schemaName, tbl.name, this, Some(tbl.fileName), Some(newTableId))
+    ddTables += DDTablesRecord(schemaName, tbl.name, this, Some(tbl.fileName), Some(newTableId))
     addTuple(DDSchemaName, "DD_TABLES", Seq(schemaName, tbl.name, newTableId))
 
     /* Add entries to DD_ATTRIBUTES */
@@ -306,7 +307,7 @@ case class Catalog(schemata: Map[String, Schema]) {
   def addTuple(tableId: Int, values: Seq[(Int, Any)]): Unit = {
 
     val row = DDRowsRecord(tableId, this)
-    ddRows :+= row
+    ddRows += row
 
     val records: Seq[DDFieldsRecord] = for ((attrId, value) <- values)
       yield DDFieldsRecord(tableId, attrId, row.rowId, value)

@@ -26,7 +26,7 @@ case class PrimaryKey(attributes: List[Attribute]) extends Constraint {
     DDConstraintsRecord(
       tableId,
       'p',
-      catalog.ddAttributes.filter(at => at.tableId == tableId && attributes.map(_.name).contains(at.name)).map(_.attributeId),
+      catalog.ddAttributes.filter(at => at.tableId == tableId && attributes.map(_.name).contains(at.name)).map(_.attributeId).toList,
       None,
       None)
 }
