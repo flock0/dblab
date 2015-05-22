@@ -214,10 +214,10 @@ case class Catalog(schemata: Map[String, Schema]) {
       /* Insert records for each sequence into DD_FIELDS */
       val sequenceAttributes = ddAttributes.filter(_.tableId == 5)
       ddFields :+= DDFieldsRecord(5, sequenceAttributes(0).attributeId, sequenceRow.rowId, seq.startValue)
-      ddFields :+= DDFieldsRecord(5, sequenceAttributes(0).attributeId, sequenceRow.rowId, seq.endValue)
-      ddFields :+= DDFieldsRecord(5, sequenceAttributes(0).attributeId, sequenceRow.rowId, seq.incrementBy)
-      ddFields :+= DDFieldsRecord(5, sequenceAttributes(0).attributeId, sequenceRow.rowId, seq.sequenceName)
-      ddFields :+= DDFieldsRecord(5, sequenceAttributes(0).attributeId, sequenceRow.rowId, seq.sequenceId)
+      ddFields :+= DDFieldsRecord(5, sequenceAttributes(1).attributeId, sequenceRow.rowId, seq.endValue)
+      ddFields :+= DDFieldsRecord(5, sequenceAttributes(2).attributeId, sequenceRow.rowId, seq.incrementBy)
+      ddFields :+= DDFieldsRecord(5, sequenceAttributes(3).attributeId, sequenceRow.rowId, seq.sequenceName)
+      ddFields :+= DDFieldsRecord(5, sequenceAttributes(4).attributeId, sequenceRow.rowId, seq.sequenceId)
     }
   }
 
