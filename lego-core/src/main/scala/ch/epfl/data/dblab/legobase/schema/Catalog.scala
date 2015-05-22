@@ -229,7 +229,7 @@ case class Catalog(schemata: Map[String, Schema]) {
 
     /* Add entry to DD_TABLES*/
     val newTableId = getSequenceNext(constructSequenceName(DDSchemaName, "DD_TABLES", "TABLE_ID"))
-    ddTables :+= DDTablesRecord(schemaName, tbl.name, this, Some(tbl.resourceLocator), Some(newTableId))
+    ddTables :+= DDTablesRecord(schemaName, tbl.name, this, Some(tbl.fileName), Some(newTableId))
     addTuple(DDSchemaName, "DD_TABLES", Seq(schemaName, tbl.name, newTableId))
 
     /* Add entries to DD_ATTRIBUTES */

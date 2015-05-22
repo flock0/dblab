@@ -57,9 +57,9 @@ object Loader {
    */
   @dontInline
   def loadTable[R](table: Table)(implicit c: ClassTag[R]): Array[R] = {
-    val size = fileLineCount(table.resourceLocator)
+    val size = fileLineCount(table.fileName)
     val arr = new Array[R](size)
-    val ldr = new K2DBScanner(table.resourceLocator)
+    val ldr = new K2DBScanner(table.fileName)
     val recordType = currentMirror.staticClass(c.runtimeClass.getName).asType.toTypeConstructor
 
     val classMirror = currentMirror.reflectClass(recordType.typeSymbol.asClass)

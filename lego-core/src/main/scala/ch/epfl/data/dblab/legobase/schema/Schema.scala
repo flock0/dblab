@@ -6,7 +6,7 @@ import sc.pardis.types._
 import scala.language.implicitConversions
 
 case class Schema(tables: List[Table])
-case class Table(name: String, attributes: List[Attribute], constraints: List[Constraint], resourceLocator: String = "", var rowCount: Long = 0) {
+case class Table(name: String, attributes: List[Attribute], constraints: List[Constraint], fileName: String = "", var rowCount: Long = 0) {
   def primaryKey: Option[PrimaryKey] = constraints.collectFirst { case pk: PrimaryKey => pk }
   def foreignKeys: List[ForeignKey] = constraints.collect { case fk: ForeignKey => fk }
   def notNulls: List[NotNull] = constraints.collect { case nn: NotNull => nn }
