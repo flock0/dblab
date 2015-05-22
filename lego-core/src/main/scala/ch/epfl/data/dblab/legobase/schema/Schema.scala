@@ -82,5 +82,6 @@ case class Unique(attribute: Attribute) extends Constraint {
   }
 }
 case class AutoIncrement(attribute: Attribute) extends Constraint {
-  def toDDConstraintsRecord(catalog: Catalog, tableId: Int) = ??? //TODO AutoIncrement doesn't really belong to the Constraint trait
+  def toDDConstraintsRecord(catalog: Catalog, tableId: Int) =
+    throw new Exception("AutoIncrement doesn't have a representation as a DDConstraintsRecord. It is handled through DDSequenceRecords")
 }
