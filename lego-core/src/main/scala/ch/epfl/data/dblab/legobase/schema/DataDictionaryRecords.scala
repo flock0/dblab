@@ -29,14 +29,14 @@ case class DDConstraintsRecord(tableId: Int, constraintType: Char, attributes: L
 case class DDSequencesRecord(startValue: Int, endValue: Int, incrementBy: Int, sequenceName: String, private val catalog: Catalog, private val _sequenceId: Option[Int] = None) {
   /* Catch invalid start/end/incrementBy values*/
   if (incrementBy == 0)
-    throw new Exception("incrementBy must not be 0")
+    throw new Exception(s"incrementBy of $sequenceName must not be 0")
   if (startValue < endValue) {
     if (incrementBy < 0) {
-      throw new Exception("Sequence can never reach the end value")
+      throw new Exception(s"Sequence $sequenceName can never reach the end value")
     }
   } else {
     if (incrementBy > 0) {
-      throw new Exception("Sequence can never reach the end value")
+      throw new Exception(s"Sequence $sequenceName can never reach the end value")
 
     }
   }
@@ -56,7 +56,7 @@ case class DDSequencesRecord(startValue: Int, endValue: Int, incrementBy: Int, s
    */
   def nextVal: Int = {
     if (next > endValue)
-      throw new Exception(s"Sequence $sequenceId has reached it's maximum value $endValue")
+      throw new Exception(s"Sequence $sequenceName has reached it's maximum value $endValue")
     val value = next
     next += incrementBy
     //TODO Update field value in DD_FIELD for this sequence
