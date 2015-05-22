@@ -24,14 +24,31 @@ class SchemaTest extends FlatSpec {
       && f.rowId == cat.ddRows.filter(r => r.tableId == 0)(1).rowId) // 2nd record in DD_TABLES
     assert(tuple.find(f => f.attributeId == cat.ddAttributes(0).attributeId).get.value == "DD")
 
-    //TODO Write more extensive tests
   }
+
+  "Catalog" should "return DD tables correctly" in {
+    val cat = Catalog(Map())
+    val tables = cat.getTuples(Catalog.DDSchemaName, "DD_TABLES")
+    assert(tables.size == 6)
+    assert(tables(2).SCHEMA_NAME[String] == Catalog.DDSchemaName)
+
+    val seqs = cat.getTuples(Catalog.DDSchemaName, "DD_SEQUENCES")
+    assert(seqs.size == 4)
+    assert(seqs(1).START_VALUE[Int] == 0)
+    assert(seqs(1).INCREMENT_BY[Int] == 1)
+  }
+
   val DATAPATH = System.getenv("LEGO_DATA_FOLDER")
   if (DATAPATH != null) {
-    "Catalog" should "load TPCH schema correctly" in {
+    "Catalog" should "load PART table correctly" in {
       val cat = Catalog(Map("TPCH" -> TPCHSchema.getSchema(s"$DATAPATH/sf0.1/", 0.1)))
-      fail("Not tested yet") //TODO Write tests
+      Loader.loadTable(cat, "TPCH", "PART")
+      val records = cat.getTuples("TPCH", "PART")
+      assert(records.size == 20000)
+      assert(records(0).P_PARTKEY[Int] == 1)
+      assert(records(19999).P_RETAILPRICE[Double] == 920.00)
     }
+
   } else {
     fail("Tests could not run because the environment variable `LEGO_DATA_FOLDER` does not exist.")
   }
