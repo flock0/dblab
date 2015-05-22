@@ -292,25 +292,25 @@ case class Catalog(schemata: Map[String, Schema]) {
    * The order of the sequence correspond to the order of the attributes in the data dictionary
    */
   def addTuple(schemaName: String, tableName: String, values: Seq[Any]): Unit = {
+
+    def getAttributeIds(tId: Int) = ddAttributes.filter(a => a.tableId == tId).map(_.attributeId)
     val tableId = getTableId(schemaName, tableName)
-    addTuples(tableId, Seq(ddAttributes.filter(a => a.tableId == tableId).map(_.attributeId) zip values))
+    addTuple(tableId, getAttributeIds(tableId) zip values)
   }
 
   /**
-   * Adds multiple rows and their field values to the database
+   * Adds a row and it's field values to the database
    *
-   * @param newTuples an iterable of iterables with the attributeId and the value to be stored for that attribute.
+   * @param values n iterable with the attributeId and the value to be stored for that attribute.
    */
-  def addTuples(tableId: Int, newTuples: Seq[Seq[(Int, Any)]]): Unit = {
+  def addTuple(tableId: Int, values: Seq[(Int, Any)]): Unit = {
 
-    val rowsAndFields = for (tup <- newTuples) yield {
-      val row = DDRowsRecord(tableId, this)
-      val fields = for ((attrId, value) <- tup) yield DDFieldsRecord(tableId, attrId, row.rowId, value)
-      row -> fields
-    }
-    val (rows, fields) = rowsAndFields.unzip
-    ddRows ++= rows
-    ddFields ++= fields.flatten
+    val row = DDRowsRecord(tableId, this)
+    ddRows :+= row
+
+    val records: Seq[DDFieldsRecord] = for ((attrId, value) <- values)
+      yield DDFieldsRecord(tableId, attrId, row.rowId, value)
+    ddFields ++= records
   }
 
   /**

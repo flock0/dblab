@@ -119,8 +119,8 @@ object Loader {
     val ldr = new K2DBScanner(fileName)
 
     var i = 0
-    val newTuples = for (i <- 0 until size if ldr.hasNext) yield {
-      attributes.map { at =>
+    while (i < size && ldr.hasNext()) {
+      val values = attributes.map { at =>
         at.attributeId -> (at.dataType match {
           case IntType          => ldr.next_int
           case DoubleType       => ldr.next_double
@@ -129,8 +129,10 @@ object Loader {
           case VarCharType(len) => loadString(len, ldr)
         })
       }
-    }
 
-    catalog.addTuples(table.tableId, newTuples)
+      catalog.addTuple(table.tableId, values)
+
+      i += 1
+    }
   }
 }
