@@ -19,97 +19,91 @@ class SQLParserTest extends FlatSpec {
     r should not be None
   }
 
-  "SQLParser" should "parse Q2 correctly" in {
+  it should "parse Q2 correctly" in {
     val parser = SQLParser
     val r = parser.parse(TPCHQueries.q2)
     r should not be None
   }
 
-  "SQLParser" should "parse Q3 correctly" in {
+  it should "parse Q3 correctly" in {
     val parser = SQLParser
     val r = parser.parse(TPCHQueries.q3)
     r should not be None
   }
 
-  "SQLParser" should "parse Q4 correctly" in {
+  it should "parse Q4 correctly" in {
     val parser = SQLParser
     val r = parser.parse(TPCHQueries.q4)
     r should not be None
   }
 
-  "SQLParser" should "parse Q5 correctly" in {
+  it should "parse Q5 correctly" in {
     val parser = SQLParser
     val r = parser.parse(TPCHQueries.q5)
     r should not be None
   }
 
-  "SQLParser" should "parse Q6 correctly" in {
+  it should "parse Q6 correctly" in {
     val parser = SQLParser
     val r = parser.parse(TPCHQueries.q6)
     r should not be None
   }
 
-  "SQLParser" should "parse simple SELECT/FROM correctly" in {
+  it should "parse simple SELECT/FROM correctly" in {
     val parser = SQLParser
     val r = parser.parse("SELECT * FROM table t")
     r should not be None
   }
 
-  "SQLParser" should "parse simple SELECT/FROM (case insensitive) correctly" in {
-    val parser = SQLParser
-    val r = parser.parse("select * FROM table t")
-    r should not be None
-  }
-
-  "SQLParser" should "parse single expression correctly" in {
+  it should "parse single expression correctly" in {
     val parser = SQLParser
     val r = parser.parse("SELECT column1 FROM table")
     r should not be None
   }
 
-  "SQLParser" should "parse explicit columns correctly" in {
+  it should "parse explicit columns correctly" in {
     val parser = SQLParser
     val r = parser.parse("SELECT column1, ident.column2 FROM table")
     r should not be None
   }
 
-  "SQLParser" should "parse aggregate functions correctly" in {
+  it should "parse aggregate functions correctly" in {
     val parser = SQLParser
     val r = parser.parse("SELECT SUM(column1), MIN(ident.column2) FROM table")
     r should not be None
   }
 
-  "SQLParser" should "parse aliased expression correctly" in {
+  it should "parse aliased expression correctly" in {
     val parser = SQLParser
     val r = parser.parse("SELECT SUM(column1) AS theSum, MIN(ident.column2) AS minimum FROM table")
     r should not be None
   }
 
-  "SQLParser" should "parse arithmetic operations correctly" in {
+  it should "parse arithmetic operations correctly" in {
     val parser = SQLParser
     val r = parser.parse("SELECT SUM(column1) / 10, MIN(ident.column2) + 125.50 FROM table")
     r should not be None
   }
 
-  "SQLParser" should "parse GROUP BY with HAVING correctly" in {
+  it should "parse GROUP BY with HAVING correctly" in {
     val parser = SQLParser
     val r = parser.parse("SELECT column1 FROM table GROUP BY column1, table.column2 HAVING SUM(table.column3) > 12345")
     r should not be None
   }
 
-  "SQLParser" should "parse WHERE correctly" in {
+  it should "parse WHERE correctly" in {
     val parser = SQLParser
     val r = parser.parse("SELECT column1 FROM table WHERE column2 > 2.51 AND 1 != 0 AND table.column3 BETWEEN 5 AND 10")
     r should not be None
   }
 
-  "SQLParser" should "parse dates correctly" in {
+  it should "parse dates correctly" in {
     val parser = SQLParser
     val r = parser.parse("SELECT * FROM lineitem WHERE DATE '1998-09-02'")
     r should not be None
   }
 
-  "SQLParser" should "parse LIMIT correctly" in {
+  it should "parse LIMIT correctly" in {
     val parser = SQLParser
     val r = parser.parse("SELECT * FROM table LIMIT 20")
     r should not be None
