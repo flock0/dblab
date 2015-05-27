@@ -105,34 +105,46 @@ object Loader {
    * @param schemaName The name of the schema in the catalog
    * @param tableName The name of the table in the schema
    */
-  def loadTable(catalog: Catalog, schemaName: String, tableName: String): Unit = {
-    val table = catalog.ddTables.find(t => t.schemaName == schemaName && t.name == tableName) match {
-      case Some(t) => t
+  def loadTable(catalog: Catalog, schemaName: String, tableName: String): Unit =
+    catalog.ddTables.find(t => t.schemaName == schemaName && t.name == tableName) match {
+      case Some(t) => loadTable(catalog, t)
       case None    => throw new Exception(s"No table found with the name `$tableName`")
     }
-    val fileName = table.fileName match {
-      case Some(fn) => fn
-      case None     => throw new Exception("No filename available to load data from")
-    }
-    val attributes = catalog.ddAttributes.filter(a => table.tableId == a.tableId)
-    val size = fileLineCount(fileName)
-    val ldr = new K2DBScanner(fileName)
 
-    var i = 0
-    while (i < size && ldr.hasNext()) {
-      val values = attributes.map { at =>
-        at.attributeId -> (at.dataType match {
-          case IntType          => ldr.next_int
-          case DoubleType       => ldr.next_double
-          case CharType         => ldr.next_char
-          case DateType         => ldr.next_date
-          case VarCharType(len) => loadString(len, ldr)
-        })
+  /**
+   * Loads a table into the in-memory DB
+   *
+   * @param catalog The catalog that should store the data
+   * @param table The table to load into the catalog
+   */
+  def loadTable(catalog: Catalog, table: DDTablesRecord): Unit = {
+    if (!table.isLoaded) {
+      val fileName = table.fileName match {
+        case Some(fn) => fn
+        case None     => throw new Exception("No filename available to load data from")
       }
+      val attributes = catalog.ddAttributes.filter(a => table.tableId == a.tableId)
+      val size = fileLineCount(fileName)
+      val ldr = new K2DBScanner(fileName)
 
-      catalog.addTuple(table.tableId, values)
+      var i = 0
+      while (i < size && ldr.hasNext()) {
+        val values = attributes.map { at =>
+          at.attributeId -> (at.dataType match {
+            case IntType          => ldr.next_int
+            case DoubleType       => ldr.next_double
+            case CharType         => ldr.next_char
+            case DateType         => ldr.next_date
+            case VarCharType(len) => loadString(len, ldr)
+          })
+        }
 
-      i += 1
+        catalog.addTuple(table.tableId, values)
+
+        i += 1
+      }
+      table.isLoaded = true
     }
   }
+
 }

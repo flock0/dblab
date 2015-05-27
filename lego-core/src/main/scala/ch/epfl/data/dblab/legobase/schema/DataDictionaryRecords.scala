@@ -6,7 +6,7 @@ import Catalog._
 import sc.pardis.types._
 
 /* Case classes for the tables in the data dictionary */
-case class DDTablesRecord(schemaName: String, name: String, private val catalog: Catalog, val fileName: Option[String] = None, private val _tableId: Option[Int] = None) {
+case class DDTablesRecord(schemaName: String, name: String, private val catalog: Catalog, val fileName: Option[String] = None, private val _tableId: Option[Int] = None, var isLoaded: Boolean = false) {
   val tableId = _tableId match {
     case Some(id) => id
     case None     => catalog.getSequenceNext(constructSequenceName(DDSchemaName, "DD_TABLES", "TABLE_ID"))

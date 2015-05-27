@@ -26,7 +26,7 @@ class SchemaTest extends FlatSpec {
 
   }
 
-  "Catalog" should "return DD tables correctly" in {
+  it should "return DD tables correctly" in {
     val cat = Catalog(Map())
     val tables = cat.getTuples(Catalog.DDSchemaName, "DD_TABLES")
     assert(tables.size == 6)
@@ -40,7 +40,7 @@ class SchemaTest extends FlatSpec {
 
   val DATAPATH = System.getenv("LEGO_DATA_FOLDER")
   if (DATAPATH != null) {
-    "Catalog" should "load PART table correctly" in {
+    it should "load PART table correctly" in {
       val cat = Catalog(Map("TPCH" -> TPCHSchema.getSchema(s"$DATAPATH/sf0.1/", 0.1)))
       Loader.loadTable(cat, "TPCH", "PART")
       val records = cat.getTuples("TPCH", "PART")
@@ -49,6 +49,25 @@ class SchemaTest extends FlatSpec {
       assert(records(19999).P_RETAILPRICE[Double] == 920.00)
     }
 
+    it should "load PART table automatically" in {
+      val cat = Catalog(Map("TPCH" -> TPCHSchema.getSchema(s"$DATAPATH/sf0.1/", 0.1)))
+      val records = cat.getTuples("TPCH", "PART")
+      assert(records.size == 20000)
+      assert(records(0).P_PARTKEY[Int] == 1)
+      assert(records(19999).P_RETAILPRICE[Double] == 920.00)
+    }
+
+    it should "load PART only once" in {
+      val cat = Catalog(Map("TPCH" -> TPCHSchema.getSchema(s"$DATAPATH/sf0.1/", 0.1)))
+      val records = cat.getTuples("TPCH", "PART")
+      assert(records.size == 20000)
+      assert(records(0).P_PARTKEY[Int] == 1)
+      assert(records(19999).P_RETAILPRICE[Double] == 920.00)
+      val sameRecords = cat.getTuples("TPCH", "PART")
+      assert(sameRecords.size == 20000)
+      assert(sameRecords(0).P_PARTKEY[Int] == 1)
+      assert(sameRecords(19999).P_RETAILPRICE[Double] == 920.00)
+    }
   } else {
     fail("Tests could not run because the environment variable `LEGO_DATA_FOLDER` does not exist.")
   }

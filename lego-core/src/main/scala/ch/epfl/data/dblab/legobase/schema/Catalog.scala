@@ -6,6 +6,7 @@ import scala.collection.mutable.ArrayBuffer
 import sc.pardis.types._
 import schema._
 import Catalog._
+import storagemanager.Loader
 
 object Catalog {
   /** Returns the standardized sequence name */
@@ -323,7 +324,7 @@ case class Catalog(schemata: Map[String, Schema]) {
    */
   def getTuples(schemaName: String, tableName: String): Array[Record] =
     ddTables.find(tbl => tbl.schemaName == schemaName && tbl.name == tableName) match {
-      case Some(tbl) => getTuples(tbl.tableId)
+      case Some(tbl) => getTuples(tbl)
       case None      => throw new Exception(s"$schemaName.$tableName doesn't exist in this catalog")
     }
 
@@ -334,7 +335,25 @@ case class Catalog(schemata: Map[String, Schema]) {
    * @return An array of all records for this table
    */
   def getTuples(tableId: Int): Array[Record] =
-    ddRows.filter(row => row.tableId == tableId).map(row => Record(this, tableId, row.rowId)).toArray
+    ddTables.find(tbl => tbl.tableId == tableId) match {
+      case Some(tbl) => getTuples(tbl)
+      case None      => throw new Exception(s"Table $tableId doesn't exist in this catalog")
+    }
+
+  /**
+   * Returns all tuples for the requested table
+   *
+   * @param table The table to get the tuples from
+   * @return An array of all records for this table
+   */
+  private def getTuples(table: DDTablesRecord): Array[Record] = {
+    if (!isDataDictionary(table))
+      Loader.loadTable(this, table)
+    ddRows.filter(row => row.tableId == table.tableId).map(row => Record(this, table.tableId, row.rowId)).toArray
+  }
+
+  /** Indicates whether a table belongs to the Data Dictionary and should thus not be loaded from disk */
+  private def isDataDictionary(table: DDTablesRecord): Boolean = table.schemaName == DDSchemaName
 
   /** Returns whether the given row exists in the given table */
   def rowExists(tableId: Int, rowId: Int): Boolean =
