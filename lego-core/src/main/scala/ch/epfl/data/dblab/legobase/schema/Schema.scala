@@ -47,24 +47,22 @@ case class ForeignKey(ownTable: String, referencedTable: String, attributes: Lis
   def matchingAttributes(implicit s: Schema): List[(Attribute, Attribute)] = attributes.map { case (localAttr, foreignAttr) => thisTable.get.attributes.find(a => a.name == localAttr).get -> foreignTable.get.attributes.find(a => a.name == foreignAttr).get }
 }
 case class NotNull(attribute: Attribute) extends Constraint {
-  def toDDConstraintsRecord(catalog: Catalog, tableId: Int) = {
+  def toDDConstraintsRecord(catalog: Catalog, tableId: Int) =
     DDConstraintsRecord(
       tableId,
       'n',
       List(catalog.getAttribute(tableId, attribute.name).attributeId),
       None,
       None)
-  }
 }
 case class Unique(attribute: Attribute) extends Constraint {
-  def toDDConstraintsRecord(catalog: Catalog, tableId: Int) = {
+  def toDDConstraintsRecord(catalog: Catalog, tableId: Int) =
     DDConstraintsRecord(
       tableId,
       'u',
       List(catalog.getAttribute(tableId, attribute.name).attributeId),
       None,
       None)
-  }
 }
 case class AutoIncrement(attribute: Attribute) extends Constraint {
   def toDDConstraintsRecord(catalog: Catalog, tableId: Int) =

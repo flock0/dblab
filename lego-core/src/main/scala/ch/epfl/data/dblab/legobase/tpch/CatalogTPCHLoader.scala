@@ -19,7 +19,7 @@ import scala.reflect.runtime.currentMirror
 trait CatalogTPCHLoader
 
 /**
- * A module that defines loaders for TPCH relations.
+ * A module that defines loaders for TPCH relations using the Catalog.
  */
 object CatalogTPCHLoader {
 

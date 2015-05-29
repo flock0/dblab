@@ -7,9 +7,11 @@ import sc.pardis.types._
 import schema._
 import Catalog._
 import storagemanager.Loader
-
+/**
+  * A catalog of one or multiple table schemata and may also contain their data
+  */
 object Catalog {
-  /** Returns the standardized sequence name */
+  /** The standardized sequence name */
   def constructSequenceName(schemaName: String, tableName: String, attributeName: String) =
     schemaName + "_" + tableName + "_" + attributeName + "_SEQ"
 
@@ -118,9 +120,14 @@ object Catalog {
   }
 }
 
+/**
+  * Represents a catalog of one or multiple table schemata and contains their data
+  *
+  * @param schemata A map from the schema name to the schema itself
+  */
 case class Catalog(schemata: Map[String, Schema]) {
 
-  /* Collections that contain the data in the data dictionary */
+  /* Collections that contain the data in the data dictionary (and thus in the whole catalog) */
   private[schema] val ddTables: ArrayBuffer[DDTablesRecord] = ArrayBuffer.empty
   private[schema] val ddAttributes: ArrayBuffer[DDAttributesRecord] = ArrayBuffer.empty
   private[schema] val ddRows: ArrayBuffer[DDRowsRecord] = ArrayBuffer.empty
@@ -137,10 +144,10 @@ case class Catalog(schemata: Map[String, Schema]) {
   }
 
   /**
-   * Initializes the data dictionary with itself
-   *
-   * We avoid self-referencing entries in the DD_ROWS and DD_FIELDS relations.
-   */
+    * Initializes the data dictionary with itself
+    *
+    * We avoid self-referencing entries in the DD_ROWS and DD_FIELDS relations.
+    */
   private def initializeDD() = {
     val dd = dataDictionary
     /* Create initial sequences for the DD relations */
@@ -223,7 +230,11 @@ case class Catalog(schemata: Map[String, Schema]) {
     }
   }
 
-  /** Adds a table to the given schema */
+  /** 
+    * Adds a table to the given schema
+    * 
+    * Please note: This does not load the tables data into the catalog
+    */
   private def addTableToDD(schemaName: String, tbl: Table) = {
     if (tableExistsAlreadyInDD(schemaName, tbl.name)) {
       throw new Exception(s"Table ${tbl.name} already exists in schema $schemaName.")
@@ -256,7 +267,106 @@ case class Catalog(schemata: Map[String, Schema]) {
     newSequences.foreach(seq => addTuple(DDSchemaName, "DD_SEQUENCES", Seq(seq.startValue, seq.endValue, seq.incrementBy, seq.sequenceName, seq.sequenceId)))
   }
 
-  /** Indicates whether a constraint is an AutoIncrement as theye are handled seperately */
+  /**
+    * Adds a row and it's field values to the database
+    *
+    * @param schemaName The name of the schema where the table resides
+    * @param tableName The name of the table to add the tuple to
+    * @param values A sequence of values that should be stored.
+    * The order of the sequence must correspond to the order of the attributes in the data dictionary
+    */
+  def addTuple(schemaName: String, tableName: String, values: Seq[Any]): Unit = {
+    val tableId = getTable(schemaName, tableName).tableId
+    val attributeIds = getAttributes(tableId).map(_.attributeId)
+    addTuple(tableId, attributeIds zip values)
+  }
+
+  /**
+    * Adds a row and it's field values to the database
+    *
+    * @param tableId The id of the table to add the tuple to
+    * @param values A sequence of values that should be stored.
+    * The order of the sequence must correspond to the order of the attributes in the data dictionary
+    */
+  def addTuple(tableId: Int, values: Seq[(Int, Any)]): Unit = {
+
+    val row = DDRowsRecord(tableId, this)
+    ddRows += row
+
+    val records: Seq[DDFieldsRecord] = for ((attrId, value) <- values)
+      yield DDFieldsRecord(tableId, attrId, row.rowId, value)
+    ddFields ++= records
+  }
+
+  /**
+    * Returns all tuples for the requested table
+    *
+    * @param schemaName The name of the schema where this table resides
+    * @param tableName The name of the table
+    * @return An array of all records for this table
+    */
+  def getTuples(schemaName: String, tableName: String): Array[Record] =
+    getTuples(getTable(schemaName, tableName))
+
+  /**
+    * Returns all tuples for the requested table
+    *
+    * @param tableId The id of the table to get the tuples for
+    * @return An array of all records for this table
+    */
+  def getTuples(tableId: Int): Array[Record] =
+    getTuples(getTable(tableId))
+
+  /**
+    * Returns all tuples for the requested table
+    *
+    * @param table The table to get the tuples for
+    * @return An array of all records for this table
+    */
+  private def getTuples(table: DDTablesRecord): Array[Record] = {
+    if (!isDataDictionary(table)) /* Only load tables from disk that are not part of the data dictionary */
+      Loader.loadTable(this, table)
+    ddRows.filter(row => row.tableId == table.tableId).map(row => Record(this, table.tableId, row.rowId)).toArray
+  }
+
+  /** Returns the attribute with the specified name in the given table */
+  def getAttribute(tableId: Int, attributeName: String) = getAttributes(tableId, List(attributeName)).head
+
+  /** Returns all attributes of the specified table */
+  def getAttributes(tableId: Int) = ddAttributes.filter(a => tableId == a.tableId)
+
+  /** Returns a list of attributes with the specified names that belong to the given table */
+  def getAttributes(tableId: Int, attributeNames: List[String]) = {
+    val attributes = ddAttributes.filter(at => at.tableId == tableId && attributeNames.contains(at.name)).toList
+
+    if (attributes.size != attributeNames.size)
+      throw new Exception(s"Couldn't find all requested attributes in $tableId")
+    attributes
+  }
+
+  /** Returns the table with specified name in the given schema */
+  def getTable(schemaName: String, tableName: String): DDTablesRecord = {
+    ddTables.find(t => t.schemaName == schemaName && t.name == tableName) match {
+      case Some(t) => t
+      case None    => throw new Exception(s"Table $tableName does not exist in schema $schemaName")
+    }
+  }
+
+  /** Returns the table with the specified tableId */
+  def getTable(tableId: Int) =
+    ddTables.find(tbl => tbl.tableId == tableId) match {
+      case Some(t) => t
+      case None    => throw new Exception(s"Table with ID $tableId doesn't exist in this catalog")
+    }
+
+  /** Returns the field identified by the given IDs */
+  private[schema] def getField[T](tableId: Int, attributeId: Int, rowId: Int): Option[T] =
+    ddFields.find(f => f.tableId == tableId && f.attributeId == attributeId && f.rowId == rowId) match {
+      case Some(rec) => Some(rec.value.asInstanceOf[T])
+      case None      => None
+    }
+
+  /** Indicates whether a constraint is an AutoIncrement (as they are handled seperately) */
   private def filterAutoIncrement(cstr: Constraint): Boolean = {
     cstr match {
       case _: AutoIncrement => true
@@ -267,7 +377,7 @@ case class Catalog(schemata: Map[String, Schema]) {
   private def filterNotAutoIncrement(cstr: Constraint) = !filterAutoIncrement(cstr)
 
   /** Returns the next value of the sequence with the given name */
-  def getSequenceNext(sequenceName: String): Int = //TODO When there's a way to fetch data from the DB, replace this
+  private[schema] def getSequenceNext(sequenceName: String): Int = //TODO When there's a way to fetch data from the DB, replace this
     ddSequences.find(s => s.sequenceName == sequenceName) match {
       case Some(seq) => seq.nextVal
       case None      => throw new Exception(s"Sequence $sequenceName not found")
@@ -280,116 +390,13 @@ case class Catalog(schemata: Map[String, Schema]) {
       case _    => true
     }
 
-  def getTable(schemaName: String, tableName: String): DDTablesRecord = {
-    ddTables.find(t => t.schemaName == schemaName && t.name == tableName) match {
-      case Some(t) => t
-      case None    => throw new Exception(s"Table $tableName does not exist in schema $schemaName")
-    }
-  }
-
-  /**
-   * Adds a row and it's field values to the database
-   *
-   * @param values A sequence of values that should be stored.
-   * The order of the sequence correspond to the order of the attributes in the data dictionary
-   */
-  def addTuple(schemaName: String, tableName: String, values: Seq[Any]): Unit = {
-
-    def getAttributeIds(tId: Int) = ddAttributes.filter(a => a.tableId == tId).map(_.attributeId)
-    val tableId = getTable(schemaName, tableName).tableId
-    addTuple(tableId, getAttributeIds(tableId) zip values)
-  }
-
-  /**
-   * Adds a row and it's field values to the database
-   *
-   * @param values n iterable with the attributeId and the value to be stored for that attribute.
-   */
-  def addTuple(tableId: Int, values: Seq[(Int, Any)]): Unit = {
-
-    val row = DDRowsRecord(tableId, this)
-    ddRows += row
-
-    val records: Seq[DDFieldsRecord] = for ((attrId, value) <- values)
-      yield DDFieldsRecord(tableId, attrId, row.rowId, value)
-    ddFields ++= records
-  }
-
-  /**
-   * Returns all tuples for the requested table
-   *
-   * @param schemaName The name of the schema where this table resides
-   * @param tableName The name of the table
-   * @return An array of all records for this table
-   */
-  def getTuples(schemaName: String, tableName: String): Array[Record] =
-    ddTables.find(tbl => tbl.schemaName == schemaName && tbl.name == tableName) match {
-      case Some(tbl) => getTuples(tbl)
-      case None      => throw new Exception(s"$schemaName.$tableName doesn't exist in this catalog")
-    }
-
-  /**
-   * Returns all tuples for the requested table
-   *
-   * @param tableId The id of the table to get the tuples from
-   * @return An array of all records for this table
-   */
-  def getTuples(tableId: Int): Array[Record] =
-    ddTables.find(tbl => tbl.tableId == tableId) match {
-      case Some(tbl) => getTuples(tbl)
-      case None      => throw new Exception(s"Table $tableId doesn't exist in this catalog")
-    }
-
-  /**
-   * Returns all tuples for the requested table
-   *
-   * @param table The table to get the tuples from
-   * @return An array of all records for this table
-   */
-  private def getTuples(table: DDTablesRecord): Array[Record] = {
-    if (!isDataDictionary(table))
-      Loader.loadTable(this, table)
-    ddRows.filter(row => row.tableId == table.tableId).map(row => Record(this, table.tableId, row.rowId)).toArray
-  }
-
-  /** Indicates whether a table belongs to the Data Dictionary and should thus not be loaded from disk */
+  /** Indicates whether a table belongs to the data dictionary */
   private def isDataDictionary(table: DDTablesRecord): Boolean = table.schemaName == DDSchemaName
 
   /** Returns whether the given row exists in the given table */
-  def rowExists(tableId: Int, rowId: Int): Boolean =
+  private[schema] def rowExists(tableId: Int, rowId: Int): Boolean =
     ddRows.find(r => r.rowId == rowId && r.tableId == tableId) match {
       case None => false
       case _    => true
-    }
-
-  /** Returns the DDAttributesRecord with the specified name in the given table */
-  def getAttribute(tableId: Int, attributeName: String) = getAttributes(tableId, List(attributeName)).head
-
-  /** Returns all attributes of the specified table table */
-  def getAttributes(tableId: Int) = ddAttributes.filter(a => tableId == a.tableId)
-
-  /** Returns a list of attributes with the given specified names that belong to the given table */
-  def getAttributes(tableId: Int, attributeNames: List[String]) = {
-    val attributes = ddAttributes.filter(at => at.tableId == tableId && attributeNames.contains(at.name)).toList
-
-    if (attributes.size != attributeNames.size)
-      throw new Exception(s"Couldn't find all requested attributes in $tableId")
-    attributes
-  }
-  /**
-   * Returns the table for a given tableId.
-   * Throws an exception if no field could be found.
-   */
-  def getTableRecord(tableId: Int) = ddTables.find(tbl => tbl.tableId == tableId) match {
-    case Some(t) => t
-    case None    => throw new Exception(s"Table with ID $tableId doesn't exist in this catalog")
-  }
-  /**
-   * Returns the field identified by the given IDs.
-   */
-  def getField[T](tableId: Int, attributeId: Int, rowId: Int): Option[T] =
-    ddFields.find(f => f.tableId == tableId && f.attributeId == attributeId && f.rowId == rowId) match {
-      case Some(rec) => Some(rec.value.asInstanceOf[T])
-      case None      => None
     }
 }
