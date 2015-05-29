@@ -26,20 +26,15 @@ case class PrimaryKey(attributes: List[Attribute]) extends Constraint {
     DDConstraintsRecord(
       tableId,
       'p',
-      catalog.ddAttributes.filter(at => at.tableId == tableId && attributes.map(_.name).contains(at.name)).map(_.attributeId).toList,
+      catalog.getAttributes(tableId, attributes.map(_.name)).map(_.attributeId),
       None,
       None)
 }
 case class ForeignKey(ownTable: String, referencedTable: String, attributes: List[(String, String)], var selectivity: Double = 1) extends Constraint {
   def toDDConstraintsRecord(catalog: Catalog, tableId: Int) = {
-    def findAttributeId(tID: Int, attributeName: String) =
-      catalog.ddAttributes.find(at => at.tableId == tID && attributeName == at.name) match {
-        case Some(a) => a.attributeId
-        case None    => throw new Exception(s"Couldn't find attribute $attributeName in table $tID")
-      }
-
-    val fks: List[(Int, String)] = attributes map { case (loc: String, ref: String) => findAttributeId(tableId, loc) -> ref }
+    val fks: List[(Int, String)] = attributes map { case (loc: String, ref: String) => catalog.getAttribute(tableId, loc).attributeId -> ref }
     val (attributesList, refAttributesList) = fks.unzip
+
     DDConstraintsRecord(
       tableId,
       'f',
@@ -53,30 +48,20 @@ case class ForeignKey(ownTable: String, referencedTable: String, attributes: Lis
 }
 case class NotNull(attribute: Attribute) extends Constraint {
   def toDDConstraintsRecord(catalog: Catalog, tableId: Int) = {
-    val attributeId = catalog.ddAttributes.find(at => at.tableId == tableId && attribute.name == at.name) match {
-      case Some(a) => a.attributeId
-      case None    => throw new Exception(s"Couldn't find attribute ${attribute.name}")
-    }
-
     DDConstraintsRecord(
       tableId,
       'n',
-      List(attributeId),
+      List(catalog.getAttribute(tableId, attribute.name).attributeId),
       None,
       None)
   }
 }
 case class Unique(attribute: Attribute) extends Constraint {
   def toDDConstraintsRecord(catalog: Catalog, tableId: Int) = {
-    val attributeId = catalog.ddAttributes.find(at => at.tableId == tableId && attribute.name == at.name) match {
-      case Some(a) => a.attributeId
-      case None    => throw new Exception(s"Couldn't find attribute ${attribute.name}")
-    }
-
     DDConstraintsRecord(
       tableId,
       'u',
-      List(attributeId),
+      List(catalog.getAttribute(tableId, attribute.name).attributeId),
       None,
       None)
   }

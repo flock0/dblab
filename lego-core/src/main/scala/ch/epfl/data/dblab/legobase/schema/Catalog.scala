@@ -120,13 +120,13 @@ object Catalog {
 
 case class Catalog(schemata: Map[String, Schema]) {
 
-  /* Lists that contain the data in the data dictionary*/
-  val ddTables: ArrayBuffer[DDTablesRecord] = ArrayBuffer.empty
-  val ddAttributes: ArrayBuffer[DDAttributesRecord] = ArrayBuffer.empty
-  val ddRows: ArrayBuffer[DDRowsRecord] = ArrayBuffer.empty
-  val ddFields: ArrayBuffer[DDFieldsRecord] = ArrayBuffer.empty
-  val ddConstraints: ArrayBuffer[DDConstraintsRecord] = ArrayBuffer.empty
-  val ddSequences: ArrayBuffer[DDSequencesRecord] = ArrayBuffer.empty
+  /* Collections that contain the data in the data dictionary */
+  private[schema] val ddTables: ArrayBuffer[DDTablesRecord] = ArrayBuffer.empty
+  private[schema] val ddAttributes: ArrayBuffer[DDAttributesRecord] = ArrayBuffer.empty
+  private[schema] val ddRows: ArrayBuffer[DDRowsRecord] = ArrayBuffer.empty
+  private[schema] val ddFields: ArrayBuffer[DDFieldsRecord] = ArrayBuffer.empty
+  private[schema] val ddConstraints: ArrayBuffer[DDConstraintsRecord] = ArrayBuffer.empty
+  private[schema] val ddSequences: ArrayBuffer[DDSequencesRecord] = ArrayBuffer.empty
 
   initializeDD()
   /* Populate DD with schemata that have been passed to the constructor */
@@ -280,9 +280,9 @@ case class Catalog(schemata: Map[String, Schema]) {
       case _    => true
     }
 
-  private def getTableId(schemaName: String, tableName: String): Int = {
+  def getTable(schemaName: String, tableName: String): DDTablesRecord = {
     ddTables.find(t => t.schemaName == schemaName && t.name == tableName) match {
-      case Some(t) => t.tableId
+      case Some(t) => t
       case None    => throw new Exception(s"Table $tableName does not exist in schema $schemaName")
     }
   }
@@ -296,7 +296,7 @@ case class Catalog(schemata: Map[String, Schema]) {
   def addTuple(schemaName: String, tableName: String, values: Seq[Any]): Unit = {
 
     def getAttributeIds(tId: Int) = ddAttributes.filter(a => a.tableId == tId).map(_.attributeId)
-    val tableId = getTableId(schemaName, tableName)
+    val tableId = getTable(schemaName, tableName).tableId
     addTuple(tableId, getAttributeIds(tableId) zip values)
   }
 
@@ -362,9 +362,20 @@ case class Catalog(schemata: Map[String, Schema]) {
       case _    => true
     }
 
-  /** Returns an Option[DDAttributesRecord] for the given parameters */
-  def getAttribute(tableId: Int, attributeName: String) = ddAttributes.find(a => a.tableId == tableId && a.name == attributeName)
+  /** Returns the DDAttributesRecord with the specified name in the given table */
+  def getAttribute(tableId: Int, attributeName: String) = getAttributes(tableId, List(attributeName)).head
 
+  /** Returns all attributes of the specified table table */
+  def getAttributes(tableId: Int) = ddAttributes.filter(a => tableId == a.tableId)
+
+  /** Returns a list of attributes with the given specified names that belong to the given table */
+  def getAttributes(tableId: Int, attributeNames: List[String]) = {
+    val attributes = ddAttributes.filter(at => at.tableId == tableId && attributeNames.contains(at.name)).toList
+
+    if (attributes.size != attributeNames.size)
+      throw new Exception(s"Couldn't find all requested attributes in $tableId")
+    attributes
+  }
   /**
    * Returns the table for a given tableId.
    * Throws an exception if no field could be found.

@@ -1,3 +1,7 @@
+package ch.epfl.data
+package dblab.legobase
+package schema
+
 import ch.epfl.data.dblab.legobase.storagemanager._
 import ch.epfl.data.dblab.legobase.LBString
 import ch.epfl.data.dblab.legobase.tpch.TPCHSchema

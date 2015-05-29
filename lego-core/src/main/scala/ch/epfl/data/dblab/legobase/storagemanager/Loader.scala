@@ -106,10 +106,7 @@ object Loader {
    * @param tableName The name of the table in the schema
    */
   def loadTable(catalog: Catalog, schemaName: String, tableName: String): Unit =
-    catalog.ddTables.find(t => t.schemaName == schemaName && t.name == tableName) match {
-      case Some(t) => loadTable(catalog, t)
-      case None    => throw new Exception(s"No table found with the name `$tableName`")
-    }
+    loadTable(catalog, catalog.getTable(schemaName, tableName))
 
   /**
    * Loads a table into the in-memory DB
@@ -123,7 +120,7 @@ object Loader {
         case Some(fn) => fn
         case None     => throw new Exception("No filename available to load data from")
       }
-      val attributes = catalog.ddAttributes.filter(a => table.tableId == a.tableId)
+      val attributes = catalog.getAttributes(table.tableId)
       val size = fileLineCount(fileName)
       val ldr = new K2DBScanner(fileName)
 
