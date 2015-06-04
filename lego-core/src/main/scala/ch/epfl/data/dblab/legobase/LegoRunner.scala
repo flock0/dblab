@@ -40,14 +40,14 @@ trait LegoRunner {
     val excludedQueries = Nil
 
     val stmt = SQLParser.parse("SELECT * FROM LINEITEM WHERE " +
-      " L_SHIPDATE >= DATE '1996-01-01' ") /*AND L_SHIPDATE < DATE '1997-01-01'" +
+      " L_SHIPDATE >= DATE '1996-01-01' AND L_SHIPDATE < DATE '1997-01-01'" +
       " AND L_DISCOUNT BETWEEN 0.07 - 0.01 AND 0.07 + 0.01 " +
-      " AND L_QUANTITY < 24;")*/
+      " AND L_QUANTITY < 24.0;")
+    System.out.println(stmt)
 
     val schema: Schema = TPCHSchema.getSchema(Config.datapath, Config.sf) // TODO-GEN : This should be given as argument
     new SQLSemanticCheckerAndTypeInference(schema).checkAndInfer(stmt)
     val qp = new SQLTreeToQueryPlanConverter(schema).convert(stmt)
-    System.out.println(stmt)
     System.exit(0)
 
     val queries: scala.collection.immutable.List[String] =

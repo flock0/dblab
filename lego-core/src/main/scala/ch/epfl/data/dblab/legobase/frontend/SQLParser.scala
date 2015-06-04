@@ -8,6 +8,8 @@ import scala.util.parsing.combinator._
 import scala.util.parsing.combinator.lexical._
 import scala.util.parsing.combinator.syntactical._
 import scala.util.parsing.combinator.token._
+//TODO : should this be here?
+import ch.epfl.data.dblab.legobase.queryengine.GenericEngine
 
 import scala.util.parsing.input.CharArrayReader.EofCh
 
@@ -106,10 +108,10 @@ object SQLParser extends StandardTokenParsers {
 
   def parseLiteral: Parser[Expression] = (
     numericLit ^^ { case i => IntLiteral(i.toInt) }
-    | floatLit ^^ { case f => FloatLiteral(f.toDouble) }
+    | floatLit ^^ { case f => FloatLiteral(f.toFloat) }
     | stringLit ^^ { case s => StringLiteral(s) }
     | "NULL" ^^ { case _ => NullLiteral() }
-    | "DATE" ~> stringLit ^^ { case s => DateLiteral(s) })
+    | "DATE" ~> stringLit ^^ { case s => DateLiteral(GenericEngine.parseDate(s)) })
 
   def parseRelations: Parser[Seq[Relation]] = rep1sep(parseRelation, ",")
 

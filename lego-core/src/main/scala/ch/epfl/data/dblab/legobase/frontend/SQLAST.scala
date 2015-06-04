@@ -26,7 +26,7 @@ trait Expression extends Node {
   var tp: TypeTag[_] = null
   def getTp = tp match {
     case t if t == null => throw new Exception("SQL Type Inferrence BUG: type of Expression cannot be null.")
-    case _              =>
+    case _              => tp
   }
   def setTp[A](tt: TypeTag[A]) { this.tp = tt }
 
@@ -87,10 +87,10 @@ trait LiteralExpression extends Expression {
   override def isLiteral = true
 }
 case class IntLiteral(v: Long) extends LiteralExpression
-case class FloatLiteral(v: Double) extends LiteralExpression
+case class FloatLiteral(v: Float) extends LiteralExpression
 case class StringLiteral(v: String) extends LiteralExpression
 case class NullLiteral() extends LiteralExpression
-case class DateLiteral(d: String) extends LiteralExpression
+case class DateLiteral(d: Integer) extends LiteralExpression
 
 trait Relation extends Node
 case class Table(name: String, alias: Option[String]) extends Relation
