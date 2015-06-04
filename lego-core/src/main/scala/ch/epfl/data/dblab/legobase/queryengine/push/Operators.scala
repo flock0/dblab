@@ -48,15 +48,9 @@ object MultiMap {
  */
 @deep class ScanOp[A](table: Array[A]) extends Operator[A] {
   var i = 0
-  def open() {
-    //printf("Scan operator commencing...\n")
-  }
+  def open() {}
   def next() {
     while (!stop && i < table.length) {
-      /*  for (j <- 0 until 16) {
-        child.consume(table(i + j).asInstanceOf[Record])
-      }
-      i += 16*/
       child.consume(table(i).asInstanceOf[Record])
       i += 1
     }
@@ -74,7 +68,8 @@ object MultiMap {
  * @param parent the parent operator of this operator
  * @param printFunc the function that should be invoked whenever the output is printed
  * @param limit a thunk value which specifes if there is not longer any need to print more
- * results. It has the same effect as LIMIT clause in SQL.
+ * results. It has the same effect as LIMIT clause in SQL. Set it to -1 if you want to print
+ * everything
  */
 @deep class PrintOp[A](parent: Operator[A])(printFunc: A => Unit, limit: Int) extends Operator[A] { self =>
   var numRows = (0)

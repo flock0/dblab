@@ -8,7 +8,10 @@ import scala.collection.immutable.ListMap
 
 case class Catalog(schemata: Map[String, Schema])
 case class Schema(tables: List[Table], stats: Statistics = Statistics()) {
-  def findTable(name: String) = tables.find(t => t.name == name)
+  def findTable(name: String) = tables.find(t => t.name == name) match {
+    case Some(tab) => tab
+    case None      => throw new Exception("Table " + name + " not found in schema!")
+  }
   def findAttribute(attrName: String): Option[Attribute] = tables.map(t => t.attributes).flatten.find(attr => attr.name == attrName)
 }
 case class Table(name: String, attributes: List[Attribute], constraints: List[Constraint], resourceLocator: String, var rowCount: Long) {
@@ -18,7 +21,7 @@ case class Table(name: String, attributes: List[Attribute], constraints: List[Co
   def uniques: List[Unique] = constraints.collect { case unq: Unique => unq }
   def autoIncrement: Option[AutoIncrement] = constraints.collectFirst { case ainc: AutoIncrement => ainc }
 }
-case class Attribute(name: String, dataType: Tpe, constraints: List[Constraint] = List(), var distinctValuesCount: Int = 0, var nullValuesCount: Long = 0) {
+case class Attribute(name: String, dataType: Tpe, constraints: List[Constraint] = List()) {
   def hasConstraint(con: Constraint) = constraints.contains(con)
 }
 object Attribute {

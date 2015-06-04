@@ -3,6 +3,7 @@ package dblab.legobase
 
 import tpch._
 import schema._
+import frontend._
 import utils.Utilities._
 import java.io.PrintStream
 
@@ -38,7 +39,16 @@ trait LegoRunner {
 
     val excludedQueries = Nil
 
+    val stmt = SQLParser.parse("SELECT * FROM LINEITEM WHERE " +
+      " L_SHIPDATE >= DATE '1996-01-01' ") /*AND L_SHIPDATE < DATE '1997-01-01'" +
+      " AND L_DISCOUNT BETWEEN 0.07 - 0.01 AND 0.07 + 0.01 " +
+      " AND L_QUANTITY < 24;")*/
+
     val schema: Schema = TPCHSchema.getSchema(Config.datapath, Config.sf) // TODO-GEN : This should be given as argument
+    new SQLSemanticCheckerAndTypeInference(schema).checkAndInfer(stmt)
+    val qp = new SQLTreeToQueryPlanConverter(schema).convert(stmt)
+    System.out.println(stmt)
+    System.exit(0)
 
     val queries: scala.collection.immutable.List[String] =
       if (args.length >= 3 && args(2) == "testsuite-scala") (for (i <- 1 to 22 if !excludedQueries.contains(i)) yield "Q" + i).toList
