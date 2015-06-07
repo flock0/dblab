@@ -61,32 +61,22 @@ class SQLTreeToQueryPlanConverter(schema: Schema) {
   }
 
   def computeOrderingExpression[A: TypeTag, B: TypeTag](e1: Expression, e2: Expression, op: (Ordering[Any]#Ops, Any) => Boolean): Boolean = {
-    implicit val numericA = getNumVal[A]
-    implicit val numericB = getNumVal[B]
     val n1 = parseNumericExpression[A](e1)
     val n2 = parseNumericExpression[B](e2)
     val (pn1, pn2) = promoteNumbers[A, B](n1, n2)
-    val orderingA = numericA.asInstanceOf[Ordering[Any]]
+    val orderingA = getNumVal[A].asInstanceOf[Ordering[Any]]
     val opn1 = new orderingA.Ops(pn1)
     op(opn1, pn2)
   }
 
   def computeNumericExpression[A: TypeTag, B: TypeTag](e1: Expression, e2: Expression, op: (Numeric[Any]#Ops, Any) => Any): Any = {
-    implicit val numericA = getNumVal[A]
-    implicit val numericB = getNumVal[B]
     val n1 = parseNumericExpression[A](e1)
     val n2 = parseNumericExpression[B](e2)
     val (pn1, pn2) = promoteNumbers[A, B](n1, n2)
-    val numericAAny = numericA.asInstanceOf[Numeric[Any]]
-    val opn1 = new numericAAny.Ops(pn1)
+    val numericA = getNumVal[A].asInstanceOf[Numeric[Any]]
+    val opn1 = new numericA.Ops(pn1)
     op(opn1, pn2)
   }
-
-  /*def typeTagToNumeric[A](tp: TypeTag[A]): Numeric[A] = (tp match {
-    case x if x == typeTag[Int] => implicitly[Numeric[Int]]
-  }).asInstanceOf[Numeric[A]]*/
-
-  //sdef typeNum[T](tp: TypeTag[T]) = tp.asInstanceOf[TypeTag[NumType]]
 
   def getNumVal[T](implicit tp: TypeTag[T]): Numeric[T] = (tp match {
     case x if x == typeTag[Int]    => implicitly[Numeric[Int]]
@@ -109,6 +99,8 @@ class SQLTreeToQueryPlanConverter(schema: Schema) {
     // Comparison Operators
     case GreaterOrEqual(left, right) =>
       computeOrderingExpression(left, right, (x, y) => x >= y)(left.tp, right.tp)
+    case GreaterThan(left, right) =>
+      computeOrderingExpression(left, right, (x, y) => x > y)(left.tp, right.tp)
     case LessOrEqual(left, right) =>
       computeOrderingExpression(left, right, (x, y) => x <= y)(left.tp, right.tp)
     case LessThan(left, right) =>
@@ -127,8 +119,11 @@ class SQLTreeToQueryPlanConverter(schema: Schema) {
   def convertOperators(sqlTree: SelectStatement): Operator[_] = {
     val scanOps = tableMap.map({ case (tableName, tab) => (tableName, new ScanOp(tab)) })
     val scanOp = scanOps.find(s => s._1 == "LINEITEM").get._2 // TODO: Generalize
-    val selectOp = parseWhereClauses(sqlTree.where, scanOp)
-    new PrintOp(selectOp)(t => {} /*println(t)*/ , -1)
+    val selectOp = parseWhereClauses(sqlTree.where, scanOp).asInstanceOf[SelectOp[LINEITEMRecord]] // TODO: Generalize
+    val aggOp = new AggOp(selectOp, 1)(x => "Total")((t, currAgg) => { (t.L_EXTENDEDPRICE * t.L_DISCOUNT) + currAgg }) // TODO: Generalize
+    // new PrintOp(aggOp)(t => {} /*println(t)*/ , -1)
+    // TODO: Generalize
+    new PrintOp(aggOp)(kv => { kv.key; printf("%.4f\n", kv.aggs(0)) }, -1)
   }
 
   def convert(sqlTree: SelectStatement) {

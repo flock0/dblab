@@ -41,7 +41,7 @@ trait LegoRunner {
 
     val stmt = SQLParser.parse("SELECT * FROM LINEITEM WHERE " +
       " L_SHIPDATE >= DATE '1996-01-01' AND L_SHIPDATE < DATE '1997-01-01'" +
-      " AND L_DISCOUNT BETWEEN 0.07 - 0.01 AND 0.07 + 0.01 " +
+      " AND L_DISCOUNT BETWEEN 0.09 - 0.01 AND 0.09 + 0.01 " +
       " AND L_QUANTITY < 24.0;")
     System.out.println(stmt)
 
