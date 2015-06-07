@@ -44,13 +44,32 @@ class SQLTreeToQueryPlanConverter(schema: Schema) {
     case _                      => parseExpression(e)
   }).asInstanceOf[A]
 
+  def computeOrderingExpression[A: Numeric: TypeTag, B: Numeric: TypeTag](e1: Expression, e2: Expression, op: (Ordering[Any]#Ops, Any) => Boolean): Boolean = {
+    val n1 = parseNumericExpression[A](e1).asInstanceOf[A]
+    val n2 = parseNumericExpression[B](e2).asInstanceOf[A]
+    val IntType = typeTag[Int]
+    val FloatType = typeTag[Float]
+    val DoubleType = typeTag[Double]
+    val (pn1, pn2) = {
+      (typeTag[A], typeTag[B]) match {
+        case (IntType, DoubleType)   => n1.asInstanceOf[Int].toDouble -> n2
+        case (DoubleType, FloatType) => n1 -> n2.asInstanceOf[Float].toDouble
+        case (x, y) if x == y        => n1 -> n2
+        case (x, y)                  => throw new Exception(s"Does not know how to find the common type for $x and $y")
+      }
+    }.asInstanceOf[(Any, Any)]
+    val numericA = implicitly[Numeric[A]].asInstanceOf[Ordering[Any]]
+    val opn1 = new numericA.Ops(pn1)
+    op(opn1, pn2)
+  }
+
   /*def typeTagToNumeric[A](tp: TypeTag[A]): Numeric[A] = (tp match {
     case x if x == typeTag[Int] => implicitly[Numeric[Int]]
   }).asInstanceOf[Numeric[A]]*/
 
   //sdef typeNum[T](tp: TypeTag[T]) = tp.asInstanceOf[TypeTag[NumType]]
 
-  def getNumVal[T](tp: TypeTag[T]): Numeric[NumType] = (tp match {
+  def getNumVal[T](implicit tp: TypeTag[T]): Numeric[NumType] = (tp match {
     case x if x == typeTag[Int]    => implicitly[Numeric[Int]]
     case x if x == typeTag[Double] => implicitly[Numeric[Double]]
     case x if x == typeTag[Float]  => implicitly[Numeric[Float]]
@@ -75,18 +94,19 @@ class SQLTreeToQueryPlanConverter(schema: Schema) {
     case GreaterOrEqual(left, right) =>
       System.out.println(left.tp)
       System.out.println(right.tp)
-      /*implicit val numVal = ({
+      implicit val numVal = ({
         if (left.tp == typeTag[Double] && right.tp == typeTag[Float]) implicitly[Numeric[Float]]
         else {
           getNumVal(right.tp)
           //throw new Exception("Unsupported combination!")
         }
       }).asInstanceOf[Numeric[NumType]]
-      //implicit val numVal = getNumVal(right.tp)*/
+      //implicit val numVal = getNumVal(right.tp)
       val num1 = getNumVal(left.tp)
-      val num2 = getNumVal(right.tp)
+      val num2 = getNumVal(right.tp).asInstanceOf[Numeric[Any]]
 
-      parseNumericExpression(left)(num1, left.tp/*.asInstanceOf[TypeTag[NumType]]*/) >= parseNumericExpression(right)(num2, right.tp/*.asInstanceOf[TypeTag[NumType]]*/)
+      // parseNumericExpression(left)(num1, left.tp.asInstanceOf[TypeTag[NumType]]) >= parseNumericExpression(right)(num2, right.tp.asInstanceOf[TypeTag[NumType]])
+      computeOrderingExpression(left, right, (x, y) => x >= y)(num1, left.tp.asInstanceOf[TypeTag[NumType]], num2, right.tp.asInstanceOf[TypeTag[Any]])
     case LessThan(left, right) =>
       implicit val numVal = getNumVal(right.tp)
       parseNumericExpression(left) < parseNumericExpression(right)
