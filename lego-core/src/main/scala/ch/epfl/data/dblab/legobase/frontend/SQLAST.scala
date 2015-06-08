@@ -90,7 +90,7 @@ case class IntLiteral(v: Long) extends LiteralExpression
 case class FloatLiteral(v: Float) extends LiteralExpression
 case class StringLiteral(v: String) extends LiteralExpression
 case class NullLiteral() extends LiteralExpression
-case class DateLiteral(d: Integer) extends LiteralExpression
+case class DateLiteral(d: Int) extends LiteralExpression
 
 trait Relation extends Node
 case class SQLTable(name: String, alias: Option[String]) extends Relation
