@@ -1,9 +1,9 @@
 package ch.epfl.data
-package dblab.legobase
-package utils
+package dblab
+package offheap
 
 import org.scalatest._
-import offheap._
+import _root_.offheap._
 import Matchers._
 
 class String21Test extends FlatSpec {

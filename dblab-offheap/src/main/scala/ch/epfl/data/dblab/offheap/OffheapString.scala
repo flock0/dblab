@@ -1,14 +1,10 @@
 package ch.epfl.data
-package dblab.legobase
-package utils
+package dblab
+package offheap
 
-import sc.pardis.shallow.OptimalString
 import scala.collection.mutable.ArrayBuilder
-import ch.epfl.data.sc.pardis.annotations._
-import offheap._
+import _root_.offheap._
 
-@deep
-@noImplementation
 @data class String21(
   val __0: Byte,
   val __1: Byte,
@@ -100,10 +96,7 @@ object String21 {
   def default(implicit alloc: Allocator) = apply("".getBytes, 0, 0)
 }
 
-@deep
-@noImplementation
-@needs[(Tuple2[_, _], Array[_])]
-@data class TupleString(
+@data class OffheapString(
   @embed val __0: String21,
   @embed val __1: String21,
   @embed val __2: String21,
@@ -137,7 +130,7 @@ object String21 {
       case 9 => __9(i - (9 * 21))
       case _ => throw new NoSuchElementException(s"no element with index $i")
     }
-  def startsWith(that: TupleString): Boolean = {
+  def startsWith(that: OffheapString): Boolean = {
     var i = 0
     var j = 0
     val thisLen = length
@@ -148,8 +141,8 @@ object String21 {
     }
     j == thatLen
   }
-  def containsSlice(that: TupleString): Boolean = indexOfSlice(that, 0) != -1
-  def slice(from: Int, until: Int): TupleString = {
+  def containsSlice(that: OffheapString): Boolean = indexOfSlice(that, 0) != -1
+  def slice(from: Int, until: Int): OffheapString = {
     val lo = math.max(from, 0)
     val hi = math.min(math.max(until, 0), length)
     val elems = math.max(hi - lo, 0)
@@ -161,19 +154,19 @@ object String21 {
       b += this(i)
       i += 1
     }
-    TupleString(b.result())
+    OffheapString(b.result())
   }
-  def endsWith(that: TupleString): Boolean = this.iterator.drop(length - that.length).sameElements(that.iterator)
-  def diff(that: TupleString): Int = (this.iterator zip that.iterator).foldLeft(0)((res, e) => { if (res == 0) e._1 - e._2 else res })
-  def ===(that: TupleString): Boolean = this.iterator.sameElements(that.iterator)
-  def =!=(that: TupleString): Boolean = !(===(that))
+  def endsWith(that: OffheapString): Boolean = this.iterator.drop(length - that.length).sameElements(that.iterator)
+  def diff(that: OffheapString): Int = (this.iterator zip that.iterator).foldLeft(0)((res, e) => { if (res == 0) e._1 - e._2 else res })
+  def ===(that: OffheapString): Boolean = this.iterator.sameElements(that.iterator)
+  def =!=(that: OffheapString): Boolean = !(===(that))
   def string: String = {
     val sb = new StringBuilder()
     this.iterator.foreach { b => sb += b.toChar }
     sb.toString
   }
 
-  def indexOfSlice(that: TupleString, from: Int): Int = ??? /*{
+  def indexOfSlice(that: OffheapString, from: Int): Int = ??? /*{
     val l = length
     val tl = that.length
     val clippedFrom = math.max(0, from)
@@ -269,8 +262,8 @@ object String21 {
     }
   }*/
 }
-object TupleString {
-  def apply(data: scala.Array[Byte])(implicit alloc: Allocator): TupleString = {
+object OffheapString {
+  def apply(data: scala.Array[Byte])(implicit alloc: Allocator): OffheapString = {
     if (data.length > 210)
       throw new IllegalArgumentException("data is longer than 210 characters")
     var remaining = data.length
@@ -385,7 +378,7 @@ object TupleString {
       remaining -= 21
       str
     }
-    TupleString(__0, __1, __2, __3, __4, __5, __6, __7, __8, __9,
+    OffheapString(__0, __1, __2, __3, __4, __5, __6, __7, __8, __9,
       __0.len + __1.len + __2.len +
         __3.len + __4.len + __5.len +
         __6.len + __7.len + __8.len +

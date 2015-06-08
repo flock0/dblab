@@ -1,53 +1,53 @@
 package ch.epfl.data
-package dblab.legobase
-package utils
+package dblab
+package offheap
 
-import sc.pardis.shallow.OptimalString
+// import sc.pardis.shallow.OptimalString
 import org.scalatest._
-import offheap._
+import _root_.offheap._
 import Matchers._
 
-class TupleStringTest extends FlatSpec with Matchers {
+class OffheapStringTest extends FlatSpec with Matchers {
   val alphabet = "abcdefghijklmnopqrstuvwxyz".getBytes
 
-  "TupleString" should "have the correct length" in {
-    val t1 = TupleString("abcde".getBytes)
+  "OffheapString" should "have the correct length" in {
+    val t1 = OffheapString("abcde".getBytes)
     t1.length should be(5)
 
-    val t2 = TupleString("".getBytes)
+    val t2 = OffheapString("".getBytes)
     t2.length should be(0)
 
-    val t3 = TupleString(alphabet)
+    val t3 = OffheapString(alphabet)
     t3.length should be(26)
   }
 
   it should "refuse to be filled with a string longer than 210 characters" in {
-    TupleString(("x" * 210).getBytes)
+    OffheapString(("x" * 210).getBytes)
     intercept[IllegalArgumentException] {
-      TupleString(("x" * 211).getBytes)
+      OffheapString(("x" * 211).getBytes)
     }
   }
 
-  it should "when empty, be equal to another empty TupleString" in {
-    val t1 = TupleString("".getBytes)
-    val t2 = TupleString("".getBytes)
+  it should "when empty, be equal to another empty OffheapString" in {
+    val t1 = OffheapString("".getBytes)
+    val t2 = OffheapString("".getBytes)
     t1 === t2 should be(true)
   }
 
-  it should "behave correctly when comparing two varying TupleStrings " in {
-    val t1 = TupleString("abc".getBytes)
-    val t2 = TupleString("def".getBytes)
+  it should "behave correctly when comparing two varying OffheapStrings " in {
+    val t1 = OffheapString("abc".getBytes)
+    val t2 = OffheapString("def".getBytes)
     t1 =!= t2 should be(true)
   }
 
-  it should "behave correctly when comparing two equal TupleStrings" in {
-    val t1 = TupleString(alphabet)
-    val t2 = TupleString(alphabet)
+  it should "behave correctly when comparing two equal OffheapStrings" in {
+    val t1 = OffheapString(alphabet)
+    val t2 = OffheapString(alphabet)
     t1 === t2 should be(true)
   }
 
   it should "iterate through all the elements of its String21s" in {
-    val t1 = TupleString(("a" * 150).getBytes)
+    val t1 = OffheapString(("a" * 150).getBytes)
     val iter = t1.iterator
     iter.hasNext should be(true)
     var loopCounter = 0
@@ -60,7 +60,7 @@ class TupleStringTest extends FlatSpec with Matchers {
   }
 
   it should "iterate through no element when the length is 0" in {
-    val t1 = TupleString("".getBytes)
+    val t1 = OffheapString("".getBytes)
     val iter = t1.iterator
     iter.hasNext should be(false)
     intercept[NoSuchElementException] {
@@ -69,7 +69,7 @@ class TupleStringTest extends FlatSpec with Matchers {
   }
 
   it should "not iterate after the Iterator has been exhausted" in {
-    val t1 = TupleString("abc".getBytes)
+    val t1 = OffheapString("abc".getBytes)
     val iter = t1.iterator
     iter.next
     iter.next
@@ -81,58 +81,59 @@ class TupleStringTest extends FlatSpec with Matchers {
   }
 
   it should "return the string with the string method" in {
-    val t1 = TupleString(alphabet)
+    val t1 = OffheapString(alphabet)
     t1.string should be("abcdefghijklmnopqrstuvwxyz")
   }
 
-  it should "correctly implement endsWith with another TupleString" in {
-    val t1 = TupleString("0123456789".getBytes)
-    val t2 = TupleString("456789".getBytes)
+  it should "correctly implement endsWith with another OffheapString" in {
+    val t1 = OffheapString("0123456789".getBytes)
+    val t2 = OffheapString("456789".getBytes)
     t1 endsWith t2 should be(true)
 
-    val t3 = TupleString("345".getBytes)
+    val t3 = OffheapString("345".getBytes)
     t1 endsWith t3 should be(false)
 
     t2 endsWith t2 should be(true)
 
-    val t4 = TupleString("45".getBytes)
+    val t4 = OffheapString("45".getBytes)
     t4 endsWith t3 should be(false)
 
-    val t5 = TupleString("".getBytes)
+    val t5 = OffheapString("".getBytes)
     t1 endsWith t5 should be(true)
 
     t5 endsWith t5 should be(true)
   }
 
-  it should "implement diff correctly (as in OptimalString)" in {
-    val t1 = TupleString(alphabet)
-    val o1 = OptimalString(alphabet)
-    t1 diff t1 should be(o1 diff o1)
+  // TODO rewrite it using string diff if possible
+  // it should "implement diff correctly (as in OptimalString)" in {
+  //   val t1 = OffheapString(alphabet)
+  //   val o1 = OptimalString(alphabet)
+  //   t1 diff t1 should be(o1 diff o1)
 
-    val s2 = "123456789"
-    val s3 = "abcd"
-    val s4 = ""
-    val s5 = "@#^defgh122"
+  //   val s2 = "123456789"
+  //   val s3 = "abcd"
+  //   val s4 = ""
+  //   val s5 = "@#^defgh122"
 
-    val t2 = TupleString(s2.getBytes)
-    val t3 = TupleString(s3.getBytes)
-    val t4 = TupleString(s4.getBytes)
-    val t5 = TupleString(s5.getBytes)
+  //   val t2 = OffheapString(s2.getBytes)
+  //   val t3 = OffheapString(s3.getBytes)
+  //   val t4 = OffheapString(s4.getBytes)
+  //   val t5 = OffheapString(s5.getBytes)
 
-    val o2 = OptimalString(s2.getBytes)
-    val o3 = OptimalString(s3.getBytes)
-    val o4 = OptimalString(s4.getBytes)
-    val o5 = OptimalString(s5.getBytes)
+  //   val o2 = OptimalString(s2.getBytes)
+  //   val o3 = OptimalString(s3.getBytes)
+  //   val o4 = OptimalString(s4.getBytes)
+  //   val o5 = OptimalString(s5.getBytes)
 
-    t1 diff t2 should be(o1 diff o2)
-    t2 diff t3 should be(o2 diff o3)
-    t2 diff t4 should be(o2 diff o4)
-    t5 diff t3 should be(o5 diff o3)
-    t4 diff t1 should be(o4 diff o1)
-  }
+  //   t1 diff t2 should be(o1 diff o2)
+  //   t2 diff t3 should be(o2 diff o3)
+  //   t2 diff t4 should be(o2 diff o4)
+  //   t5 diff t3 should be(o5 diff o3)
+  //   t4 diff t1 should be(o4 diff o1)
+  // }
 
   it should "implement apply correctly" in {
-    val t1 = TupleString(alphabet)
+    val t1 = OffheapString(alphabet)
     t1(0) should be('a'.toByte)
     t1(1) should be('b'.toByte)
     t1(25) should be('z'.toByte)
@@ -145,30 +146,30 @@ class TupleStringTest extends FlatSpec with Matchers {
   }
 
   it should "implement startsWith correctly" in {
-    val t1 = TupleString("0123456789".getBytes)
-    val t2 = TupleString("01234".getBytes)
+    val t1 = OffheapString("0123456789".getBytes)
+    val t2 = OffheapString("01234".getBytes)
     t1 startsWith t2 should be(true)
 
-    val t3 = TupleString("345".getBytes)
+    val t3 = OffheapString("345".getBytes)
     t1 startsWith t3 should be(false)
 
     t2 startsWith t2 should be(true)
 
-    val t4 = TupleString("45".getBytes)
+    val t4 = OffheapString("45".getBytes)
     t4 startsWith t3 should be(false)
 
-    val t5 = TupleString("".getBytes)
+    val t5 = OffheapString("".getBytes)
     t1 startsWith t5 should be(true)
 
     t5 startsWith t5 should be(true)
   }
 
   it should "implement containsSlice correctly" in {
-    val t1 = TupleString("0123456789".getBytes)
-    val t2 = TupleString("2345".getBytes)
-    val t3 = TupleString("0123456".getBytes)
-    val t4 = TupleString("910".getBytes)
-    val t5 = TupleString("".getBytes)
+    val t1 = OffheapString("0123456789".getBytes)
+    val t2 = OffheapString("2345".getBytes)
+    val t3 = OffheapString("0123456".getBytes)
+    val t4 = OffheapString("910".getBytes)
+    val t5 = OffheapString("".getBytes)
 
     t1 containsSlice t2 should be(true)
     t2 containsSlice t1 should be(false)
@@ -181,7 +182,7 @@ class TupleStringTest extends FlatSpec with Matchers {
   }
 
   it should "implement slice correctly" in {
-    val t1 = TupleString(alphabet)
+    val t1 = OffheapString(alphabet)
     t1.slice(5, 10).string should be("fghij")
     t1.slice(20, 21).string should be("u")
     t1.slice(16, 16).string should be("")
@@ -191,11 +192,11 @@ class TupleStringTest extends FlatSpec with Matchers {
   }
 
   it should "implement indexOfSlice correctly" in {
-    val t1 = TupleString(alphabet)
-    val t2 = TupleString("defghij".getBytes)
-    val t3 = TupleString(alphabet ++ "0123456789".getBytes)
-    val t4 = TupleString("a".getBytes)
-    val t5 = TupleString("".getBytes)
+    val t1 = OffheapString(alphabet)
+    val t2 = OffheapString("defghij".getBytes)
+    val t3 = OffheapString(alphabet ++ "0123456789".getBytes)
+    val t4 = OffheapString("a".getBytes)
+    val t5 = OffheapString("".getBytes)
     t1.indexOfSlice(t2, 0) should be(3)
     t1.indexOfSlice(t2, 3) should be(3)
     t1.indexOfSlice(t2, 4) should be(-1)

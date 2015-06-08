@@ -22,12 +22,8 @@ object LegoBuild extends Build {
       "junit" % "junit-dep" % "4.10" % "test",
       "org.scalatest" % "scalatest_2.11" % "2.2.0" % "test",
       "org.scala-lang"         %  "scala-reflect" % "2.11.2",
-      "org.scala-lang" % "scala-compiler" % "2.11.2" % "optional",
-      "sh.den" % "scala-offheap_2.11" % "0.1-SNAPSHOT"
+      "org.scala-lang" % "scala-compiler" % "2.11.2" % "optional"
     ),
-
-    // add macro paradise plugin for scala-offheap
-    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0-M5" cross CrossVersion.full),
 
     // add scalac options (verbose deprecation warnings)
     scalacOptions ++= Seq("-deprecation", "-feature"),
@@ -66,6 +62,13 @@ object LegoBuild extends Build {
      name := "lego-core",
      scalacOptions ++= Seq("-optimize"),
      libraryDependencies += "ch.epfl.data" % "sc-pardis-library_2.11" % "0.1-SNAPSHOT"))
+  lazy val dblab_offheap       = Project(id = "dblab-offheap",        base = file("dblab-offheap"),
+   settings = defaults ++ purgatorySettings ++  Seq(
+     name := "dblab-offheap",
+     scalacOptions ++= Seq("-optimize"),
+     // add macro paradise plugin for scala-offheap
+     addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0-M5" cross CrossVersion.full),
+     libraryDependencies += "sh.den" % "scala-offheap_2.11" % "0.1-SNAPSHOT"))
   lazy val legocompiler = Project(id = "lego-compiler", base = file("lego-compiler"), settings = defaults ++ Seq(name := "lego-compiler",
       libraryDependencies ++= Seq(//"ch.epfl.lamp" % "scala-yinyang_2.11" % "0.2.0-SNAPSHOT",
         "ch.epfl.data" % "sc-pardis-compiler_2.11" % "0.1-SNAPSHOT",
