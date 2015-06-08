@@ -86,7 +86,7 @@ case class Max(expr: Expression) extends Aggregation
 trait LiteralExpression extends Expression {
   override def isLiteral = true
 }
-case class IntLiteral(v: Long) extends LiteralExpression
+case class IntLiteral(v: Int) extends LiteralExpression
 case class FloatLiteral(v: Float) extends LiteralExpression
 case class StringLiteral(v: String) extends LiteralExpression
 case class NullLiteral() extends LiteralExpression

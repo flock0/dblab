@@ -25,7 +25,7 @@ class SQLTreeToQueryPlanConverter(schema: Schema) {
   def loadRelations(sqlTree: SelectStatement) {
     val sqlRelations = sqlTree.relations;
     val schemaRelations = sqlRelations.map(r => schema.findTable(r match {
-      case t: Table    => t.name
+      case t: SQLTable => t.name
       case s: Subquery => s.alias
     }))
     schemaRelations.foreach(tn => tableMap += tn.name -> {
@@ -55,7 +55,10 @@ class SQLTreeToQueryPlanConverter(schema: Schema) {
       (typeTag[A], typeTag[B]) match {
         case (x, y) if x == y        => n1 -> n2
         case (IntType, DoubleType)   => n1.asInstanceOf[Int].toDouble -> n2
+        case (IntType, FloatType)    => n1.asInstanceOf[Int].toFloat -> n2
+        case (FloatType, DoubleType) => n1.asInstanceOf[Float].toDouble -> n2
         case (DoubleType, FloatType) => n1 -> n2.asInstanceOf[Float].toDouble
+        case (DoubleType, IntType)   => n1 -> n2.asInstanceOf[Int].toDouble
         case (x, y)                  => throw new Exception(s"Does not know how to find the common type for $x and $y")
       }).asInstanceOf[(Any, Any)]
   }

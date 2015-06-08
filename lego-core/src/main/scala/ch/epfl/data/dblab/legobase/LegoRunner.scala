@@ -39,9 +39,9 @@ trait LegoRunner {
 
     val excludedQueries = Nil
 
-    val ddlDefStr = scala.io.Source.fromFile("/home/klonatos/Work/dblab/tpch/dss.ddl").mkString
+    val ddlDefStr = scala.io.Source.fromFile("tpch/dss.ddl").mkString
     val schemaDDL = DDLParser.parse(ddlDefStr)
-    val constraintsDefStr = scala.io.Source.fromFile("/home/klonatos/Work/dblab/tpch/dss.ri").mkString
+    val constraintsDefStr = scala.io.Source.fromFile("tpch/dss.ri").mkString
     val constraintsDDL = DDLParser.parse(constraintsDefStr)
     val schemaWithConstraints = schemaDDL ++ constraintsDDL
     val schema = DDLInterpreter.interpret(schemaWithConstraints)
@@ -52,16 +52,16 @@ trait LegoRunner {
     //DDLInterpreter.interpret(dropDDL)
     //System.out.println(finalSchema)
 
-    /*val stmt = SQLParser.parse("SELECT * FROM LINEITEM WHERE " +
+    val stmt = SQLParser.parse("SELECT * FROM LINEITEM WHERE " +
       " L_SHIPDATE >= DATE '1996-01-01' AND L_SHIPDATE < DATE '1997-01-01'" +
       " AND L_DISCOUNT BETWEEN 0.09 - 0.01 AND 0.09 + 0.01 " +
-      " AND L_QUANTITY < 24.0;")
+      " AND L_QUANTITY < 24;")
     System.out.println(stmt)
 
-    val schema: Schema = schema.getSchema(Config.datapath, Config.sf) // TODO-GEN : This should be given as argument
+    // val schema: Schema = schema.getSchema(Config.datapath, Config.sf) // TODO-GEN : This should be given as argument
     new SQLSemanticCheckerAndTypeInference(schema).checkAndInfer(stmt)
     val qp = new SQLTreeToQueryPlanConverter(schema).convert(stmt)
-    System.exit(0)*/
+    System.exit(0)
     // TODO: These stats will die soon
     schema.stats += "DISTINCT_L_SHIPMODE" -> 7
     schema.stats += "DISTINCT_L_RETURNFLAG" -> 3
