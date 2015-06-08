@@ -22,8 +22,12 @@ object LegoBuild extends Build {
       "junit" % "junit-dep" % "4.10" % "test",
       "org.scalatest" % "scalatest_2.11" % "2.2.0" % "test",
       "org.scala-lang"         %  "scala-reflect" % "2.11.2",
-      "org.scala-lang" % "scala-compiler" % "2.11.2" % "optional"
+      "org.scala-lang" % "scala-compiler" % "2.11.2" % "optional",
+      "sh.den" % "scala-offheap_2.11" % "0.1-SNAPSHOT"
     ),
+
+    // add macro paradise plugin for scala-offheap
+    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0-M5" cross CrossVersion.full),
 
     // add scalac options (verbose deprecation warnings)
     scalacOptions ++= Seq("-deprecation", "-feature"),
