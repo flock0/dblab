@@ -54,6 +54,7 @@ class Settings(val args: List[String]) {
   def largeOutputHoisting(targetIsC: Boolean, tpchQuery: Int): Boolean = !onlyLoading && (hasSetting(LargeOutputHoistingSetting) || (isLargeOutputQuery(tpchQuery) && targetIsC))
   def noFieldRemoval: Boolean = hasSetting(NoFieldRemovalSetting)
   def noSingletonHashMap: Boolean = hasSetting(NoSingletonHashMapSetting)
+  def isOffheap: Boolean = hasSetting(OffheapSetting)
   def nameIsWithFlag: Boolean = hasSetting(OutputNameWithFlagSetting)
   def onlyLoading: Boolean = hasSetting(OnlyLoaderSetting)
 
@@ -88,6 +89,7 @@ object Settings {
     LargeOutputHoistingSetting,
     NoFieldRemovalSetting,
     NoSingletonHashMapSetting,
+    OffheapSetting,
     OutputNameWithFlagSetting,
     OnlyLoaderSetting)
 }
@@ -182,6 +184,9 @@ case object NoFieldRemovalSetting extends OptimizationSetting("no-field-rem",
 case object NoSingletonHashMapSetting extends OptimizationSetting("no-sing-hm",
   "Disables the singleton hashmap optimization",
   "Deoptimization!")
+case object OffheapSetting extends OptimizationSetting("off-heap",
+  "Converts Pointer-Store to Row-Store",
+  "Only for Scala code generation.")
 
 /* 
  * Available option settings

@@ -186,9 +186,9 @@ class LegoCompiler(val DSL: LoweringLegoBase, val number: Int, val scalingFactor
         new LegoCGenerator(false, outputFile, true)
     } else {
       if (settings.noLetBinding)
-        new LegoScalaASTGenerator(DSL, false, outputFile)
+        new LegoScalaASTGenerator(DSL, false, outputFile, settings.isOffheap)
       else
-        new LegoScalaGenerator(false, outputFile)
+        new LegoScalaGenerator(false, outputFile, settings.isOffheap)
     }
 
 }

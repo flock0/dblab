@@ -7,6 +7,7 @@ import sc.pardis.ir._
 import sc.pardis.prettyprinter._
 import scala.language.implicitConversions
 import sc.pardis.deep.scalalib._
+import sc.pardis.types._
 
 /**
  * The class responsible for Scala code generation in ANF.
@@ -18,7 +19,7 @@ import sc.pardis.deep.scalalib._
  * LegoBase or not.
  * @param outputFileName the name of output file
  */
-class LegoScalaGenerator(val shallow: Boolean = false, val outputFileName: String = "generatedProgram") extends ScalaCodeGenerator {
+class LegoScalaGenerator(val shallow: Boolean = false, val outputFileName: String = "generatedProgram", val isOffheap: Boolean = false) extends ScalaCodeGenerator {
 
   /**
    * Returns the generated code of the necessary import for the shallow libraries
@@ -32,6 +33,11 @@ import sc.pardis.shallow._
   """
   else
     ""
+
+  def getOffheapHeader: Document = if (isOffheap) doc"""import ch.epfl.data.dblab.OffheapString
+import _root_.offheap._"""
+  else
+    Document.empty
   /**
    * Returns the generated code that is put in the header
    */
@@ -39,6 +45,7 @@ import sc.pardis.shallow._
 package dblab.legobase
 
 $getShallowHeader
+$getOffheapHeader
 import scala.collection.mutable.Set
 import scala.collection.mutable.HashMap
 import scala.collection.mutable.TreeSet
@@ -77,6 +84,21 @@ object OrderingFactory {
   def apply(program: PardisProgram) {
     generate(program, outputFileName)
   }
+
+  import ch.epfl.data.sc.pardis.deep.OptimalStringIRs.{ OptimalStringType, OptimalStringNew }
+
+  override def tpeToDocument[T](tp: PardisType[T]): Document = tp match {
+    case OptimalStringType if isOffheap => doc"OffheapString"
+    case _                              => super.tpeToDocument(tp)
+  }
+
+  override def constructorNodeToDocument(fun: ConstructorNode[_]) = fun match {
+    case OptimalStringNew(array) if isOffheap => doc"OffheapString($array)"
+    case _                                    => super.functionNodeToDocument(fun)
+  }
+
+  override def getStruct(structDef: PardisStructDef[_]): Document = (if (isOffheap) doc"@data " else Document.empty) ::
+    super.getStruct(structDef)
 }
 
 /**
@@ -90,7 +112,7 @@ object OrderingFactory {
  * LegoBase or not.
  * @param outputFileName the name of output file
  */
-class LegoScalaASTGenerator(val IR: Base, override val shallow: Boolean = false, override val outputFileName: String = "generatedProgram") extends LegoScalaGenerator(shallow, outputFileName) with ASTCodeGenerator[Base]
+class LegoScalaASTGenerator(val IR: Base, override val shallow: Boolean = false, override val outputFileName: String = "generatedProgram", override val isOffheap: Boolean = false) extends LegoScalaGenerator(shallow, outputFileName, isOffheap) with ASTCodeGenerator[Base]
 
 /**
  * The class responsible for C code generation in ANF.
