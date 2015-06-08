@@ -24,7 +24,7 @@ import scala.reflect._
   thisComponent = "ch.epfl.data.dblab.legobase.deep.DeepDSL")
 class MetaInfo
 
-@needs[(K2DBScanner, Array[_], OptimalString)]
+@needs[(LegobaseScanner, Array[_], OptimalString)]
 @deep
 trait Loader
 
@@ -36,7 +36,7 @@ object Loader {
   @dontInline
   def getFullPath(fileName: String): String = Config.datapath + fileName
 
-  def loadString(size: Int, s: K2DBScanner) = {
+  def loadString(size: Int, s: LegobaseScanner) = {
     val NAME = new Array[Byte](size + 1)
     s.next(NAME)
     new OptimalString(NAME.filter(y => y != 0))
@@ -61,7 +61,7 @@ object Loader {
   def loadTable[R](table: Table)(implicit c: ClassTag[R]): Array[R] = {
     val size = fileLineCount(table.resourceLocator)
     val arr = new Array[R](size)
-    val ldr = new K2DBScanner(table.resourceLocator)
+    val ldr = new LegobaseScanner(table.resourceLocator)
     val recordType = currentMirror.staticClass(c.runtimeClass.getName).asType.toTypeConstructor
 
     val classMirror = currentMirror.reflectClass(recordType.typeSymbol.asClass)

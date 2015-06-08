@@ -93,7 +93,7 @@ case class NullLiteral() extends LiteralExpression
 case class DateLiteral(d: Integer) extends LiteralExpression
 
 trait Relation extends Node
-case class Table(name: String, alias: Option[String]) extends Relation
+case class SQLTable(name: String, alias: Option[String]) extends Relation
 case class Subquery(subquery: SelectStatement, alias: String) extends Relation
 
 sealed abstract trait JoinType

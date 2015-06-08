@@ -13,6 +13,7 @@ import sc.pardis.types._
 import scala.reflect._
 import scala.reflect.runtime.universe._
 import scala.reflect.runtime.currentMirror
+import ch.epfl.data.dblab.legobase.frontend.DDLInterpreter
 
 @metadeep(
   folder = "",
@@ -25,7 +26,7 @@ import scala.reflect._""",
   thisComponent = "ch.epfl.data.dblab.legobase.deep.DeepDSL")
 class MetaInfoLoader
 
-@needs[(K2DBScanner, Array[_], REGIONRecord, PARTSUPPRecord, PARTRecord, NATIONRecord, SUPPLIERRecord, LINEITEMRecord, ORDERSRecord, CUSTOMERRecord, OptimalString, Loader, Table)]
+@needs[(LegobaseScanner, Array[_], REGIONRecord, PARTSUPPRecord, PARTRecord, NATIONRecord, SUPPLIERRecord, LINEITEMRecord, ORDERSRecord, CUSTOMERRecord, OptimalString, Loader, Table)]
 @deep
 trait TPCHLoader
 
@@ -34,10 +35,14 @@ trait TPCHLoader
  */
 object TPCHLoader {
 
-  @dontLift
-  val tpchSchema: Schema = TPCHSchema.getSchema(Config.datapath, getScalingFactor)
+  //@dontLift
+  //val tpchSchema: Schema = TPCHSchema.getSchema(Config.datapath, getScalingFactor)
   @dontInline
-  def getTable(tableName: String): Table = tpchSchema.tables.find(t => t.name == tableName).get
+  def getTable(tableName: String): Table =
+    // NEWVERSION (not hardcoded tpch schema -- TODO Must be generalized without DDLInterpreter)
+    DDLInterpreter.getCurrSchema.tables.find(t => t.name == tableName).get
+  // OLDVERSION (when tpchSchema existed)
+  // tpchSchema.tables.find(t => t.name == tableName).get
   @dontLift
   def getScalingFactor: Double = Config.datapath.slice(Config.datapath.lastIndexOfSlice("sf") + 2, Config.datapath.length - 1).toDouble //TODO Pass SF to Config
 

@@ -72,7 +72,7 @@ class SQLTreeToQueryPlanConverter(schema: Schema) {
     case And(left, right) =>
       parseExpression[Boolean](left) && parseExpression[Boolean](right)
     // Comparison Operators
-    case GreaterOrEqual(left, right) =>
+    /* case GreaterOrEqual(left, right) =>
       System.out.println(left.tp)
       System.out.println(right.tp)
       /*implicit val numVal = ({
@@ -86,10 +86,10 @@ class SQLTreeToQueryPlanConverter(schema: Schema) {
       val num1 = getNumVal(left.tp)
       val num2 = getNumVal(right.tp)
 
-      parseNumericExpression(left)(num1, left.tp/*.asInstanceOf[TypeTag[NumType]]*/) >= parseNumericExpression(right)(num2, right.tp/*.asInstanceOf[TypeTag[NumType]]*/)
+      parseNumericExpression(left)(num1, left.tp /*.asInstanceOf[TypeTag[NumType]]*/ ) >= parseNumericExpression(right)(num2, right.tp /*.asInstanceOf[TypeTag[NumType]]*/ )
     case LessThan(left, right) =>
       implicit val numVal = getNumVal(right.tp)
-      parseNumericExpression(left) < parseNumericExpression(right)
+      parseNumericExpression(left) < parseNumericExpression(right)*/
   }).asInstanceOf[A]
 
   def parseWhereClauses(e: Option[Expression], parentOp: Operator[_]): Operator[_] = e match {

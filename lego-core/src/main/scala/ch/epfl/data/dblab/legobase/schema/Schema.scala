@@ -4,41 +4,73 @@ package schema
 
 import sc.pardis.types._
 import scala.language.implicitConversions
-import scala.collection.immutable.ListMap
+import scala.collection.mutable.ListMap
+import scala.collection.mutable.ArrayBuffer
 
-case class Catalog(schemata: Map[String, Schema])
-case class Schema(tables: List[Table], stats: Statistics = Statistics()) {
+object Catalog {
+  val schemata = new scala.collection.mutable.HashMap[String, Schema]()
+}
+case class Schema(tables: ArrayBuffer[Table] = ArrayBuffer(), stats: Statistics = Statistics()) {
   def findTable(name: String) = tables.find(t => t.name == name) match {
     case Some(tab) => tab
     case None      => throw new Exception("Table " + name + " not found in schema!")
   }
-  def findAttribute(attrName: String): Option[Attribute] = tables.map(t => t.attributes).flatten.find(attr => attr.name == attrName)
+  def findAttribute(attrName: String): Option[Attribute] = tables.map(t => t.findAttribute(attrName)).flatten.toList match {
+    case List() => throw new Exception("Attribute " + attrName + " not found in schema!")
+    case l      => Some(l.apply(0)) // todo -- OK, but assumes that all attribute names are unique
+  }
+  override def toString() = {
+    val schemaName = Catalog.schemata.find({ case (k, v) => v.equals(this) }).get._1
+    val header = "\nSchema " + schemaName + "\n" + "-" * (schemaName.length + 8) + "\n\n"
+    tables.foldLeft(header)((str, t) => {
+      str + t.name + " (" + t.attributes.mkString("\n", "\n", "\n") + ");\n" + t.constraints.mkString("\n") + "\n\n"
+    })
+  }
 }
-case class Table(name: String, attributes: List[Attribute], constraints: List[Constraint], resourceLocator: String, var rowCount: Long) {
+case class Table(name: String, attributes: List[Attribute], constraints: ArrayBuffer[Constraint], resourceLocator: String, var rowCount: Long) {
   def primaryKey: Option[PrimaryKey] = constraints.collectFirst { case pk: PrimaryKey => pk }
-  def foreignKeys: List[ForeignKey] = constraints.collect { case fk: ForeignKey => fk }
-  def notNulls: List[NotNull] = constraints.collect { case nn: NotNull => nn }
-  def uniques: List[Unique] = constraints.collect { case unq: Unique => unq }
+  def dropPrimaryKey = primaryKey match {
+    case Some(pk) => constraints -= pk
+    case None     => System.out.println(s"${scala.Console.YELLOW}Warning${scala.Console.RESET}: Primary Key for table " + name + " cannot be dropped as it does not exist!")
+  }
+  def foreignKeys: List[ForeignKey] = constraints.collect { case fk: ForeignKey => fk }.toList
+  def foreignKey(foreignKeyName: String): Option[ForeignKey] = foreignKeys.find(f => f.foreignKeyName == foreignKeyName)
+  def dropForeignKey(foreignKeyName: String) = foreignKey(foreignKeyName) match {
+    case Some(fk) => constraints -= fk
+    case None     => System.out.println(s"${scala.Console.YELLOW}Warning${scala.Console.RESET}: ForeignKey Key " + foreignKeyName + " for table " + name + " cannot be dropped as it does not exist!")
+  }
+  def notNulls: List[NotNull] = constraints.collect { case nn: NotNull => nn }.toList
+  def uniques: List[Unique] = constraints.collect { case unq: Unique => unq }.toList
   def autoIncrement: Option[AutoIncrement] = constraints.collectFirst { case ainc: AutoIncrement => ainc }
+  def findAttribute(attrName: String): Option[Attribute] = attributes.find(attr => attr.name == attrName)
 }
 case class Attribute(name: String, dataType: Tpe, constraints: List[Constraint] = List()) {
   def hasConstraint(con: Constraint) = constraints.contains(con)
+  override def toString() = {
+    "    " + "%-20s".format(name) + "%-20s".format(dataType) + constraints.map(c => "@%-10s".format(c)).mkString(" , ")
+  }
 }
 object Attribute {
   implicit def tuple2ToAttribute(nameAndType: (String, Tpe)): Attribute = Attribute(nameAndType._1, nameAndType._2)
 }
 
 sealed trait Constraint
-case class PrimaryKey(attributes: List[Attribute]) extends Constraint
-case class ForeignKey(ownTable: String, referencedTable: String, attributes: List[(String, String)], var selectivity: Double = 1) extends Constraint {
+case class PrimaryKey(attributes: List[Attribute]) extends Constraint {
+  override def toString() = "PrimaryKey(" + attributes.map(a => a.name).mkString(",") + ")"
+}
+case class ForeignKey(foreignKeyName: String, ownTable: String, referencedTable: String, attributes: List[Attribute]) extends Constraint {
+  override def toString() = "ForeignKey(" + attributes.map(a => a.name).mkString(",") + ") references " + referencedTable
+
   def foreignTable(implicit s: Schema): Option[Table] = s.tables.find(t => t.name == referencedTable)
   def thisTable(implicit s: Schema): Option[Table] = s.tables.find(t => t.name == ownTable)
-  def matchingAttributes(implicit s: Schema): List[(Attribute, Attribute)] = attributes.map { case (localAttr, foreignAttr) => thisTable.get.attributes.find(a => a.name == localAttr).get -> foreignTable.get.attributes.find(a => a.name == foreignAttr).get }
+  //def matchingAttributes(implicit s: Schema): List[(Attribute, Attribute)] = attributes.map { case (localAttr, foreignAttr) => thisTable.get.attributes.find(a => a.name == localAttr).get -> foreignTable.get.attributes.find(a => a.name == foreignAttr).get }
 }
 case class NotNull(attribute: Attribute) extends Constraint
 case class Unique(attribute: Attribute) extends Constraint
 case class AutoIncrement(attribute: Attribute) extends Constraint
-object Compressed extends Constraint
+object Compressed extends Constraint {
+  override def toString = "COMPRESSED"
+}
 
 // TODO-GEN: Move this to its own file
 case class Statistics() {
@@ -111,4 +143,4 @@ case class Statistics() {
   }
 }
 
-// TODO add a type representation for fixed-size string
+// TODO add a type representation for fixed-size stringd-sizz

@@ -39,16 +39,58 @@ trait LegoRunner {
 
     val excludedQueries = Nil
 
-    val stmt = SQLParser.parse("SELECT * FROM LINEITEM WHERE " +
+    val ddlDefStr = scala.io.Source.fromFile("/home/klonatos/Work/dblab/tpch/dss.ddl").mkString
+    val schemaDDL = DDLParser.parse(ddlDefStr)
+    val constraintsDefStr = scala.io.Source.fromFile("/home/klonatos/Work/dblab/tpch/dss.ri").mkString
+    val constraintsDDL = DDLParser.parse(constraintsDefStr)
+    val schemaWithConstraints = schemaDDL ++ constraintsDDL
+    val schema = DDLInterpreter.interpret(schemaWithConstraints)
+    System.out.println(schema)
+
+    //val dropDefStr = scala.io.Source.fromFile("/home/klonatos/Work/dblab/tpch/drop.sql").mkString
+    //val dropDDL = DDLParser.parse(dropDefStr)
+    //DDLInterpreter.interpret(dropDDL)
+    //System.out.println(finalSchema)
+
+    /*val stmt = SQLParser.parse("SELECT * FROM LINEITEM WHERE " +
       " L_SHIPDATE >= DATE '1996-01-01' AND L_SHIPDATE < DATE '1997-01-01'" +
       " AND L_DISCOUNT BETWEEN 0.07 - 0.01 AND 0.07 + 0.01 " +
       " AND L_QUANTITY < 24.0;")
     System.out.println(stmt)
 
-    val schema: Schema = TPCHSchema.getSchema(Config.datapath, Config.sf) // TODO-GEN : This should be given as argument
+    val schema: Schema = schema.getSchema(Config.datapath, Config.sf) // TODO-GEN : This should be given as argument
     new SQLSemanticCheckerAndTypeInference(schema).checkAndInfer(stmt)
     val qp = new SQLTreeToQueryPlanConverter(schema).convert(stmt)
-    System.exit(0)
+    System.exit(0)*/
+    // TODO: These stats will die soon
+    schema.stats += "DISTINCT_L_SHIPMODE" -> 7
+    schema.stats += "DISTINCT_L_RETURNFLAG" -> 3
+    schema.stats += "DISTINCT_L_LINESTATUS" -> 2
+    schema.stats += "DISTINCT_L_ORDERKEY" -> schema.stats.getCardinality("LINEITEM")
+    schema.stats += "DISTINCT_L_PARTKEY" -> schema.stats.getCardinality("PART")
+    schema.stats += "DISTINCT_L_SUPPKEY" -> schema.stats.getCardinality("SUPPLIER")
+    schema.stats += "DISTINCT_N_NAME" -> 25
+    schema.stats += "DISTINCT_O_SHIPPRIORITY" -> 1
+    schema.stats += "DISTINCT_O_ORDERDATE" -> 365 * 7 // 7-whole years
+    schema.stats += "DISTINCT_O_ORDERPRIORITY" -> 5
+    schema.stats += "DISTINCT_O_ORDERKEY" -> schema.stats.getCardinality("LINEITEM")
+    schema.stats += "DISTINCT_O_CUSTKEY" -> schema.stats.getCardinality("CUSTOMER")
+    schema.stats += "DISTINCT_P_PARTKEY" -> schema.stats.getCardinality("PART")
+    schema.stats += "DISTINCT_P_BRAND" -> 25
+    schema.stats += "DISTINCT_P_SIZE" -> 50
+    schema.stats += "DISTINCT_P_TYPE" -> 150
+    schema.stats += "DISTINCT_PS_PARTKEY" -> schema.stats.getCardinality("PART")
+    schema.stats += "DISTINCT_PS_SUPPKEY" -> schema.stats.getCardinality("SUPPLIER")
+    schema.stats += "DISTINCT_PS_AVAILQTY" -> 9999
+    schema.stats += "DISTINCT_S_NAME" -> schema.stats.getCardinality("SUPPLIER")
+    schema.stats += "DISTINCT_S_NATIONKEY" -> 25
+    schema.stats += "DISTINCT_C_CUSTKEY" -> schema.stats.getCardinality("CUSTOMER")
+    schema.stats += "DISTINCT_C_NAME" -> schema.stats.getCardinality("CUSTOMER")
+    schema.stats += "DISTINCT_C_NATIONKEY" -> 25
+
+    schema.stats += "NUM_YEARS_ALL_DATES" -> 7
+
+    System.out.println(schema.stats.mkString("\n"))
 
     val queries: scala.collection.immutable.List[String] =
       if (args.length >= 3 && args(2) == "testsuite-scala") (for (i <- 1 to 22 if !excludedQueries.contains(i)) yield "Q" + i).toList

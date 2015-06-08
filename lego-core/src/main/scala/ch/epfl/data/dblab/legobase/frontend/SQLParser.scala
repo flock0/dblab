@@ -8,10 +8,10 @@ import scala.util.parsing.combinator._
 import scala.util.parsing.combinator.lexical._
 import scala.util.parsing.combinator.syntactical._
 import scala.util.parsing.combinator.token._
+import scala.util.parsing.input.CharArrayReader.EofCh
+
 //TODO : should this be here?
 import ch.epfl.data.dblab.legobase.queryengine.GenericEngine
-
-import scala.util.parsing.input.CharArrayReader.EofCh
 
 /**
  * A simple SQL parser.
@@ -123,7 +123,7 @@ object SQLParser extends StandardTokenParsers {
 
   def parseSimpleRelation: Parser[Relation] = (
     ident ~ ("AS".? ~> ident.?) ^^ {
-      case tbl ~ alias => Table(tbl, alias)
+      case tbl ~ alias => SQLTable(tbl, alias)
     }
     | ("(" ~> parseSelectStatement <~ ")") ~ ("AS".? ~> ident) ^^ {
       case subq ~ alias => Subquery(subq, alias)

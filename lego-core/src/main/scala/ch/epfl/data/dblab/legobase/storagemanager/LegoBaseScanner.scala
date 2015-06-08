@@ -15,7 +15,7 @@ import sc.pardis.annotations._
  */
 @noImplementation
 @deep
-class K2DBScanner(filename: String) {
+class LegobaseScanner(filename: String) {
   @dontLift private var byteRead: Int = 0
   @dontLift private var intDigits: Int = 0
   @dontLift private var delimiter: Char = '|'
