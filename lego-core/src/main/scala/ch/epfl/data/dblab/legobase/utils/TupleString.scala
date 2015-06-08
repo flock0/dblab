@@ -3,6 +3,7 @@ package dblab.legobase
 package utils
 
 import sc.pardis.shallow.OptimalString
+import scala.collection.mutable.ArrayBuilder
 import ch.epfl.data.sc.pardis.annotations._
 import offheap._
 
@@ -120,13 +121,49 @@ object String21 {
     __4.iterator ++ __5.iterator ++ __6.iterator ++
     __7.iterator ++ __8.iterator ++ __9.iterator
 
-  def apply(i: Int): Byte = ???
-  def startsWith(o: TupleString): Boolean = ???
-  def containsSlice(o: TupleString): Boolean = ???
-  def slice(start: Int, end: Int): TupleString = ???
-  def indexOfSlice(o: TupleString, i: Int): Int = ???
-  def endsWith(that: TupleString): Boolean = this.iterator.drop(length - that.length).sameElements(that.iterator)
+  def apply(i: Int): Byte =
+    if (i >= length)
+      throw new NoSuchElementException(s"no element with index $i")
+    else i / 21 match {
+      case 0 => __0(i)
+      case 1 => __1(i - (1 * 21))
+      case 2 => __2(i - (2 * 21))
+      case 3 => __3(i - (3 * 21))
+      case 4 => __4(i - (4 * 21))
+      case 5 => __5(i - (5 * 21))
+      case 6 => __6(i - (6 * 21))
+      case 7 => __7(i - (7 * 21))
+      case 8 => __8(i - (8 * 21))
+      case 9 => __9(i - (9 * 21))
+      case _ => throw new NoSuchElementException(s"no element with index $i")
+    }
+  def startsWith(that: TupleString): Boolean = {
+    var i = 0
+    var j = 0
+    val thisLen = length
+    val thatLen = that.length
+    while (i < thisLen && j < thatLen && this(i) == that(j)) {
+      i += 1
+      j += 1
+    }
+    j == thatLen
+  }
+  def containsSlice(that: TupleString): Boolean = indexOfSlice(that, 0) != -1
+  def slice(from: Int, until: Int): TupleString = {
+    val lo = math.max(from, 0)
+    val hi = math.min(math.max(until, 0), length)
+    val elems = math.max(hi - lo, 0)
+    val b = ArrayBuilder.make[Byte]
+    b.sizeHint(elems)
 
+    var i = lo
+    while (i < hi) {
+      b += this(i)
+      i += 1
+    }
+    TupleString(b.result())
+  }
+  def endsWith(that: TupleString): Boolean = this.iterator.drop(length - that.length).sameElements(that.iterator)
   def diff(that: TupleString): Int = (this.iterator zip that.iterator).foldLeft(0)((res, e) => { if (res == 0) e._1 - e._2 else res })
   def ===(that: TupleString): Boolean = this.iterator.sameElements(that.iterator)
   def =!=(that: TupleString): Boolean = !(===(that))
@@ -135,6 +172,102 @@ object String21 {
     this.iterator.foreach { b => sb += b.toChar }
     sb.toString
   }
+
+  def indexOfSlice(that: TupleString, from: Int): Int = ??? /*{
+    val l = length
+    val tl = that.length
+    val clippedFrom = math.max(0, from)
+    if (from > l) -1
+    else if (tl < 1) clippedFrom
+    else if (l < tl) -1
+    else kmpSearch(thisCollection, clippedFrom, l, that.seq, 0, tl, forward = true)
+  }
+  
+  /**
+   * A KMP implementation, based on the undoubtedly reliable wikipedia entry.
+   *  Note: I made this private to keep it from entering the API.  That can be reviewed.
+   *
+   *  @author paulp, Rex Kerr
+   *  @since  2.10
+   *  @param  S       Sequence that may contain target
+   *  @param  m0      First index of S to consider
+   *  @param  m1      Last index of S to consider (exclusive)
+   *  @param  W       Target sequence
+   *  @param  n0      First index of W to match
+   *  @param  n1      Last index of W to match (exclusive)
+   *  @param  forward Direction of search (from beginning==true, from end==false)
+   *  @return Index of start of sequence if found, -1 if not (relative to beginning of S, not m0).
+   */
+  private def kmpSearch[B](S: Seq[B], m0: Int, m1: Int, W: Seq[B], n0: Int, n1: Int, forward: Boolean): Int = {
+    // Check for redundant case when target has single valid element
+    def clipR(x: Int, y: Int) = if (x < y) x else -1
+    def clipL(x: Int, y: Int) = if (x > y) x else -1
+
+    if (n1 == n0 + 1) {
+      if (forward)
+        clipR(S.indexOf(W(n0), m0), m1)
+      else
+        clipL(S.lastIndexOf(W(n0), m1 - 1), m0 - 1)
+    } // Check for redundant case when both sequences are same size
+    else if (m1 - m0 == n1 - n0) {
+      // Accepting a little slowness for the uncommon case.
+      if (S.view.slice(m0, m1) == W.view.slice(n0, n1)) m0
+      else -1
+    } // Now we know we actually need KMP search, so do it
+    else S match {
+      case xs: IndexedSeq[_] =>
+        // We can index into S directly; it should be adequately fast
+        val Wopt = kmpOptimizeWord(W, n0, n1, forward)
+        val T = kmpJumpTable(Wopt, n1 - n0)
+        var i, m = 0
+        val zero = if (forward) m0 else m1 - 1
+        val delta = if (forward) 1 else -1
+        while (i + m < m1 - m0) {
+          if (Wopt(i) == S(zero + delta * (i + m))) {
+            i += 1
+            if (i == n1 - n0) return (if (forward) m + m0 else m1 - m - i)
+          } else {
+            val ti = T(i)
+            m += i - ti
+            if (i > 0) i = ti
+          }
+        }
+        -1
+      case _ =>
+        // We had better not index into S directly!
+        val iter = S.iterator.drop(m0)
+        val Wopt = kmpOptimizeWord(W, n0, n1, forward = true)
+        val T = kmpJumpTable(Wopt, n1 - n0)
+        val cache = new Array[AnyRef](n1 - n0) // Ring buffer--need a quick way to do a look-behind
+        var largest = 0
+        var i, m = 0
+        var answer = -1
+        while (m + m0 + n1 - n0 <= m1) {
+          while (i + m >= largest) {
+            cache(largest % (n1 - n0)) = iter.next().asInstanceOf[AnyRef]
+            largest += 1
+          }
+          if (Wopt(i) == cache((i + m) % (n1 - n0))) {
+            i += 1
+            if (i == n1 - n0) {
+              if (forward) return m + m0
+              else {
+                i -= 1
+                answer = m + m0
+                val ti = T(i)
+                m += i - ti
+                if (i > 0) i = ti
+              }
+            }
+          } else {
+            val ti = T(i)
+            m += i - ti
+            if (i > 0) i = ti
+          }
+        }
+        answer
+    }
+  }*/
 }
 object TupleString {
   def apply(data: scala.Array[Byte])(implicit alloc: Allocator): TupleString = {

@@ -46,12 +46,6 @@ class TupleStringTest extends FlatSpec with Matchers {
     t1 === t2 should be(true)
   }
 
-  it should "behave correctly when comparing to an OptimalString" in {
-    val t1 = TupleString(alphabet)
-    val o1 = OptimalString(alphabet)
-    t1 === o1 should be(true)
-  }
-
   it should "iterate through all the elements of its String21s" in {
     val t1 = TupleString(("a" * 150).getBytes)
     val iter = t1.iterator
@@ -110,35 +104,110 @@ class TupleStringTest extends FlatSpec with Matchers {
     t5 endsWith t5 should be(true)
   }
 
-  it should "correctly implement endsWith with an OptimalString" in {
-    val t1 = TupleString("0123456789".getBytes)
-    val o1 = OptimalString("456789".getBytes)
-    t1 endsWith o1 should be(true)
+  it should "implement diff correctly (as in OptimalString)" in {
+    val t1 = TupleString(alphabet)
+    val o1 = OptimalString(alphabet)
+    t1 diff t1 should be(o1 diff o1)
 
-    val o2 = OptimalString("345".getBytes)
-    t1 endsWith o2 should be(false)
+    val s2 = "123456789"
+    val s3 = "abcd"
+    val s4 = ""
+    val s5 = "@#^defgh122"
 
-    val o3 = OptimalString("".getBytes)
-    t1 endsWith o3 should be(true)
+    val t2 = TupleString(s2.getBytes)
+    val t3 = TupleString(s3.getBytes)
+    val t4 = TupleString(s4.getBytes)
+    val t5 = TupleString(s5.getBytes)
+
+    val o2 = OptimalString(s2.getBytes)
+    val o3 = OptimalString(s3.getBytes)
+    val o4 = OptimalString(s4.getBytes)
+    val o5 = OptimalString(s5.getBytes)
+
+    t1 diff t2 should be(o1 diff o2)
+    t2 diff t3 should be(o2 diff o3)
+    t2 diff t4 should be(o2 diff o4)
+    t5 diff t3 should be(o5 diff o3)
+    t4 diff t1 should be(o4 diff o1)
   }
 
-  it should "implement diff correctly" in (pending)
+  it should "implement apply correctly" in {
+    val t1 = TupleString(alphabet)
+    t1(0) should be('a'.toByte)
+    t1(1) should be('b'.toByte)
+    t1(25) should be('z'.toByte)
+    intercept[NoSuchElementException] {
+      t1(26)
+    }
+    intercept[NoSuchElementException] {
+      t1(-1)
+    }
+  }
 
-  it should "implement apply correctly" in (pending)
+  it should "implement startsWith correctly" in {
+    val t1 = TupleString("0123456789".getBytes)
+    val t2 = TupleString("01234".getBytes)
+    t1 startsWith t2 should be(true)
 
-  it should "implement startsWith correctly" in (pending)
+    val t3 = TupleString("345".getBytes)
+    t1 startsWith t3 should be(false)
 
-  it should "implement containsSlice correctly" in (pending)
+    t2 startsWith t2 should be(true)
 
-  it should "implement slice correctly" in (pending)
+    val t4 = TupleString("45".getBytes)
+    t4 startsWith t3 should be(false)
 
-  it should "implement indexOfSlice correctly" in (pending)
+    val t5 = TupleString("".getBytes)
+    t1 startsWith t5 should be(true)
 
-  it should "implement zip correctly" in (pending)
+    t5 startsWith t5 should be(true)
+  }
 
-  it should "implement foldLeft correctly" in (pending)
+  it should "implement containsSlice correctly" in {
+    val t1 = TupleString("0123456789".getBytes)
+    val t2 = TupleString("2345".getBytes)
+    val t3 = TupleString("0123456".getBytes)
+    val t4 = TupleString("910".getBytes)
+    val t5 = TupleString("".getBytes)
 
-  it should "implement reverse correctly" in (pending)
+    t1 containsSlice t2 should be(true)
+    t2 containsSlice t1 should be(false)
+    t1 containsSlice t1 should be(true)
+    t1 containsSlice t3 should be(true)
+    t1 containsSlice t4 should be(false)
+    t2 containsSlice t5 should be(true)
+    t5 containsSlice t5 should be(true)
+    t5 containsSlice t4 should be(false)
+  }
 
-  it should "implement split correctly" in (pending)
+  it should "implement slice correctly" in {
+    val t1 = TupleString(alphabet)
+    t1.slice(5, 10).string should be("fghij")
+    t1.slice(20, 21).string should be("u")
+    t1.slice(16, 16).string should be("")
+    t1.slice(20, 16).string should be("")
+    t1.slice(3, -3).string should be("")
+    t1.slice(30, 33).string should be("")
+  }
+
+  it should "implement indexOfSlice correctly" in {
+    val t1 = TupleString(alphabet)
+    val t2 = TupleString("defghij".getBytes)
+    val t3 = TupleString(alphabet ++ "0123456789".getBytes)
+    val t4 = TupleString("a".getBytes)
+    val t5 = TupleString("".getBytes)
+    t1.indexOfSlice(t2, 0) should be(3)
+    t1.indexOfSlice(t2, 3) should be(3)
+    t1.indexOfSlice(t2, 4) should be(-1)
+    t1.indexOfSlice(t2, 100) should be(-1)
+    t1.indexOfSlice(t2, -100) should be(3)
+    t1.indexOfSlice(t4, 0) should be(0)
+    t1.indexOfSlice(t1, 0) should be(0)
+    t1.indexOfSlice(t1, 1) should be(-1)
+    t1.indexOfSlice(t3, 0) should be(-1)
+    t1.indexOfSlice(t5, 0) should be(0)
+    t1.indexOfSlice(t5, 2) should be(2)
+    t1.indexOfSlice(t5, 100) should be(-1)
+    t1.indexOfSlice(t5, -2) should be(0)
+  }
 }
