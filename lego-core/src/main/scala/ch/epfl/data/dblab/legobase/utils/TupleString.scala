@@ -28,22 +28,19 @@ import offheap._
     __7.iterator ++ __8.iterator ++ __9.iterator
 
   def apply(i: Int): Byte = ???
-  def startsWith(o: OptimalString): Boolean = ???
-  def containsSlice(o: OptimalString): Boolean = ???
-  def slice(start: Int, end: Int): OptimalString = ???
-  def indexOfSlice(o: OptimalString, i: Int): Int = ???
+  def startsWith(o: TupleString): Boolean = ???
+  def containsSlice(o: TupleString): Boolean = ???
+  def slice(start: Int, end: Int): TupleString = ???
+  def indexOfSlice(o: TupleString, i: Int): Int = ???
   def endsWith(that: TupleString): Boolean = this.iterator.drop(length - that.length).sameElements(that.iterator)
-  def endsWith(that: OptimalString): Boolean = this.iterator.drop(length - that.data.length).sameElements(that.data.iterator)
 
   def diff(that: TupleString): Int = (this.iterator zip that.iterator).foldLeft(0)((res, e) => { if (res == 0) e._1 - e._2 else res })
   def ===(that: TupleString): Boolean = this.iterator.sameElements(that.iterator)
-  def ===(that: OptimalString): Boolean = this.iterator.sameElements(that.data.iterator)
   def =!=(that: TupleString): Boolean = !(===(that))
-  def =!=(that: OptimalString): Boolean = !(===(that))
-  def zip(o: OptimalString) = ???
+  def zip(o: TupleString) = ???
   def foldLeft(c: Int)(f: (Int, Byte) => Int): Int = ???
-  def reverse(): OptimalString = ???
-  def split(delimiter: Array[Char]): Array[OptimalString] = ???
+  def reverse: TupleString = ???
+  def split(delimiter: Array[Char]): Array[TupleString] = ???
   def string: String = {
     val sb = new StringBuilder()
     this.iterator.foreach { b => sb += b.toChar }
