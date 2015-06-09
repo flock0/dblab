@@ -9,6 +9,19 @@ import scala.language.implicitConversions
 import sc.pardis.deep.scalalib._
 import sc.pardis.types._
 
+trait LegoGenerator extends CodeGenerator {
+  val outputFileName: String
+  // TODO should be moved to SC?
+  /**
+   * Generates the code for the IR of the given program
+   *
+   * @param program the input program for which the code is generated
+   */
+  def apply(program: PardisProgram) {
+    generate(program, outputFileName)
+  }
+}
+
 /**
  * The class responsible for Scala code generation in ANF.
  *
@@ -19,7 +32,7 @@ import sc.pardis.types._
  * LegoBase or not.
  * @param outputFileName the name of output file
  */
-class LegoScalaGenerator(val shallow: Boolean = false, val outputFileName: String = "generatedProgram", val isOffheap: Boolean = false) extends ScalaCodeGenerator {
+class LegoScalaGenerator(val shallow: Boolean = false, val outputFileName: String = "generatedProgram", val isOffheap: Boolean = false) extends ScalaCodeGenerator with LegoGenerator {
 
   /**
    * Returns the generated code of the necessary import for the shallow libraries
@@ -77,12 +90,17 @@ object OrderingFactory {
   def main() = 
   """
 
+  val offHeapAnalyser = new optimization.OffHeapAnalyser()
+
   /**
    * Generates the code for the IR of the given program
    *
    * @param program the input program for which the code is generated
    */
-  def apply(program: PardisProgram) {
+  override def apply(program: PardisProgram) {
+    if (isOffheap) {
+      offHeapAnalyser.analyse(program)
+    }
     generate(program, outputFileName)
   }
 
@@ -101,10 +119,10 @@ object OrderingFactory {
   object OffheapStructDefToDocument extends StructDefToDocument {
     override def signatureMod(structDef: PardisStructDef[_]): Document = "@data"
     override def fieldDef(field: StructElemInformation): Document =
-      (if (field.tpe == OptimalStringType) doc"@embed " else Document.empty) :: super.fieldDef(field)
+      (if (offHeapAnalyser.isOffHeap(field.tpe)) doc"@embed " else Document.empty) :: super.fieldDef(field)
   }
 
-  override def getStruct(structDef: PardisStructDef[_]): Document = if (isOffheap)
+  override def getStruct(structDef: PardisStructDef[_]): Document = if (isOffheap && offHeapAnalyser.isOffheap(structDef))
     OffheapStructDefToDocument(structDef)
   else
     super.getStruct(structDef)
@@ -136,16 +154,7 @@ class LegoScalaASTGenerator(val IR: Base, override val shallow: Boolean = false,
  * definitions. For example, in the case of defining mutable variables an appropriate comment in front
  * of that variable definition.
  */
-class LegoCGenerator(val shallow: Boolean = false, val outputFileName: String = "generatedProgram", override val verbose: Boolean = true) extends CCodeGenerator /* with BooleanCCodeGen */ {
-  /**
-   * Generates the code for the IR of the given program
-   *
-   * @param program the input program for which the code is generated
-   */
-  def apply(program: PardisProgram) {
-    generate(program, outputFileName)
-  }
-
+class LegoCGenerator(val shallow: Boolean = false, val outputFileName: String = "generatedProgram", override val verbose: Boolean = true) extends CCodeGenerator /* with BooleanCCodeGen */ with LegoGenerator {
   import sc.cscala.deep.GArrayHeaderIRs._
 
   /**

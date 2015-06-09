@@ -46,7 +46,7 @@ class LegoCompiler(val DSL: LoweringLegoBase, val number: Int, val scalingFactor
       val block = utils.Utilities.time(DSL.reifyBlock(program), "Reification")
       val optimizedBlock = utils.Utilities.time(optimize(block), "Optimization")
       val irProgram = irToPorgram.createProgram(optimizedBlock)
-      utils.Utilities.time(codeGenerator.generate(irProgram, outputFile), "Code Generation")
+      utils.Utilities.time(codeGenerator.apply(irProgram), "Code Generation")
     } else {
       super.compile(program, outputFile)
     }
