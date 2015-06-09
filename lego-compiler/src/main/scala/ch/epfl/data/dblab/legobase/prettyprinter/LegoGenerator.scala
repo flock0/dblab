@@ -34,8 +34,9 @@ import sc.pardis.shallow._
   else
     ""
 
-  def getOffheapHeader: Document = if (isOffheap) doc"""import ch.epfl.data.dblab.OffheapString
-import _root_.offheap._"""
+  def getOffheapHeader: Document = if (isOffheap) doc"""import ch.epfl.data.dblab.offheap._
+import scala.offheap.{data, embed, EmbedArray}
+"""
   else
     Document.empty
   /**
@@ -97,7 +98,15 @@ object OrderingFactory {
     case _                                    => super.functionNodeToDocument(fun)
   }
 
-  override def getStruct(structDef: PardisStructDef[_]): Document = (if (isOffheap) doc"@data " else Document.empty) ::
+  object OffheapStructDefToDocument extends StructDefToDocument {
+    override def signatureMod(structDef: PardisStructDef[_]): Document = "@data"
+    override def fieldDef(field: StructElemInformation): Document =
+      (if (field.tpe == OptimalStringType) doc"@embed " else Document.empty) :: super.fieldDef(field)
+  }
+
+  override def getStruct(structDef: PardisStructDef[_]): Document = if (isOffheap)
+    OffheapStructDefToDocument(structDef)
+  else
     super.getStruct(structDef)
 }
 
