@@ -104,33 +104,7 @@ class OffheapStringTest extends FlatSpec with Matchers {
     t5 endsWith t5 should be(true)
   }
 
-  // TODO rewrite it using string diff if possible
-  // it should "implement diff correctly (as in OptimalString)" in {
-  //   val t1 = OffheapString(alphabet)
-  //   val o1 = OptimalString(alphabet)
-  //   t1 diff t1 should be(o1 diff o1)
-
-  //   val s2 = "123456789"
-  //   val s3 = "abcd"
-  //   val s4 = ""
-  //   val s5 = "@#^defgh122"
-
-  //   val t2 = OffheapString(s2.getBytes)
-  //   val t3 = OffheapString(s3.getBytes)
-  //   val t4 = OffheapString(s4.getBytes)
-  //   val t5 = OffheapString(s5.getBytes)
-
-  //   val o2 = OptimalString(s2.getBytes)
-  //   val o3 = OptimalString(s3.getBytes)
-  //   val o4 = OptimalString(s4.getBytes)
-  //   val o5 = OptimalString(s5.getBytes)
-
-  //   t1 diff t2 should be(o1 diff o2)
-  //   t2 diff t3 should be(o2 diff o3)
-  //   t2 diff t4 should be(o2 diff o4)
-  //   t5 diff t3 should be(o5 diff o3)
-  //   t4 diff t1 should be(o4 diff o1)
-  // }
+  it should "implement diff correctly" in (pending)
 
   it should "implement apply correctly" in {
     val t1 = OffheapString(alphabet)
