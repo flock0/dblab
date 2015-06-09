@@ -3,7 +3,7 @@ package dblab
 package offheap
 
 import scala.collection.mutable.ArrayBuilder
-import _root_.offheap._
+import scala.offheap._
 
 @data class String21(
   val __0: Byte,
@@ -266,118 +266,33 @@ object OffheapString {
   def apply(data: scala.Array[Byte])(implicit alloc: Allocator): OffheapString = {
     if (data.length > 210)
       throw new IllegalArgumentException("data is longer than 210 characters")
+
     var remaining = data.length
 
-    val __0 = if (remaining <= 0) {
-      String21(data, 0 * 21, 0)
-    } else if (remaining <= 21) {
-      val str = String21(data, 0 * 21, remaining.toByte)
-      remaining = 0
-      str
-    } else {
-      val str = String21(data, 0 * 21, 21)
-      remaining -= 21
-      str
-    }
-    val __1 = if (remaining <= 0) {
-      String21(data, 1 * 21, 0)
-    } else if (remaining <= 21) {
-      val str = String21(data, 1 * 21, remaining.toByte)
-      remaining = 0
-      str
-    } else {
-      val str = String21(data, 1 * 21, 21)
-      remaining -= 21
-      str
-    }
-    val __2 = if (remaining <= 0) {
-      String21(data, 2 * 21, 0)
-    } else if (remaining <= 21) {
-      val str = String21(data, 2 * 21, remaining.toByte)
-      remaining = 0
-      str
-    } else {
-      val str = String21(data, 2 * 21, 21)
-      remaining -= 21
-      str
-    }
-    val __3 = if (remaining <= 0) {
-      String21(data, 3 * 21, 0)
-    } else if (remaining <= 21) {
-      val str = String21(data, 3 * 21, remaining.toByte)
-      remaining = 0
-      str
-    } else {
-      val str = String21(data, 3 * 21, 21)
-      remaining -= 21
-      str
-    }
-    val __4 = if (remaining <= 0) {
-      String21(data, 4 * 21, 0)
-    } else if (remaining <= 21) {
-      val str = String21(data, 4 * 21, remaining.toByte)
-      remaining = 0
-      str
-    } else {
-      val str = String21(data, 4 * 21, 21)
-      remaining -= 21
-      str
-    }
-    val __5 = if (remaining <= 0) {
-      String21(data, 5 * 21, 0)
-    } else if (remaining <= 21) {
-      val str = String21(data, 5 * 21, remaining.toByte)
-      remaining = 0
-      str
-    } else {
-      val str = String21(data, 5 * 21, 21)
-      remaining -= 21
-      str
-    }
-    val __6 = if (remaining <= 0) {
-      String21(data, 6 * 21, 0)
-    } else if (remaining <= 21) {
-      val str = String21(data, 6 * 21, remaining.toByte)
-      remaining = 0
-      str
-    } else {
-      val str = String21(data, 6 * 21, 21)
-      remaining -= 21
-      str
-    }
-    val __7 = if (remaining <= 0) {
-      String21(data, 7 * 21, 0)
-    } else if (remaining <= 21) {
-      val str = String21(data, 7 * 21, remaining.toByte)
-      remaining = 0
-      str
-    } else {
-      val str = String21(data, 7 * 21, 21)
-      remaining -= 21
-      str
-    }
-    val __8 = if (remaining <= 0) {
-      String21(data, 8 * 21, 0)
-    } else if (remaining <= 21) {
-      val str = String21(data, 8 * 21, remaining.toByte)
-      remaining = 0
-      str
-    } else {
-      val str = String21(data, 8 * 21, 21)
-      remaining -= 21
-      str
-    }
-    val __9 = if (remaining <= 0) {
-      String21(data, 9 * 21, 0)
-    } else if (remaining <= 21) {
-      val str = String21(data, 9 * 21, remaining.toByte)
-      remaining = 0
-      str
-    } else {
-      val str = String21(data, 9 * 21, 21)
-      remaining -= 21
-      str
-    }
+    def retrieve(i: Int) =
+      if (remaining <= 0) {
+        String21(data, i * 21, 0)
+      } else if (remaining <= 21) {
+        val str = String21(data, i * 21, remaining.toByte)
+        remaining = 0
+        str
+      } else {
+        val str = String21(data, i * 21, 21)
+        remaining -= 21
+        str
+      }
+
+    val __0 = retrieve(0)
+    val __1 = retrieve(1)
+    val __2 = retrieve(2)
+    val __3 = retrieve(3)
+    val __4 = retrieve(4)
+    val __5 = retrieve(5)
+    val __6 = retrieve(6)
+    val __7 = retrieve(7)
+    val __8 = retrieve(8)
+    val __9 = retrieve(9)
+
     OffheapString(__0, __1, __2, __3, __4, __5, __6, __7, __8, __9,
       __0.len + __1.len + __2.len +
         __3.len + __4.len + __5.len +

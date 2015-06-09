@@ -3,7 +3,7 @@ package dblab
 package offheap
 
 import org.scalatest._
-import _root_.offheap._
+import scala.offheap._
 import Matchers._
 
 class String21Test extends FlatSpec {

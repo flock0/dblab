@@ -4,7 +4,7 @@ package offheap
 
 // import sc.pardis.shallow.OptimalString
 import org.scalatest._
-import _root_.offheap._
+import scala.offheap._
 import Matchers._
 
 class OffheapStringTest extends FlatSpec with Matchers {
