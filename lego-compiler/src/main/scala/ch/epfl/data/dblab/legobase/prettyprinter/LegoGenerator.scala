@@ -113,13 +113,14 @@ object OrderingFactory {
 
   override def constructorNodeToDocument(fun: ConstructorNode[_]) = fun match {
     case OptimalStringNew(array) if isOffheap => doc"OffheapString($array)"
-    case _                                    => super.functionNodeToDocument(fun)
+    case n @ ArrayIRs.ArrayNew(size) if isOffheap && offHeapAnalyser.isOffheap(n.typeT) => doc"EmbedArray.uninit[${n.typeT}]($size)"
+    case _ => super.functionNodeToDocument(fun)
   }
 
   object OffheapStructDefToDocument extends StructDefToDocument {
     override def signatureMod(structDef: PardisStructDef[_]): Document = "@data"
     override def fieldDef(field: StructElemInformation): Document =
-      (if (offHeapAnalyser.isOffHeap(field.tpe)) doc"@embed " else Document.empty) :: super.fieldDef(field)
+      (if (offHeapAnalyser.isOffheap(field.tpe)) doc"@embed " else Document.empty) :: super.fieldDef(field)
   }
 
   override def getStruct(structDef: PardisStructDef[_]): Document = if (isOffheap && offHeapAnalyser.isOffheap(structDef))

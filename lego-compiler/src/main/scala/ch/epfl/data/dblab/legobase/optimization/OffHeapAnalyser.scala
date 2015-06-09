@@ -15,31 +15,25 @@ class OffHeapAnalyser {
 
   val offheapStructs = scala.collection.mutable.ArrayBuffer[PardisStructDef[_]]()
 
-  def isOffHeap(tpe: PardisType[_]): Boolean =
+  def isOffheap(tpe: PardisType[_]): Boolean =
     offheapStructs.exists(_.tag.typeName == tpe.name) || tpe.name == "OptimalString"
 
   def isOffheap(structDef: PardisStructDef[_]): Boolean =
     offheapStructs.contains(structDef)
 
   def analyse(program: PardisProgram): Unit = {
-    System.out.println("analysing offheap started")
     var workListFinished = false
     while (!workListFinished) {
       workListFinished = true
       for (structDef <- program.structs) {
         if (!isOffheap(structDef)) {
-          val isOffheap = structDef.fields.forall(f => !f.tpe.isArray && (f.tpe.isPrimitive || isOffHeap(f.tpe)))
-          System.out.println(s"$structDef isOffheap==$isOffheap")
-          if (isOffheap) {
+          val isOffHeap = structDef.fields.forall(f => !f.tpe.isArray && (f.tpe.isPrimitive || isOffheap(f.tpe)))
+          if (isOffHeap) {
             offheapStructs += structDef
             workListFinished = false
           }
         }
       }
     }
-
-    System.out.println("analysing offheap finished")
-
-    // analyse(IR)
   }
 }
