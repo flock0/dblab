@@ -52,7 +52,7 @@ object Queries {
             res = kv1.key.L_LINESTATUS - kv2.key.L_LINESTATUS
           res
         })
-        val po = new PrintOp(sortOp)(kv => printf("%c|%c|%.2f|%.2f|%.2f|%.2f|%.2f|%.2f|%.2f|%.0f\n",
+        val po = new PrintOp(sortOp)(kv => printf("%c|%c|%.2f|%.2f|%.2f|%.2f|%.2f|%.2f|%.2f|%.2f|\n",
           kv.key.L_RETURNFLAG, kv.key.L_LINESTATUS, kv.aggs(1), kv.aggs(2), kv.aggs(3), kv.aggs(4),
           kv.aggs(6), kv.aggs(7), kv.aggs(8), kv.aggs(5)), -1)
         po.open
@@ -215,7 +215,7 @@ object Queries {
         val lineitemScan = new SelectOp(new ScanOp(lineitemTable))(x =>
           x.L_SHIPDATE >= constantDate1 && (x.L_SHIPDATE < constantDate2 && (x.L_DISCOUNT >= 0.08 && (x.L_DISCOUNT <= 0.1 && (x.L_QUANTITY < 24)))))
         val aggOp = new AggOp(lineitemScan, 1)(x => "Total")((t, currAgg) => { (t.L_EXTENDEDPRICE * t.L_DISCOUNT) + currAgg })
-        val po = new PrintOp(aggOp)(kv => { kv.key; printf("%.4f\n", kv.aggs(0)) }, -1)
+        val po = new PrintOp(aggOp)(kv => { kv.key; printf("%.2f|\n", kv.aggs(0)) }, -1)
         po.open
         po.next
         ()

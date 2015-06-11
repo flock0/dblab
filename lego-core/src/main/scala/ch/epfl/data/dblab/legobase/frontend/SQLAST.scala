@@ -87,6 +87,7 @@ trait LiteralExpression extends Expression {
   override def isLiteral = true
 }
 case class IntLiteral(v: Int) extends LiteralExpression
+case class DoubleLiteral(v: Double) extends LiteralExpression
 case class FloatLiteral(v: Float) extends LiteralExpression
 case class StringLiteral(v: String) extends LiteralExpression
 case class NullLiteral() extends LiteralExpression

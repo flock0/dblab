@@ -12,13 +12,64 @@ class SQLSemanticCheckerAndTypeInference(schema: Schema) {
   def typeToTypeTag(tp: Tpe) = tp match {
     case c if c == IntType || c == DateType => typeTag[Int]
     case c if c == DoubleType               => typeTag[Double]
+    case c if c == CharType                 => typeTag[Char]
+    case c: VarCharType                     => typeTag[VarCharType]
+  }
+
+  def setResultType(e: Expression, left: Expression, right: Expression) {
+    val IntType = typeTag[Int]
+    val FloatType = typeTag[Float]
+    val DoubleType = typeTag[Double]
+    (left.tp, right.tp) match {
+      case (IntType, DoubleType)    => e.setTp(DoubleType)
+      case (DoubleType, DoubleType) => e.setTp(DoubleType)
+    }
   }
 
   def checkAndInferExpr(expr: Expression): Unit = expr match {
+    // Literals
+    case lt @ (DateLiteral(_) | IntLiteral(_)) =>
+      lt.setTp(typeTag[Int])
+    case fl @ FloatLiteral(_) =>
+      fl.setTp(typeTag[Float])
+    case sl @ StringLiteral(_) =>
+      sl.setTp(typeTag[String])
+    case fi @ FieldIdent(_, name, _) =>
+      schema.findAttribute(name) match {
+        case Some(a) =>
+          fi.setTp(typeToTypeTag(a.dataType))
+        case None => throw new Exception("Attribute " + name + " referenced in SQL query does not exist in any relation.")
+      }
+    // Arithmetic Operators
+    case add @ Add(left, right) =>
+      checkAndInferExpr(left)
+      checkAndInferExpr(right)
+      setResultType(add, left, right)
+    case sub @ Subtract(left, right) =>
+      checkAndInferExpr(left)
+      checkAndInferExpr(right)
+      setResultType(sub, left, right)
+    case mut @ Multiply(left, right) =>
+      checkAndInferExpr(left)
+      checkAndInferExpr(right)
+      setResultType(mut, left, right)
+    case sum @ Sum(expr) =>
+      checkAndInferExpr(expr)
+      sum.setTp(typeTag(expr.tp))
+    case avg @ Avg(expr) =>
+      checkAndInferExpr(expr)
+      avg.setTp(typeTag(expr.tp))
+    case avg @ CountAll() =>
+      avg.setTp(typeTag[Double])
+    // Logical Operators
     case and @ And(left, right) =>
       checkAndInferExpr(left)
       checkAndInferExpr(right)
       and.setTp(typeTag[Boolean])
+    case eq @ Equals(left, right) =>
+      checkAndInferExpr(left)
+      checkAndInferExpr(right)
+      eq.setTp(typeTag[Boolean])
     case lt @ LessThan(left, right) =>
       checkAndInferExpr(left)
       checkAndInferExpr(right)
@@ -27,46 +78,27 @@ class SQLSemanticCheckerAndTypeInference(schema: Schema) {
       checkAndInferExpr(left)
       checkAndInferExpr(right)
       loe.setTp(typeTag[Boolean])
-    /*case GreaterThan(left, right) =>
-      parseExpression[Double](left) > parseExpression[Long](right)*/
+    case gt @ GreaterThan(left, right) =>
+      checkAndInferExpr(left)
+      checkAndInferExpr(right)
+      gt.setTp(typeTag[Boolean])
     case goe @ GreaterOrEqual(left, right) =>
       checkAndInferExpr(left)
       checkAndInferExpr(right)
       goe.setTp(typeTag[Boolean])
-    case lt @ (DateLiteral(_) | IntLiteral(_)) =>
-      lt.setTp(typeTag[Int])
-    case fl @ FloatLiteral(_) =>
-      fl.setTp(typeTag[Float])
-    case add @ Add(left, right) =>
-      checkAndInferExpr(left)
-      checkAndInferExpr(right)
-      add.setTp(typeTag(left.tp))
-    case sub @ Subtract(left, right) =>
-      checkAndInferExpr(left)
-      checkAndInferExpr(right)
-      sub.setTp(typeTag(left.tp))
-
-    // System.out.println("here" + left.tp + "/")
-    // val e = parseExpression(left) //>= parseExpression[Long](right)
-    //System.out.println(e.getClass)
-
-    /*case IntLiteral(v)   => v
-    case FloatLiteral(v) => v.toLong
-    //case bo: BinaryOperator => parseBinaryOperator(bo)*/
-    case fi @ FieldIdent(_, name, _) =>
-      schema.findAttribute(name) match {
-        case Some(a) => {
-          fi.setTp(typeToTypeTag(a.dataType))
-        }
-        case None => throw new Exception("Attribute " + name + " referenced in SQL query does not exist in any relation.")
-      }
-    //case le: LiteralExpression => parseLiteralExpression(le)
   }
 
   def checkAndInfer(sqlTree: SelectStatement) {
     sqlTree.where match {
       case Some(expr) => checkAndInferExpr(expr)
       case None       =>
+    }
+    sqlTree.projections match {
+      case ExpressionProjections(proj) => proj.foreach(p => checkAndInferExpr(p._1))
+    }
+    sqlTree.groupBy match {
+      case Some(GroupBy(listExpr, having)) => listExpr.foreach(expr => checkAndInferExpr(expr))
+      case None                            =>
     }
   }
 }
