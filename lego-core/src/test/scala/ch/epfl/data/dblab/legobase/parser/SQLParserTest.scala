@@ -200,4 +200,19 @@ class SQLParserTest extends FlatSpec {
     r2 should not be None
     r3 should not be None
   }
+
+  it should "parse simple CASE statement correctly" in {
+    val r = parser.parse("SELECT CASE attributeOne WHEN 'some_value' THEN this ELSE that END FROM table")
+    r should not be None
+  }
+
+  it should "parse complex CASE statement correctly" in {
+    val r = parser.parse("SELECT CASE WHEN attribute = 'some_value' THEN this ELSE that END FROM table")
+    r should not be None
+  }
+
+  it should "parse complex CASE statement with multiple cases correctly" in {
+    val r = parser.parse("SELECT SUM(CASE WHEN attribute = 'some_value' THEN this WHEN answer = 42 THEN valX ELSE valY END) FROM table")
+    r should not be None
+  }
 }
