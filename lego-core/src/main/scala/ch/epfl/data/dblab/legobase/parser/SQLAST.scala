@@ -105,6 +105,24 @@ case class Extract(what: ExtractType, from: Expression) extends Function {
   def gatherFields = from.gatherFields
 }
 
+sealed abstract trait CaseExpression extends Expression
+case class SimpleCaseExpression(input: Expression, cases: Seq[CaseExpressionCase], default: Option[Expression]) extends CaseExpression {
+  def gatherFields = input.gatherFields ++ cases.flatMap(_.gatherFields) ++ (default match {
+    case None    => Seq()
+    case Some(e) => e.gatherFields
+  })
+}
+case class ComplexCaseExpression(cases: Seq[CaseExpressionCase], default: Option[Expression]) extends CaseExpression {
+  def gatherFields = cases.flatMap(_.gatherFields) ++ (default match {
+    case None    => Seq[(FieldIdent, Boolean)]()
+    case Some(e) => e.gatherFields
+  })
+}
+
+case class CaseExpressionCase(whenExpr: Expression, thenExpr: Expression) {
+  def gatherFields = whenExpr.gatherFields ++ thenExpr.gatherFields
+}
+
 abstract trait LiteralExpression extends Expression {
   override def isLiteral = true
   def gatherFields = Seq.empty

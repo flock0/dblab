@@ -74,7 +74,8 @@ object SQLParser extends StandardTokenParsers {
           }
       } |
       "NOT" ~> parseSimpleExpression ^^ (Not(_)) |
-      "EXISTS" ~> "(" ~> parseSelectStatement <~ ")" ^^ { case s => Exists(s) })
+      "EXISTS" ~> "(" ~> parseSelectStatement <~ ")" ^^ { case s => Exists(s) } |
+      parseCaseExpression)
 
   def parseAddition: Parser[Expression] =
     parseMultiplication * (
@@ -117,6 +118,14 @@ object SQLParser extends StandardTokenParsers {
     | stringLit ^^ { case s => StringLiteral(s) }
     | "NULL" ^^ { case _ => NullLiteral() }
     | "DATE" ~> stringLit ^^ { case s => DateLiteral(s) })
+
+  def parseCaseExpression: Parser[Expression] =
+    "CASE" ~> opt(parseExpression) ~
+      rep1("WHEN" ~> parseExpression ~ "THEN" ~ parseExpression ^^ { case w ~ _ ~ t => CaseExpressionCase(w, t) }) ~
+      opt("ELSE" ~> parseExpression) <~ "END" ^^ {
+        case Some(e) ~ cases ~ default => SimpleCaseExpression(e, cases, default)
+        case None ~ cases ~ default    => ComplexCaseExpression(cases, default)
+      }
 
   def parseRelations: Parser[Seq[Relation]] = rep1sep(parseRelation, ",")
 
@@ -204,7 +213,8 @@ object SQLParser extends StandardTokenParsers {
     "JOIN", "ASC", "DESC", "FROM", "ON", "NOT", "HAVING",
     "EXISTS", "BETWEEN", "LIKE", "IN", "NULL", "LEFT", "RIGHT",
     "FULL", "OUTER", "INNER", "COUNT", "SUM", "AVG", "MIN", "MAX",
-    "DATE", "TOP", "LIMIT", "EXTRACT", "YEAR", "MONTH", "DAY")
+    "DATE", "TOP", "LIMIT", "EXTRACT", "YEAR", "MONTH", "DAY",
+    "CASE", "WHEN", "THEN", "ELSE", "END")
 
   lexical.delimiters += (
     "*", "+", "-", "<", "=", "<>", "!=", "<=", ">=", ">", "/", "(", ")", ",", ".", ";")
