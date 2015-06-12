@@ -32,7 +32,7 @@ object SQLParser extends StandardTokenParsers {
     | rep1sep(parseAliasedExpression, ",") ^^ { case lst => ExpressionProjections(lst) })
 
   def parseAliasedExpression: Parser[(Expression, Option[String])] = (
-    parseExpression ~ ("AS" ~> (ident | stringLit)).? ^^ { case expr ~ alias => (expr, alias) })
+    parseExpression ~ ("AS".? ~> (ident | stringLit)).? ^^ { case expr ~ alias => (expr, alias) })
 
   def parseExpression: Parser[Expression] = parseOr
 
