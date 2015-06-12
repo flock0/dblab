@@ -162,7 +162,7 @@ class SQLParserTest extends FlatSpec {
   }
 
   it should "parse aliased expression correctly" in {
-    val r = parser.parse("SELECT SUM(column1) AS theSum, MIN(ident.column2) AS minimum FROM table")
+    val r = parser.parse("SELECT SUM(column1) AS theSum, MIN(ident.column2) AS 'minimum' FROM table")
     r should not be None
   }
 
