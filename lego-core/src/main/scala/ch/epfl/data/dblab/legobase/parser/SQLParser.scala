@@ -102,7 +102,14 @@ object SQLParser extends StandardTokenParsers {
     | "MIN" ~> "(" ~> parseExpression <~ ")" ^^ (Min(_))
     | "MAX" ~> "(" ~> parseExpression <~ ")" ^^ (Max(_))
     | "SUM" ~> "(" ~> parseExpression <~ ")" ^^ (Sum(_))
-    | "AVG" ~> "(" ~> parseExpression <~ ")" ^^ (Avg(_)))
+    | "AVG" ~> "(" ~> parseExpression <~ ")" ^^ (Avg(_))
+    | "EXTRACT" ~> "(" ~> parseYearMonthDay ~ "FROM" ~ parseExpression <~ ")" ^^
+    { case time ~ _ ~ expr => Extract(time, expr) })
+
+  def parseYearMonthDay: Parser[ExtractType] = (
+    "YEAR" ^^^ YEAR
+    | "MONTH" ^^^ MONTH
+    | "DAY" ^^^ DAY)
 
   def parseLiteral: Parser[Expression] = (
     numericLit ^^ { case i => IntLiteral(i.toInt) }
@@ -197,7 +204,7 @@ object SQLParser extends StandardTokenParsers {
     "JOIN", "ASC", "DESC", "FROM", "ON", "NOT", "HAVING",
     "EXISTS", "BETWEEN", "LIKE", "IN", "NULL", "LEFT", "RIGHT",
     "FULL", "OUTER", "INNER", "COUNT", "SUM", "AVG", "MIN", "MAX",
-    "DATE", "TOP", "LIMIT")
+    "DATE", "TOP", "LIMIT", "EXTRACT", "YEAR", "MONTH", "DAY")
 
   lexical.delimiters += (
     "*", "+", "-", "<", "=", "<>", "!=", "<=", ">=", ">", "/", "(", ")", ",", ".", ";")
