@@ -26,8 +26,32 @@ object SQLParser extends StandardTokenParsers {
     }
   }
 
+  def extractRelationsFromJoinTree(joinTree: Relation): Seq[Relation] = {
+    joinTree match {
+      case Join(left, right, _, _) =>
+        extractRelationsFromJoinTree(left) ++ extractRelationsFromJoinTree(right)
+      case tbl: SQLTable => Seq(tbl)
+    }
+  }
+
   def parseSelectStatement: Parser[SelectStatement] = (
-    "SELECT" ~> parseProjections ~ "FROM" ~ parseRelations ~ parseWhere.? ~ parseGroupBy.? ~ parseOrderBy.? ~ parseLimit.? <~ ";".? ^^ { case pro ~ _ ~ tab ~ whe ~ grp ~ ord ~ lim => SelectStatement(pro, tab, whe, grp, ord, lim) })
+    "SELECT" ~> parseProjections ~ "FROM" ~ parseRelations ~ parseWhere.? ~ parseGroupBy.? ~ parseOrderBy.? ~ parseLimit.? <~ ";".? ^^ {
+      case pro ~ _ ~ tab ~ whe ~ grp ~ ord ~ lim => {
+        val rel = tab.foldLeft(Seq[Relation]())((list, tb) => list ++ extractRelationsFromJoinTree(tb))
+        val aliases = pro match {
+          case ep: ExpressionProjections => ep.lst.zipWithIndex.filter(p => p._1._2.isDefined).map(al => (al._1._1, al._1._2.get, al._2))
+          case ac: AllColumns            => Seq()
+        }
+        val hasJoin = tab.exists(e => e.isInstanceOf[Join])
+        hasJoin match {
+          case true => tab.size match {
+            case 1 => SelectStatement(pro, rel, Some(tab(0)), whe, grp, ord, lim, aliases)
+            case _ => throw new Exception("BUG: Invalid number of join trees detected!")
+          }
+          case false => SelectStatement(pro, rel, None, whe, grp, ord, lim, aliases)
+        }
+      }
+    })
 
   def parseProjections: Parser[Projections] = (
     "*" ^^^ AllColumns()
@@ -104,20 +128,27 @@ object SQLParser extends StandardTokenParsers {
     | "MIN" ~> "(" ~> parseExpression <~ ")" ^^ (Min(_))
     | "MAX" ~> "(" ~> parseExpression <~ ")" ^^ (Max(_))
     | "SUM" ~> "(" ~> parseExpression <~ ")" ^^ (Sum(_))
-    | "AVG" ~> "(" ~> parseExpression <~ ")" ^^ (Avg(_)))
+    | "AVG" ~> "(" ~> parseExpression <~ ")" ^^ (Avg(_))
+    | "YEAR" ~> "(" ~> parseExpression <~ ")" ^^ (Year(_)))
 
   def parseLiteral: Parser[Expression] = (
     numericLit ^^ { case i => IntLiteral(i.toInt) }
     | floatLit ^^ { case f => FloatLiteral(f.toFloat) }
-    | stringLit ^^ { case s => StringLiteral(s) }
+    | stringLit ^^ {
+      case s => {
+        if (s.length == 1) CharLiteral(s.charAt(0))
+        else StringLiteral(GenericEngine.parseString(s))
+      }
+    }
     | "NULL" ^^ { case _ => NullLiteral() }
     | "DATE" ~> stringLit ^^ { case s => DateLiteral(GenericEngine.parseDate(s)) })
 
   def parseRelations: Parser[Seq[Relation]] = rep1sep(parseRelation, ",")
 
   def parseRelation: Parser[Relation] = (
-    parseSimpleRelation ~ rep(opt(parseJoinType) ~ "JOIN" ~ parseSimpleRelation ~ "ON" ~ parseExpression ^^
-      { case tpe ~ _ ~ r ~ _ ~ e => (tpe.getOrElse(InnerJoin), r, e) }) ^^ {
+    parseSimpleRelation ~ rep(opt(parseJoinType) ~ "JOIN" ~ parseSimpleRelation ~ "ON" ~ parseExpression ^^ {
+      case tpe ~ _ ~ r ~ _ ~ e => (tpe.getOrElse(InnerJoin), r, e)
+    }) ^^ {
       case r ~ elems => elems.foldLeft(r) { case (x, r) => Join(x, r._2, r._1, r._3) }
     })
 
@@ -130,8 +161,9 @@ object SQLParser extends StandardTokenParsers {
     })
 
   def parseJoinType: Parser[JoinType] = (
-    ("LEFT" <~ "OUTER".? | "RIGHT" <~ "OUTER".? | "FULL" ~ "OUTER") ^^ {
-      case "LEFT"           => LeftOuterJoin
+    ("LEFT" ~ "OUTER" | "LEFT" ~ "SEMI" | "RIGHT" <~ "OUTER".? | "FULL" ~ "OUTER") ^^ {
+      case "LEFT" ~ "OUTER" => LeftOuterJoin
+      case "LEFT" ~ "SEMI"  => LeftSemiJoin
       case "RIGHT"          => RightOuterJoin
       case "FULL" ~ "OUTER" => FullOuterJoin
     }
@@ -198,7 +230,7 @@ object SQLParser extends StandardTokenParsers {
     "SELECT", "AS", "OR", "AND", "GROUP", "ORDER", "BY", "WHERE",
     "JOIN", "ASC", "DESC", "FROM", "ON", "NOT", "HAVING",
     "EXISTS", "BETWEEN", "LIKE", "IN", "NULL", "LEFT", "RIGHT",
-    "FULL", "OUTER", "INNER", "COUNT", "SUM", "AVG", "MIN", "MAX",
+    "FULL", "OUTER", "SEMI", "INNER", "COUNT", "SUM", "AVG", "MIN", "MAX", "YEAR",
     "DATE", "TOP", "LIMIT")
 
   lexical.delimiters += (

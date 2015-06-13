@@ -16,7 +16,7 @@ case class Schema(tables: ArrayBuffer[Table] = ArrayBuffer(), stats: Statistics 
     case None      => throw new Exception("Table " + name + " not found in schema!")
   }
   def findAttribute(attrName: String): Option[Attribute] = tables.map(t => t.findAttribute(attrName)).flatten.toList match {
-    case List() => throw new Exception("Attribute " + attrName + " not found in schema!")
+    case List() => None //throw new Exception("Attribute " + attrName + " not found in schema!")
     case l      => Some(l.apply(0)) // todo -- OK, but assumes that all attribute names are unique
   }
   override def toString() = {

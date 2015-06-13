@@ -13,10 +13,12 @@ import ru._
 trait Node
 case class SelectStatement(projections: Projections,
                            relations: Seq[Relation],
+                           joinTree: Option[Relation],
                            where: Option[Expression],
                            groupBy: Option[GroupBy],
                            orderBy: Option[OrderBy],
-                           limit: Option[Limit]) extends Node with Expression
+                           limit: Option[Limit],
+                           aliases: Seq[(Expression, String, Int)]) extends Node with Expression
 
 trait Projections extends Node
 case class ExpressionProjections(lst: Seq[(Expression, Option[String])]) extends Projections
@@ -82,6 +84,7 @@ case class Sum(expr: Expression) extends Aggregation
 case class Avg(expr: Expression) extends Aggregation
 case class Min(expr: Expression) extends Aggregation
 case class Max(expr: Expression) extends Aggregation
+case class Year(expr: Expression) extends Expression
 
 trait LiteralExpression extends Expression {
   override def isLiteral = true
@@ -89,7 +92,8 @@ trait LiteralExpression extends Expression {
 case class IntLiteral(v: Int) extends LiteralExpression
 case class DoubleLiteral(v: Double) extends LiteralExpression
 case class FloatLiteral(v: Float) extends LiteralExpression
-case class StringLiteral(v: String) extends LiteralExpression
+case class StringLiteral(v: LBString) extends LiteralExpression
+case class CharLiteral(v: Char) extends LiteralExpression
 case class NullLiteral() extends LiteralExpression
 case class DateLiteral(d: Int) extends LiteralExpression
 
@@ -99,6 +103,7 @@ case class Subquery(subquery: SelectStatement, alias: String) extends Relation
 
 sealed abstract trait JoinType
 case object InnerJoin extends JoinType
+case object LeftSemiJoin extends JoinType
 case object LeftOuterJoin extends JoinType
 case object RightOuterJoin extends JoinType
 case object FullOuterJoin extends JoinType

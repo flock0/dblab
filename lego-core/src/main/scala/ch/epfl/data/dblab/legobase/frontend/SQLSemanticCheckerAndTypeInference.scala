@@ -8,6 +8,8 @@ import scala.reflect.runtime.{ universe => ru }
 import ru._
 
 class SQLSemanticCheckerAndTypeInference(schema: Schema) {
+  var aliasesList: Seq[(Expression, String, Int)] = _
+
   // TODO: Maybe this should be removed if there is a better solution for it
   def typeToTypeTag(tp: Tpe) = tp match {
     case c if c == IntType || c == DateType => typeTag[Int]
@@ -33,12 +35,19 @@ class SQLSemanticCheckerAndTypeInference(schema: Schema) {
     case fl @ FloatLiteral(_) =>
       fl.setTp(typeTag[Float])
     case sl @ StringLiteral(_) =>
-      sl.setTp(typeTag[String])
+      sl.setTp(typeTag[LBString])
+    case cl @ CharLiteral(_) =>
+      cl.setTp(typeTag[Char])
     case fi @ FieldIdent(_, name, _) =>
       schema.findAttribute(name) match {
         case Some(a) =>
           fi.setTp(typeToTypeTag(a.dataType))
-        case None => throw new Exception("Attribute " + name + " referenced in SQL query does not exist in any relation.")
+        case None =>
+          aliasesList.find(al => al._2 == name) match {
+            case Some(al) => fi.setTp(al._1.tp)
+            case None =>
+              throw new Exception("Attribute " + name + " referenced in SQL query does not exist in any relation.")
+          }
       }
     // Arithmetic Operators
     case add @ Add(left, right) =>
@@ -66,6 +75,10 @@ class SQLSemanticCheckerAndTypeInference(schema: Schema) {
       checkAndInferExpr(left)
       checkAndInferExpr(right)
       and.setTp(typeTag[Boolean])
+    case and @ Or(left, right) =>
+      checkAndInferExpr(left)
+      checkAndInferExpr(right)
+      and.setTp(typeTag[Boolean])
     case eq @ Equals(left, right) =>
       checkAndInferExpr(left)
       checkAndInferExpr(right)
@@ -86,19 +99,36 @@ class SQLSemanticCheckerAndTypeInference(schema: Schema) {
       checkAndInferExpr(left)
       checkAndInferExpr(right)
       goe.setTp(typeTag[Boolean])
+    // SQL Statements
+    case yr @ Year(date) =>
+      checkAndInferExpr(date)
+      yr.setTp(typeTag[Int])
+    case lk @ Like(field, values, _) =>
+      checkAndInferExpr(field)
+      checkAndInferExpr(values)
+      lk.setTp(field.tp)
+    case ex @ Exists(nestedQuery) =>
+      checkAndInfer(nestedQuery)
+      ex.setTp(nestedQuery.tp)
   }
 
   def checkAndInfer(sqlTree: SelectStatement) {
+    aliasesList = sqlTree.aliases
     sqlTree.where match {
       case Some(expr) => checkAndInferExpr(expr)
       case None       =>
     }
     sqlTree.projections match {
       case ExpressionProjections(proj) => proj.foreach(p => checkAndInferExpr(p._1))
+      case AllColumns()                =>
     }
     sqlTree.groupBy match {
       case Some(GroupBy(listExpr, having)) => listExpr.foreach(expr => checkAndInferExpr(expr))
       case None                            =>
+    }
+    sqlTree.orderBy match {
+      case Some(OrderBy(listExpr)) => listExpr.foreach(expr => checkAndInferExpr(expr._1))
+      case None                    =>
     }
   }
 }
