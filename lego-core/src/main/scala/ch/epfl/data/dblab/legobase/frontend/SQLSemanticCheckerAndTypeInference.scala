@@ -25,6 +25,7 @@ class SQLSemanticCheckerAndTypeInference(schema: Schema) {
     (left.tp, right.tp) match {
       case (IntType, DoubleType)    => e.setTp(DoubleType)
       case (DoubleType, DoubleType) => e.setTp(DoubleType)
+      case (DoubleType, FloatType)  => e.setTp(DoubleType)
     }
   }
 
@@ -34,6 +35,8 @@ class SQLSemanticCheckerAndTypeInference(schema: Schema) {
       lt.setTp(typeTag[Int])
     case fl @ FloatLiteral(_) =>
       fl.setTp(typeTag[Float])
+    case dl @ DoubleLiteral(_) =>
+      dl.setTp(typeTag[Double])
     case sl @ StringLiteral(_) =>
       sl.setTp(typeTag[LBString])
     case cl @ CharLiteral(_) =>
@@ -45,8 +48,8 @@ class SQLSemanticCheckerAndTypeInference(schema: Schema) {
         case None =>
           aliasesList.find(al => al._2 == name) match {
             case Some(al) => fi.setTp(al._1.tp)
-            case None =>
-              throw new Exception("Attribute " + name + " referenced in SQL query does not exist in any relation.")
+            case None     =>
+            //throw new Exception("Attribute " + name + " referenced in SQL query does not exist in any relation.")
           }
       }
     // Arithmetic Operators
@@ -62,6 +65,10 @@ class SQLSemanticCheckerAndTypeInference(schema: Schema) {
       checkAndInferExpr(left)
       checkAndInferExpr(right)
       setResultType(mut, left, right)
+    case div @ Divide(left, right) =>
+      checkAndInferExpr(left)
+      checkAndInferExpr(right)
+      setResultType(div, left, right)
     case sum @ Sum(expr) =>
       checkAndInferExpr(expr)
       sum.setTp(typeTag(expr.tp))
@@ -83,6 +90,10 @@ class SQLSemanticCheckerAndTypeInference(schema: Schema) {
       checkAndInferExpr(left)
       checkAndInferExpr(right)
       eq.setTp(typeTag[Boolean])
+    case neq @ NotEquals(left, right) =>
+      checkAndInferExpr(left)
+      checkAndInferExpr(right)
+      neq.setTp(typeTag[Boolean])
     case lt @ LessThan(left, right) =>
       checkAndInferExpr(left)
       checkAndInferExpr(right)
@@ -110,6 +121,11 @@ class SQLSemanticCheckerAndTypeInference(schema: Schema) {
     case ex @ Exists(nestedQuery) =>
       checkAndInfer(nestedQuery)
       ex.setTp(nestedQuery.tp)
+    case cs @ Case(cond, thenp, elsep) =>
+      checkAndInferExpr(cond)
+      checkAndInferExpr(thenp)
+      checkAndInferExpr(elsep)
+      setResultType(cs, thenp, elsep)
   }
 
   def checkAndInfer(sqlTree: SelectStatement) {
@@ -123,7 +139,7 @@ class SQLSemanticCheckerAndTypeInference(schema: Schema) {
       case AllColumns()                =>
     }
     sqlTree.groupBy match {
-      case Some(GroupBy(listExpr, having)) => listExpr.foreach(expr => checkAndInferExpr(expr))
+      case Some(GroupBy(listExpr, having)) => listExpr.map(_._1).foreach(expr => checkAndInferExpr(expr))
       case None                            =>
     }
     sqlTree.orderBy match {

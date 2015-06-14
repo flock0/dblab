@@ -217,6 +217,7 @@ object Queries {
         val aggOp = new AggOp(lineitemScan, 1)(x => "Total")((t, currAgg) => { (t.L_EXTENDEDPRICE * t.L_DISCOUNT) + currAgg })
         val po = new PrintOp(aggOp)(kv => { kv.key; printf("%.2f|\n", kv.aggs(0)) }, -1)
         po.open
+
         po.next
         ()
       })

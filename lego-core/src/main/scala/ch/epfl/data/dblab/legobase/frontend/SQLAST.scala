@@ -75,6 +75,8 @@ case class UnaryPlus(expr: Expression) extends UnaryOperation
 case class UnaryMinus(expr: Expression) extends UnaryOperation
 case class Exists(select: SelectStatement) extends Expression
 
+case class Case(cond: Expression, thenp: Expression, elsep: Expression) extends Expression
+
 case class FieldIdent(qualifier: Option[String], name: String, symbol: Symbol = null) extends Expression
 
 trait Aggregation extends Expression
@@ -114,6 +116,6 @@ sealed abstract trait OrderType
 case object ASC extends OrderType
 case object DESC extends OrderType
 
-case class GroupBy(keys: Seq[Expression], having: Option[Expression]) extends Node
+case class GroupBy(keys: Seq[(Expression, Option[String])], having: Option[Expression]) extends Node
 case class OrderBy(keys: Seq[(Expression, OrderType)]) extends Node
 case class Limit(rows: Long) extends Node

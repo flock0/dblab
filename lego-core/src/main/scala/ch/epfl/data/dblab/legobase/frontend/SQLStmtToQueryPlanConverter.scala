@@ -73,6 +73,15 @@ class SQLTreeToQueryPlanConverter(schema: Schema) {
       //System.out.println("Searching " + name + " in record " + rec)
       val fields = rec.getClass.getDeclaredFields
 
+      // Maybe there is no need to go through the fields
+      if (rec.isInstanceOf[DynamicCompositeRecord[_, _]]) {
+        val cc = rec.asInstanceOf[DynamicCompositeRecord[_, _]]
+        cc.getField(name) match {
+          case Some(_) => stop = true; res = cc;
+          case None    =>
+        }
+      }
+
       // Else exhaustively search inside the
       // TODO -- Quite imperative, maybe it can be turned to functional
       for (f <- fields if !stop) {
@@ -167,6 +176,7 @@ class SQLTreeToQueryPlanConverter(schema: Schema) {
     case FieldIdent(_, name, _) => recursiveGetField(name, t, t2)
     case DateLiteral(v)         => v
     case FloatLiteral(v)        => v
+    case DoubleLiteral(v)       => v
     case IntLiteral(v)          => v
     case StringLiteral(v)       => v
     case CharLiteral(v)         => v
@@ -259,7 +269,7 @@ class SQLTreeToQueryPlanConverter(schema: Schema) {
 
   def parseExpression[A: TypeTag](e: Expression, t: Record, t2: Record = null): A = (e match {
     // Literals
-    case FieldIdent(_, _, _) | IntLiteral(_) | DateLiteral(_) | FloatLiteral(_) | StringLiteral(_) | CharLiteral(_) =>
+    case FieldIdent(_, _, _) | IntLiteral(_) | DateLiteral(_) | FloatLiteral(_) | StringLiteral(_) | CharLiteral(_) | DoubleLiteral(_) =>
       parseNumericExpression(e, t, t2)
     // Arithmetic Operators
     case Add(left, right) =>
@@ -271,6 +281,8 @@ class SQLTreeToQueryPlanConverter(schema: Schema) {
     // Logical Operators
     case Equals(left, right) =>
       parseExpression(left, t, t2)(left.tp) == parseExpression(right, t, t2)(right.tp)
+    case NotEquals(left, right) =>
+      parseExpression(left, t, t2)(left.tp) != parseExpression(right, t, t2)(right.tp)
     case And(left, right) =>
       parseExpression[Boolean](left, t, t2) && parseExpression[Boolean](right, t, t2)
     case Or(left, right) =>
@@ -293,18 +305,22 @@ class SQLTreeToQueryPlanConverter(schema: Schema) {
       // Also the replaceAll must go to the compiler
       val v = OptimalString(parseExpression(values, t, t2).asInstanceOf[OptimalString].string.replaceAll("%", "").getBytes)
       f.asInstanceOf[OptimalString].containsSlice(v.asInstanceOf[OptimalString])
+    case Case(cond, thenp, elsep) =>
+      val c = parseExpression(cond, t, t2)
+      if (c == true) parseExpression(thenp, t, t2) else parseExpression(elsep, t, t2)
   }).asInstanceOf[A]
 
   def loadRelations(sqlTree: SelectStatement) {
     System.out.println("Constructing input relations...")
     val sqlRelations = sqlTree.relations;
-    val schemaRelations = sqlRelations.map(r => schema.findTable(r match {
-      case t: SQLTable => t.name
-      case s: Subquery => s.alias
-    }))
-    schemaRelations.foreach(tn => tableMap += tn.name -> {
-      // TODO: Generalize -- make this tpch agnostic
-      tn.name match {
+    val schemaRelations = sqlRelations.foreach(r => {
+      val table = schema.findTable(r match {
+        case t: SQLTable => t.name
+      })
+      val tn = table
+      val tableName = table.name + r.asInstanceOf[SQLTable].alias.getOrElse("")
+      tableMap += (tableName -> (table.name match {
+        // TODO: Generalize -- make this tpch agnostic
         case "LINEITEM" => Loader.loadTable[LINEITEMRecord](tn)(classTag[LINEITEMRecord])
         case "CUSTOMER" => Loader.loadTable[CUSTOMERRecord](tn)(classTag[CUSTOMERRecord])
         case "ORDERS"   => Loader.loadTable[ORDERSRecord](tn)(classTag[ORDERSRecord])
@@ -313,7 +329,7 @@ class SQLTreeToQueryPlanConverter(schema: Schema) {
         case "SUPPLIER" => Loader.loadTable[SUPPLIERRecord](tn)(classTag[SUPPLIERRecord])
         case "PART"     => Loader.loadTable[PARTRecord](tn)(classTag[PARTRecord])
         case "PARTSUPP" => Loader.loadTable[PARTSUPPRecord](tn)(classTag[PARTSUPPRecord])
-      }
+      }))
     })
   }
 
@@ -335,9 +351,9 @@ class SQLTreeToQueryPlanConverter(schema: Schema) {
           case LeftSemiJoin =>
             new LeftHashSemiJoinOp(leftOp, rightOp)((x, y) => parseExpression(j.clause, x, y).asInstanceOf[Boolean])(x => parseExpression(leftCond, x)(leftCond.tp))(x => parseExpression(rightCond, x)(rightCond.tp))
           case _ =>
-            new HashJoinOp(leftOp, rightOp)((x, y) => parseExpression(j.clause, x, y).asInstanceOf[Boolean])(x => parseExpression(leftCond, x)(leftCond.tp))(x => parseExpression(rightCond, x)(rightCond.tp))
+            new HashJoinOp(leftOp, rightOp, "N1_", "N2_")((x, y) => parseExpression(j.clause, x, y).asInstanceOf[Boolean])(x => parseExpression(leftCond, x)(leftCond.tp))(x => parseExpression(rightCond, x)(rightCond.tp))
         }
-      case r: SQLTable => scanOps.find(so => so._1 == r.name).get._2
+      case r: SQLTable => scanOps.find(so => so._1 == r.name + r.alias.getOrElse("")).get._2
     }
   }
 
@@ -353,16 +369,20 @@ class SQLTreeToQueryPlanConverter(schema: Schema) {
     System.out.println("Constructing group by...")
     gb match {
       case Some(GroupBy(listExpr, having)) =>
-        val names = listExpr.map(le => le match {
+        val names = listExpr.map(le => le._1 match {
           case FieldIdent(_, name, _) => name
+          case Year(_) => le._2 match {
+            case Some(q) => q
+            case None    => throw new Exception("When YEAR is used in group by it must be given an alias")
+          }
         })
-        val finalListExpr = listExpr.map(le => le match {
+        val finalListExpr = listExpr.map(le => le._1 match {
           case FieldIdent(_, name, _) =>
             aliases.find(e => e._2 == name) match {
               case Some(al) => al._1
-              case None     => le
+              case None     => le._1
             }
-
+          case Year(_) => le._1
         })
         (true, finalListExpr, names)
       case None => (false, null, Seq())
@@ -382,7 +402,7 @@ class SQLTreeToQueryPlanConverter(schema: Schema) {
       val aggFuncs: Seq[(Record, Double) => Double] = aggProj.map(p => {
         (t: Record, currAgg: Double) =>
           p match {
-            case Sum(e)     => currAgg + parseExpression(e, t).asInstanceOf[Double]
+            case Sum(e)     => performNumericComputation(currAgg, parseExpression(e, t), (x, y) => x + y)(typeTag[Double], e.tp).asInstanceOf[Double]
             case Avg(e)     => currAgg + parseExpression(e, t).asInstanceOf[Double]
             case CountAll() => currAgg + 1
           }
@@ -415,11 +435,9 @@ class SQLTreeToQueryPlanConverter(schema: Schema) {
       aliasesList = aliases.map(al => {
         val idx = al._3
         val isAggregation = proj(idx)._1.isInstanceOf[Aggregation]
-        if (isAggregation) {
-          //if (names.size == 1) SimpleAlias(name, 1)
-          //else 
+        if (isAggregation)
           CompositeAlias(al._2, 1, aggProj.indexOf(al._1))
-        } else {
+        else {
           if (gbProj.size == 1) SimpleAlias(al._2, 0)
           else CompositeAlias(al._2, 0, gbProj.indexOf(al._1))
         }
@@ -440,6 +458,7 @@ class SQLTreeToQueryPlanConverter(schema: Schema) {
         new MapOp(aggOp)(mapFuncs: _*);
       } else aggOp
     }
+    case AllColumns() => parentOp
   }
 
   def parseOrderBy(ob: Option[OrderBy], parentOp: Operator[_]) = ob match {

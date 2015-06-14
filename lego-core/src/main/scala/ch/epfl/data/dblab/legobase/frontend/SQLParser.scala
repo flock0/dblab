@@ -60,7 +60,11 @@ object SQLParser extends StandardTokenParsers {
   def parseAliasedExpression: Parser[(Expression, Option[String])] = (
     parseExpression ~ ("AS" ~> ident).? ^^ { case expr ~ alias => (expr, alias) })
 
-  def parseExpression: Parser[Expression] = parseOr
+  def parseExpression: Parser[Expression] = parseCase | parseOr
+
+  def parseCase: Parser[Expression] = "CASE" ~ "WHEN" ~ parseExpression ~ "THEN" ~ parseExpression ~ "ELSE" ~ parseExpression <~ "END" ^^ {
+    case _ ~ _ ~ cond ~ _ ~ thenp ~ _ ~ elsep => Case(cond, thenp, elsep)
+  }
 
   def parseOr: Parser[Expression] =
     parseAnd * ("OR" ^^^ { (a: Expression, b: Expression) => Or(a, b) })
@@ -117,7 +121,7 @@ object SQLParser extends StandardTokenParsers {
     parseKnownFunction |
     ident ~ opt("." ~> ident | "(" ~> repsep(parseExpression, ",") <~ ")") ^^ {
       case id ~ None           => FieldIdent(None, id)
-      case a ~ Some(b: String) => FieldIdent(Some(a), b)
+      case a ~ Some(b: String) => FieldIdent(Some(a), a + "_" + b)
     } |
     "(" ~> (parseExpression | parseSelectStatement) <~ ")"
     | "+" ~> parsePrimaryExpression ^^ (UnaryPlus(_))
@@ -133,7 +137,7 @@ object SQLParser extends StandardTokenParsers {
 
   def parseLiteral: Parser[Expression] = (
     numericLit ^^ { case i => IntLiteral(i.toInt) }
-    | floatLit ^^ { case f => FloatLiteral(f.toFloat) }
+    | floatLit ^^ { case f => DoubleLiteral(f.toDouble) }
     | stringLit ^^ {
       case s => {
         if (s.length == 1) CharLiteral(s.charAt(0))
@@ -173,7 +177,7 @@ object SQLParser extends StandardTokenParsers {
     "WHERE" ~> parseExpression)
 
   def parseGroupBy: Parser[GroupBy] = (
-    "GROUP" ~> "BY" ~> rep1sep(parseExpression, ",") ~ ("HAVING" ~> parseExpression).? ^^
+    "GROUP" ~> "BY" ~> rep1sep(parseAliasedExpression, ",") ~ ("HAVING" ~> parseExpression).? ^^
     { case exp ~ hav => GroupBy(exp, hav) })
 
   def parseOrderBy: Parser[OrderBy] = (
@@ -231,7 +235,7 @@ object SQLParser extends StandardTokenParsers {
     "JOIN", "ASC", "DESC", "FROM", "ON", "NOT", "HAVING",
     "EXISTS", "BETWEEN", "LIKE", "IN", "NULL", "LEFT", "RIGHT",
     "FULL", "OUTER", "SEMI", "INNER", "COUNT", "SUM", "AVG", "MIN", "MAX", "YEAR",
-    "DATE", "TOP", "LIMIT")
+    "DATE", "TOP", "LIMIT", "CASE", "WHEN", "THEN", "ELSE", "END")
 
   lexical.delimiters += (
     "*", "+", "-", "<", "=", "<>", "!=", "<=", ">=", ">", "/", "(", ")", ",", ".", ";")
