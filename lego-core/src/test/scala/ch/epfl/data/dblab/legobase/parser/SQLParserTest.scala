@@ -220,4 +220,9 @@ class SQLParserTest extends FlatSpec {
     val r = parser.parse("SELECT COUNT(abc), COUNT(DISTINCT def) FROM table")
     r should not be None
   }
+
+  it should "parse SUBSTRING correctly" in {
+    val r = parser.parse("SELECT SUBSTRING(c_phone FROM 1 FOR 2) FROM table")
+    r should not be None
+  }
 }

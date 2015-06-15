@@ -104,6 +104,9 @@ abstract trait Function extends Expression
 case class Extract(what: ExtractType, from: Expression) extends Function {
   def gatherFields = from.gatherFields
 }
+case class Substring(expr: Expression, start: Int, end: Int) extends Function {
+  def gatherFields = expr.gatherFields
+}
 
 sealed abstract trait CaseExpression extends Expression
 case class SimpleCaseExpression(input: Expression, cases: Seq[CaseExpressionCase], default: Option[Expression]) extends CaseExpression {

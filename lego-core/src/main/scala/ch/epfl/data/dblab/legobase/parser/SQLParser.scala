@@ -104,8 +104,8 @@ object SQLParser extends StandardTokenParsers {
     | "MAX" ~> "(" ~> parseOpt("DISTINCT") ~ parseExpression <~ ")" ^^ { case distinct ~ expr => Max(expr, distinct) }
     | "SUM" ~> "(" ~> parseOpt("DISTINCT") ~ parseExpression <~ ")" ^^ { case distinct ~ expr => Sum(expr, distinct) }
     | "AVG" ~> "(" ~> parseOpt("DISTINCT") ~ parseExpression <~ ")" ^^ { case distinct ~ expr => Avg(expr, distinct) }
-    | "EXTRACT" ~> "(" ~> parseYearMonthDay ~ "FROM" ~ parseExpression <~ ")" ^^
-    { case time ~ _ ~ expr => Extract(time, expr) })
+    | "EXTRACT" ~> "(" ~> parseYearMonthDay ~ "FROM" ~ parseExpression <~ ")" ^^ { case time ~ _ ~ expr => Extract(time, expr) }
+    | "SUBSTRING" ~> "(" ~> parseExpression ~ "FROM" ~ numericLit ~ "FOR" ~ numericLit <~ ")" ^^ { case expr ~ _ ~ s ~ _ ~ e => Substring(expr, s.toInt, e.toInt) })
 
   def parseOpt(keyword: String): Parser[Boolean] =
     opt(keyword) ^^ {
@@ -220,7 +220,7 @@ object SQLParser extends StandardTokenParsers {
     "EXISTS", "BETWEEN", "LIKE", "IN", "NULL", "LEFT", "RIGHT",
     "FULL", "OUTER", "INNER", "COUNT", "SUM", "AVG", "MIN", "MAX",
     "DATE", "TOP", "LIMIT", "EXTRACT", "YEAR", "MONTH", "DAY",
-    "CASE", "WHEN", "THEN", "ELSE", "END")
+    "CASE", "WHEN", "THEN", "ELSE", "END", "SUBSTRING", "FOR")
 
   lexical.delimiters += (
     "*", "+", "-", "<", "=", "<>", "!=", "<=", ">=", ">", "/", "(", ")", ",", ".", ";")
