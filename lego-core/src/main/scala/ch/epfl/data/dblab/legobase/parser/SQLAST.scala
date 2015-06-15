@@ -8,7 +8,8 @@ package parser
  */
 
 abstract trait Node
-case class SelectStatement(projections: Projections,
+case class SelectStatement(withs: List[WithExpression],
+                           projections: Projections,
                            relations: Seq[Relation],
                            where: Option[Expression],
                            groupBy: Option[GroupBy],
@@ -17,6 +18,9 @@ case class SelectStatement(projections: Projections,
   def gatherFields = Seq.empty // TODO: not sure about that
 }
 
+case class WithExpression(name: String, columns: Option[List[String]], stmt: SelectStatement) extends Node with Expression {
+  def gatherFields = Seq.empty // TODO: not sure about that
+}
 abstract trait Projections extends Node
 case class ExpressionProjections(lst: Seq[(Expression, Option[String])]) extends Projections
 case class AllColumns() extends Projections

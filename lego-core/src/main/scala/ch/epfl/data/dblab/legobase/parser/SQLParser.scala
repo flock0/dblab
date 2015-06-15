@@ -25,7 +25,14 @@ object SQLParser extends StandardTokenParsers {
   }
 
   def parseSelectStatement: Parser[SelectStatement] = (
-    "SELECT" ~> parseProjections ~ "FROM" ~ parseRelations ~ parseWhere.? ~ parseGroupBy.? ~ parseOrderBy.? ~ parseLimit.? <~ ";".? ^^ { case pro ~ _ ~ tab ~ whe ~ grp ~ ord ~ lim => SelectStatement(pro, tab, whe, grp, ord, lim) })
+    rep(parseWith) ~ "SELECT" ~ parseProjections ~ "FROM" ~ parseRelations ~ parseWhere.? ~ parseGroupBy.? ~ parseOrderBy.? ~ parseLimit.? <~ ";".? ^^ { case withs ~ _ ~ pro ~ _ ~ tab ~ whe ~ grp ~ ord ~ lim => SelectStatement(withs, pro, tab, whe, grp, ord, lim) })
+
+  def parseWith: Parser[WithExpression] =
+    "WITH" ~> ident ~ opt(parseWithColumns) ~ "AS" ~ "(" ~ parseSelectStatement <~ ")" ^^
+      { case name ~ cols ~ _ ~ _ ~ stmt => WithExpression(name, cols, stmt) }
+
+  def parseWithColumns: Parser[List[String]] =
+    "(" ~> rep1sep(ident, ",") <~ ")"
 
   def parseProjections: Parser[Projections] = (
     "*" ^^^ AllColumns()
@@ -220,7 +227,8 @@ object SQLParser extends StandardTokenParsers {
     "EXISTS", "BETWEEN", "LIKE", "IN", "NULL", "LEFT", "RIGHT",
     "FULL", "OUTER", "INNER", "COUNT", "SUM", "AVG", "MIN", "MAX",
     "DATE", "TOP", "LIMIT", "EXTRACT", "YEAR", "MONTH", "DAY",
-    "CASE", "WHEN", "THEN", "ELSE", "END", "SUBSTRING", "FOR")
+    "CASE", "WHEN", "THEN", "ELSE", "END", "SUBSTRING", "FOR",
+    "WITH")
 
   lexical.delimiters += (
     "*", "+", "-", "<", "=", "<>", "!=", "<=", ">=", ">", "/", "(", ")", ",", ".", ";")
