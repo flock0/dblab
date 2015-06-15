@@ -84,19 +84,19 @@ abstract trait Aggregation extends Expression
 case class CountAll() extends Aggregation {
   def gatherFields = Seq.empty
 }
-case class CountExpr(expr: Expression) extends Aggregation {
+case class CountExpr(expr: Expression, distinct: Boolean) extends Aggregation {
   def gatherFields = expr.gatherFields.map(_.copy(_2 = true))
 }
-case class Sum(expr: Expression) extends Aggregation {
+case class Sum(expr: Expression, distinct: Boolean) extends Aggregation {
   def gatherFields = expr.gatherFields.map(_.copy(_2 = true))
 }
-case class Avg(expr: Expression) extends Aggregation {
+case class Avg(expr: Expression, distinct: Boolean) extends Aggregation {
   def gatherFields = expr.gatherFields.map(_.copy(_2 = true))
 }
-case class Min(expr: Expression) extends Aggregation {
+case class Min(expr: Expression, distinct: Boolean) extends Aggregation {
   def gatherFields = expr.gatherFields.map(_.copy(_2 = true))
 }
-case class Max(expr: Expression) extends Aggregation {
+case class Max(expr: Expression, distinct: Boolean) extends Aggregation {
   def gatherFields = expr.gatherFields.map(_.copy(_2 = true))
 }
 

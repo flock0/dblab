@@ -215,4 +215,9 @@ class SQLParserTest extends FlatSpec {
     val r = parser.parse("SELECT SUM(CASE WHEN attribute = 'some_value' THEN this WHEN answer = 42 THEN valX ELSE valY END) FROM table")
     r should not be None
   }
+
+  it should "parse COUNT() with DISTINCT correctly" in {
+    val r = parser.parse("SELECT COUNT(abc), COUNT(DISTINCT def) FROM table")
+    r should not be None
+  }
 }

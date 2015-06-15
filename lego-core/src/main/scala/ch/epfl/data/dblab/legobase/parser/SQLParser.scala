@@ -99,13 +99,19 @@ object SQLParser extends StandardTokenParsers {
     | "-" ~> parsePrimaryExpression ^^ (UnaryMinus(_)))
 
   def parseKnownFunction: Parser[Expression] = (
-    "COUNT" ~> "(" ~> ("*" ^^^ CountAll() | parseExpression ^^ { case expr => CountExpr(expr) }) <~ ")"
-    | "MIN" ~> "(" ~> parseExpression <~ ")" ^^ (Min(_))
-    | "MAX" ~> "(" ~> parseExpression <~ ")" ^^ (Max(_))
-    | "SUM" ~> "(" ~> parseExpression <~ ")" ^^ (Sum(_))
-    | "AVG" ~> "(" ~> parseExpression <~ ")" ^^ (Avg(_))
+    "COUNT" ~> "(" ~> ("*" ^^^ CountAll() | parseOpt("DISTINCT") ~ parseExpression ^^ { case distinct ~ expr => CountExpr(expr, distinct) }) <~ ")"
+    | "MIN" ~> "(" ~> parseOpt("DISTINCT") ~ parseExpression <~ ")" ^^ { case distinct ~ expr => Min(expr, distinct) }
+    | "MAX" ~> "(" ~> parseOpt("DISTINCT") ~ parseExpression <~ ")" ^^ { case distinct ~ expr => Max(expr, distinct) }
+    | "SUM" ~> "(" ~> parseOpt("DISTINCT") ~ parseExpression <~ ")" ^^ { case distinct ~ expr => Sum(expr, distinct) }
+    | "AVG" ~> "(" ~> parseOpt("DISTINCT") ~ parseExpression <~ ")" ^^ { case distinct ~ expr => Avg(expr, distinct) }
     | "EXTRACT" ~> "(" ~> parseYearMonthDay ~ "FROM" ~ parseExpression <~ ")" ^^
     { case time ~ _ ~ expr => Extract(time, expr) })
+
+  def parseOpt(keyword: String): Parser[Boolean] =
+    opt(keyword) ^^ {
+      case Some(_) => true
+      case None    => false
+    }
 
   def parseYearMonthDay: Parser[ExtractType] = (
     "YEAR" ^^^ YEAR
@@ -210,7 +216,7 @@ object SQLParser extends StandardTokenParsers {
 
   lexical.reserved += (
     "SELECT", "AS", "OR", "AND", "GROUP", "ORDER", "BY", "WHERE",
-    "JOIN", "ASC", "DESC", "FROM", "ON", "NOT", "HAVING",
+    "JOIN", "ASC", "DESC", "FROM", "ON", "NOT", "HAVING", "DISTINCT",
     "EXISTS", "BETWEEN", "LIKE", "IN", "NULL", "LEFT", "RIGHT",
     "FULL", "OUTER", "INNER", "COUNT", "SUM", "AVG", "MIN", "MAX",
     "DATE", "TOP", "LIMIT", "EXTRACT", "YEAR", "MONTH", "DAY",
