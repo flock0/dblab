@@ -5,7 +5,6 @@ package schema
 import ch.epfl.data.dblab.legobase.storagemanager._
 import ch.epfl.data.dblab.legobase.LBString
 import ch.epfl.data.dblab.legobase.tpch.TPCHSchema
-import ch.epfl.data.dblab.legobase.schema.Catalog
 import org.scalatest._
 
 class SchemaTest extends FlatSpec {

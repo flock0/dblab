@@ -8,7 +8,7 @@ import schema._
 import Catalog._
 import storagemanager.Loader
 /**
- * A catalog of one or multiple table schemata and may also contain their data
+ * A catalog of one or multiple table schemata that may also contain their data
  */
 object Catalog {
   /** The standardized sequence name */
