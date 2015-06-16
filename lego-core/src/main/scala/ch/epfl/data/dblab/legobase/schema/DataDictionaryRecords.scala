@@ -6,27 +6,27 @@ import Catalog._
 import sc.pardis.types._
 
 /* Case classes for the tables in the data dictionary */
-case class DDTablesRecord(schemaName: String, name: String, private val catalog: Catalog, val fileName: Option[String] = None, private val _tableId: Option[Int] = None, var isLoaded: Boolean = false) {
+case class TablesRecord(schemaName: String, name: String, private val catalog: Catalog, val fileName: Option[String] = None, private val _tableId: Option[Int] = None, var isLoaded: Boolean = false) {
   val tableId = _tableId match {
     case Some(id) => id
-    case None     => catalog.getSequenceNext(constructSequenceName(DDSchemaName, "DD_TABLES", "TABLE_ID"))
+    case None     => catalog.getSequenceNext(constructSequenceName(DDSchemaName, "TABLES", "TABLE_ID"))
   }
 }
-case class DDAttributesRecord(tableId: Int, name: String, dataType: Tpe, private val catalog: Catalog, private val _attributeId: Option[Int] = None) {
+case class AttributesRecord(tableId: Int, name: String, dataType: Tpe, private val catalog: Catalog, private val _attributeId: Option[Int] = None) {
   val attributeId = _attributeId match {
     case Some(id) => id
-    case None     => catalog.getSequenceNext(constructSequenceName(DDSchemaName, "DD_ATTRIBUTES", "ATTRIBUTE_ID"))
+    case None     => catalog.getSequenceNext(constructSequenceName(DDSchemaName, "ATTRIBUTES", "ATTRIBUTE_ID"))
   }
 }
-case class DDFieldsRecord(tableId: Int, attributeId: Int, rowId: Int, value: Any)
-case class DDRowsRecord(tableId: Int, private val catalog: Catalog, private val _rowId: Option[Int] = None) {
+case class FieldsRecord(tableId: Int, attributeId: Int, rowId: Int, value: Any)
+case class RowsRecord(tableId: Int, private val catalog: Catalog, private val _rowId: Option[Int] = None) {
   val rowId = _rowId match {
     case Some(id) => id
-    case None     => catalog.getSequenceNext(constructSequenceName(DDSchemaName, "DD_ROWS", "ROW_ID"))
+    case None     => catalog.getSequenceNext(constructSequenceName(DDSchemaName, "ROWS", "ROW_ID"))
   }
 }
-case class DDConstraintsRecord(tableId: Int, constraintType: Char, attributes: List[Int], refTableName: Option[String], refAttributes: Option[List[String]])
-case class DDSequencesRecord(startValue: Int, endValue: Int, incrementBy: Int, sequenceName: String, private val catalog: Catalog, private val _sequenceId: Option[Int] = None) {
+case class ConstraintsRecord(tableId: Int, constraintType: Char, attributes: List[Int], refTableName: Option[String], refAttributes: Option[List[String]])
+case class SequencesRecord(startValue: Int, endValue: Int, incrementBy: Int, sequenceName: String, private val catalog: Catalog, private val _sequenceId: Option[Int] = None) {
   /* Catch invalid start/end/incrementBy values*/
   if (incrementBy == 0)
     throw new Exception(s"incrementBy of $sequenceName must not be 0")
@@ -43,7 +43,7 @@ case class DDSequencesRecord(startValue: Int, endValue: Int, incrementBy: Int, s
 
   val sequenceId = _sequenceId match {
     case Some(id) => id
-    case None     => catalog.getSequenceNext(constructSequenceName(DDSchemaName, "DD_SEQUENCES", "SEQUENCE_ID"))
+    case None     => catalog.getSequenceNext(constructSequenceName(DDSchemaName, "SEQUENCES", "SEQUENCE_ID"))
   }
 
   private var next = startValue
@@ -59,7 +59,7 @@ case class DDSequencesRecord(startValue: Int, endValue: Int, incrementBy: Int, s
       throw new Exception(s"Sequence $sequenceName has reached it's maximum value $endValue")
     val value = next
     next += incrementBy
-    //TODO Update field value in DD_FIELD for this sequence
+    //TODO Update field value in FIELD for this sequence
     value
   }
 }

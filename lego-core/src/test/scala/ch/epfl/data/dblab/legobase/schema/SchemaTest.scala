@@ -12,31 +12,31 @@ class SchemaTest extends FlatSpec {
   "Catalog" should "initialize successfully" in {
     val cat = Catalog(Map())
     /* Check the size of a few of the DD relations */
-    assert(cat.ddTables.size == 6)
-    assert(cat.ddAttributes.size == 24)
-    assert(cat.ddSequences.size == 4)
-    /* Check the number of attributes of DD_CONSTRAINTS */
-    assert(cat.ddAttributes.filter(a => a.tableId == 4).size == 5)
+    assert(cat.tables.size == 6)
+    assert(cat.attributes.size == 24)
+    assert(cat.sequences.size == 4)
+    /* Check the number of attributes of CONSTRAINTS */
+    assert(cat.attributes.filter(a => a.tableId == 4).size == 5)
     /* Check that sequences are working properly */
-    assert(cat.ddSequences(0).nextVal == 4)
-    assert(cat.ddSequences(0).nextVal == 5)
-    assert(cat.ddSequences(1).nextVal == 6)
-    /* Check that the values from DD_FIELDS are stored correctly*/
-    val rows = cat.ddRows.filter(r => r.tableId == 0)
-    val attributes = cat.ddAttributes.filter(a => a.tableId == 0)
-    val tuple = cat.ddFields.filter(f => f.tableId == 0
-      && f.rowId == cat.ddRows.filter(r => r.tableId == 0)(1).rowId) // 2nd record in DD_TABLES
-    assert(tuple.find(f => f.attributeId == cat.ddAttributes(0).attributeId).get.value == "DD")
+    assert(cat.sequences(0).nextVal == 4)
+    assert(cat.sequences(0).nextVal == 5)
+    assert(cat.sequences(1).nextVal == 6)
+    /* Check that the values from FIELDS are stored correctly*/
+    val rows = cat.rows.filter(r => r.tableId == 0)
+    val attributes = cat.attributes.filter(a => a.tableId == 0)
+    val tuple = cat.fields.filter(f => f.tableId == 0
+      && f.rowId == cat.rows.filter(r => r.tableId == 0)(1).rowId) // 2nd record in TABLES
+    assert(tuple.find(f => f.attributeId == cat.attributes(0).attributeId).get.value == "DD")
 
   }
 
   it should "return DD tables correctly" in {
     val cat = Catalog(Map())
-    val tables = cat.getTuples(Catalog.DDSchemaName, "DD_TABLES")
+    val tables = cat.getTuples(Catalog.DDSchemaName, "TABLES")
     assert(tables.size == 6)
     assert(tables(2).SCHEMA_NAME[String] == Catalog.DDSchemaName)
 
-    val seqs = cat.getTuples(Catalog.DDSchemaName, "DD_SEQUENCES")
+    val seqs = cat.getTuples(Catalog.DDSchemaName, "SEQUENCES")
     assert(seqs.size == 4)
     assert(seqs(1).START_VALUE[Int] == 0)
     assert(seqs(1).INCREMENT_BY[Int] == 1)
