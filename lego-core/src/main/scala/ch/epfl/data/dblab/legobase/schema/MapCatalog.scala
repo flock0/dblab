@@ -7,10 +7,10 @@ import scala.language.implicitConversions
 import scala.collection.mutable.ListMap
 import scala.collection.mutable.ArrayBuffer
 
-object Catalog {
+object MapCatalog extends Catalog {
   val schemata = new scala.collection.mutable.HashMap[String, Schema]()
 }
-case class Schema(tables: ArrayBuffer[Table] = ArrayBuffer(), stats: Statistics = Statistics()) {
+case class MapSchema(tables: ArrayBuffer[Table] = ArrayBuffer(), stats: Statistics = Statistics()) extends Schema {
   def findTable(name: String) = tables.find(t => t.name == name) match {
     case Some(tab) => tab
     case None      => throw new Exception("Table " + name + " not found in schema!")
@@ -27,7 +27,7 @@ case class Schema(tables: ArrayBuffer[Table] = ArrayBuffer(), stats: Statistics 
     })
   }
 }
-case class Table(name: String, attributes: List[Attribute], constraints: ArrayBuffer[Constraint], resourceLocator: String, var rowCount: Long) {
+case class MapTable(name: String, attributes: List[Attribute], constraints: ArrayBuffer[Constraint], resourceLocator: String, var rowCount: Long) extends Table {
   def primaryKey: Option[PrimaryKey] = constraints.collectFirst { case pk: PrimaryKey => pk }
   def dropPrimaryKey = primaryKey match {
     case Some(pk) => constraints -= pk
@@ -44,32 +44,11 @@ case class Table(name: String, attributes: List[Attribute], constraints: ArrayBu
   def autoIncrement: Option[AutoIncrement] = constraints.collectFirst { case ainc: AutoIncrement => ainc }
   def findAttribute(attrName: String): Option[Attribute] = attributes.find(attr => attr.name == attrName)
 }
-case class Attribute(name: String, dataType: Tpe, constraints: List[Constraint] = List()) {
+case class MapAttribute(name: String, dataType: Tpe, constraints: List[Constraint] = List()) extends Attribute {
   def hasConstraint(con: Constraint) = constraints.contains(con)
   override def toString() = {
     "    " + "%-20s".format(name) + "%-20s".format(dataType) + constraints.map(c => "@%-10s".format(c)).mkString(" , ")
   }
-}
-object Attribute {
-  implicit def tuple2ToAttribute(nameAndType: (String, Tpe)): Attribute = Attribute(nameAndType._1, nameAndType._2)
-}
-
-sealed trait Constraint
-case class PrimaryKey(attributes: List[Attribute]) extends Constraint {
-  override def toString() = "PrimaryKey(" + attributes.map(a => a.name).mkString(",") + ")"
-}
-case class ForeignKey(foreignKeyName: String, ownTable: String, referencedTable: String, attributes: List[Attribute]) extends Constraint {
-  override def toString() = "ForeignKey(" + attributes.map(a => a.name).mkString(",") + ") references " + referencedTable
-
-  def foreignTable(implicit s: Schema): Option[Table] = s.tables.find(t => t.name == referencedTable)
-  def thisTable(implicit s: Schema): Option[Table] = s.tables.find(t => t.name == ownTable)
-  //def matchingAttributes(implicit s: Schema): List[(Attribute, Attribute)] = attributes.map { case (localAttr, foreignAttr) => thisTable.get.attributes.find(a => a.name == localAttr).get -> foreignTable.get.attributes.find(a => a.name == foreignAttr).get }
-}
-case class NotNull(attribute: Attribute) extends Constraint
-case class Unique(attribute: Attribute) extends Constraint
-case class AutoIncrement(attribute: Attribute) extends Constraint
-object Compressed extends Constraint {
-  override def toString = "COMPRESSED"
 }
 
 // TODO-GEN: Move this to its own file
