@@ -296,9 +296,10 @@ class SQLTreeToQueryPlanConverter(schema: Schema) {
     case LessThan(left, right) =>
       computeOrderingExpression(left, right, (x, y) => x < y, t, t2)(left.tp, right.tp)
     // SQL statements
-    case Year(date) =>
+    //TODO Change to Extract function
+    /*case Year(date) =>
       val d = parseExpression(date, t, t2)
-      d.asInstanceOf[Int] / 10000;
+      d.asInstanceOf[Int] / 10000;*/
     case Like(field, values, _) =>
       val f = parseExpression(field, t, t2)
       // not generic enough -- must generalize for other like styles (replacing %% not enough)
@@ -371,10 +372,11 @@ class SQLTreeToQueryPlanConverter(schema: Schema) {
       case Some(GroupBy(listExpr, having)) =>
         val names = listExpr.map(le => le._1 match {
           case FieldIdent(_, name, _) => name
-          case Year(_) => le._2 match {
+          //TODO Change to Extract function
+          /*case Year(_) => le._2 match {
             case Some(q) => q
             case None    => throw new Exception("When YEAR is used in group by it must be given an alias")
-          }
+          }*/
         })
         val finalListExpr = listExpr.map(le => le._1 match {
           case FieldIdent(_, name, _) =>
@@ -382,7 +384,8 @@ class SQLTreeToQueryPlanConverter(schema: Schema) {
               case Some(al) => al._1
               case None     => le._1
             }
-          case Year(_) => le._1
+          //TODO Change to Extract function
+          //case Year(_) => le._1
         })
         (true, finalListExpr, names)
       case None => (false, null, Seq())
@@ -393,7 +396,7 @@ class SQLTreeToQueryPlanConverter(schema: Schema) {
     case ExpressionProjections(proj) => {
       System.out.println("Constructing aggregations...")
       var aliases = als
-      var (aggProj, gbProj) = proj.map(p => p._1).partition(p => !p.isInstanceOf[FieldIdent] && !p.isInstanceOf[Year])
+      var (aggProj, gbProj) = proj.map(p => p._1).partition(p => !p.isInstanceOf[FieldIdent] /*&& !p.isInstanceOf[Year]*/ ) //TODO Change to Extract function
 
       val hasAVG = aggProj.exists(ap => ap.isInstanceOf[Avg])
       if (hasAVG && aggProj.indexOf(CountAll()) == -1)

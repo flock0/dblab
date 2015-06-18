@@ -86,7 +86,6 @@ case class Sum(expr: Expression) extends Aggregation
 case class Avg(expr: Expression) extends Aggregation
 case class Min(expr: Expression) extends Aggregation
 case class Max(expr: Expression) extends Aggregation
-case class Year(expr: Expression) extends Expression
 
 trait LiteralExpression extends Expression {
   override def isLiteral = true

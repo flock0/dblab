@@ -111,9 +111,10 @@ class SQLSemanticCheckerAndTypeInference(schema: Schema) {
       checkAndInferExpr(right)
       goe.setTp(typeTag[Boolean])
     // SQL Statements
-    case yr @ Year(date) =>
+    //TODO Change to Extract function
+    /*case yr @ Year(date) =>
       checkAndInferExpr(date)
-      yr.setTp(typeTag[Int])
+      yr.setTp(typeTag[Int])*/
     case lk @ Like(field, values, _) =>
       checkAndInferExpr(field)
       checkAndInferExpr(values)

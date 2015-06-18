@@ -132,8 +132,7 @@ object SQLParser extends StandardTokenParsers {
     | "MIN" ~> "(" ~> parseExpression <~ ")" ^^ (Min(_))
     | "MAX" ~> "(" ~> parseExpression <~ ")" ^^ (Max(_))
     | "SUM" ~> "(" ~> parseExpression <~ ")" ^^ (Sum(_))
-    | "AVG" ~> "(" ~> parseExpression <~ ")" ^^ (Avg(_))
-    | "YEAR" ~> "(" ~> parseExpression <~ ")" ^^ (Year(_)))
+    | "AVG" ~> "(" ~> parseExpression <~ ")" ^^ (Avg(_)))
 
   def parseLiteral: Parser[Expression] = (
     numericLit ^^ { case i => IntLiteral(i.toInt) }
