@@ -2,31 +2,31 @@ package ch.epfl.data
 package dblab.legobase
 package schema.datadict
 
-import Catalog._
+import DataDictionary._
 import sc.pardis.types._
 
 /* Case classes for the tables in the data dictionary */
-case class TablesRecord(schemaName: String, name: String, private val catalog: Catalog, val fileName: Option[String] = None, private val _tableId: Option[Int] = None, var isLoaded: Boolean = false) {
+case class TablesRecord(schemaName: String, name: String, private val dict: DataDictionary, val fileName: Option[String] = None, private val _tableId: Option[Int] = None, var isLoaded: Boolean = false) {
   val tableId = _tableId match {
     case Some(id) => id
-    case None     => catalog.getSequenceNext(constructSequenceName(DDSchemaName, "TABLES", "TABLE_ID"))
+    case None     => dict.getSequenceNext(constructSequenceName(DDSchemaName, "TABLES", "TABLE_ID"))
   }
 }
-case class AttributesRecord(tableId: Int, name: String, dataType: Tpe, private val catalog: Catalog, private val _attributeId: Option[Int] = None) {
+case class AttributesRecord(tableId: Int, name: String, dataType: Tpe, private val dict: DataDictionary, private val _attributeId: Option[Int] = None) {
   val attributeId = _attributeId match {
     case Some(id) => id
-    case None     => catalog.getSequenceNext(constructSequenceName(DDSchemaName, "ATTRIBUTES", "ATTRIBUTE_ID"))
+    case None     => dict.getSequenceNext(constructSequenceName(DDSchemaName, "ATTRIBUTES", "ATTRIBUTE_ID"))
   }
 }
 case class FieldsRecord(tableId: Int, attributeId: Int, rowId: Int, value: Any)
-case class RowsRecord(tableId: Int, private val catalog: Catalog, private val _rowId: Option[Int] = None) {
+case class RowsRecord(tableId: Int, private val dict: DataDictionary, private val _rowId: Option[Int] = None) {
   val rowId = _rowId match {
     case Some(id) => id
-    case None     => catalog.getSequenceNext(constructSequenceName(DDSchemaName, "ROWS", "ROW_ID"))
+    case None     => dict.getSequenceNext(constructSequenceName(DDSchemaName, "ROWS", "ROW_ID"))
   }
 }
 case class ConstraintsRecord(tableId: Int, constraintType: Char, attributes: List[Int], refTableName: Option[String], refAttributes: Option[List[String]])
-case class SequencesRecord(startValue: Int, endValue: Int, incrementBy: Int, sequenceName: String, private val catalog: Catalog, private val _sequenceId: Option[Int] = None) {
+case class SequencesRecord(startValue: Int, endValue: Int, incrementBy: Int, sequenceName: String, private val dict: DataDictionary, private val _sequenceId: Option[Int] = None) {
   /* Catch invalid start/end/incrementBy values*/
   if (incrementBy == 0)
     throw new Exception(s"incrementBy of $sequenceName must not be 0")
@@ -43,7 +43,7 @@ case class SequencesRecord(startValue: Int, endValue: Int, incrementBy: Int, seq
 
   val sequenceId = _sequenceId match {
     case Some(id) => id
-    case None     => catalog.getSequenceNext(constructSequenceName(DDSchemaName, "SEQUENCES", "SEQUENCE_ID"))
+    case None     => dict.getSequenceNext(constructSequenceName(DDSchemaName, "SEQUENCES", "SEQUENCE_ID"))
   }
 
   private var next = startValue

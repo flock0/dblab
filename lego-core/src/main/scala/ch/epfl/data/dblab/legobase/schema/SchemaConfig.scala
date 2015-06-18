@@ -6,5 +6,5 @@ package dblab.legobase
  * the catalog implementation to use
  */
 package object schema {
-  val CurrCatalog: Catalog = schema.datadict.Catalog
+  val CurrCatalog: Catalog = schema.datadict.DDCatalog
 }

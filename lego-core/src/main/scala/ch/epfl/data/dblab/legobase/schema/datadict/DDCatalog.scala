@@ -2,6 +2,9 @@ package ch.epfl.data
 package dblab.legobase
 package schema.datadict
 
+import sc.pardis.types.Tpe
+import schema._
+
 object DDCatalog extends Catalog {
   override def findSchema(name: String): Schema = ???
   override def getSchemaOrElseCreate(name: String): Schema = ???

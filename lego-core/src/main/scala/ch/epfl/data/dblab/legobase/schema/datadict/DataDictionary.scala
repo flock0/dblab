@@ -4,7 +4,8 @@ package schema.datadict
 
 import scala.collection.mutable.ArrayBuffer
 import sc.pardis.types._
-import schema._
+import schema.{ DateType, VarCharType, TableType, TpeType }
+import helper._
 import DataDictionary._
 import storagemanager.Loader
 /**

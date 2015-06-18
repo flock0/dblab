@@ -1,6 +1,7 @@
 package ch.epfl.data
 package dblab.legobase
 package schema.datadict
+package helper
 
 import sc.pardis.types._
 import scala.language.implicitConversions
@@ -19,20 +20,20 @@ object Attribute {
 }
 
 sealed trait Constraint {
-  def toConstraintsRecord(catalog: Catalog, tableId: Int): ConstraintsRecord
+  def toConstraintsRecord(dict: DataDictionary, tableId: Int): ConstraintsRecord
 }
 case class PrimaryKey(attributes: List[Attribute]) extends Constraint {
-  def toConstraintsRecord(catalog: Catalog, tableId: Int) =
+  def toConstraintsRecord(dict: DataDictionary, tableId: Int) =
     ConstraintsRecord(
       tableId,
       'p',
-      catalog.getAttributes(tableId, attributes.map(_.name)).map(_.attributeId),
+      dict.getAttributes(tableId, attributes.map(_.name)).map(_.attributeId),
       None,
       None)
 }
 case class ForeignKey(ownTable: String, referencedTable: String, attributes: List[(String, String)], var selectivity: Double = 1) extends Constraint {
-  def toConstraintsRecord(catalog: Catalog, tableId: Int) = {
-    val fks: List[(Int, String)] = attributes map { case (loc: String, ref: String) => catalog.getAttribute(tableId, loc).attributeId -> ref }
+  def toConstraintsRecord(dict: DataDictionary, tableId: Int) = {
+    val fks: List[(Int, String)] = attributes map { case (loc: String, ref: String) => dict.getAttribute(tableId, loc).attributeId -> ref }
     val (attributesList, refAttributesList) = fks.unzip
 
     ConstraintsRecord(
@@ -47,24 +48,24 @@ case class ForeignKey(ownTable: String, referencedTable: String, attributes: Lis
   def matchingAttributes(implicit s: Schema): List[(Attribute, Attribute)] = attributes.map { case (localAttr, foreignAttr) => thisTable.get.attributes.find(a => a.name == localAttr).get -> foreignTable.get.attributes.find(a => a.name == foreignAttr).get }
 }
 case class NotNull(attribute: Attribute) extends Constraint {
-  def toConstraintsRecord(catalog: Catalog, tableId: Int) =
+  def toConstraintsRecord(dict: DataDictionary, tableId: Int) =
     ConstraintsRecord(
       tableId,
       'n',
-      List(catalog.getAttribute(tableId, attribute.name).attributeId),
+      List(dict.getAttribute(tableId, attribute.name).attributeId),
       None,
       None)
 }
 case class Unique(attribute: Attribute) extends Constraint {
-  def toConstraintsRecord(catalog: Catalog, tableId: Int) =
+  def toConstraintsRecord(dict: DataDictionary, tableId: Int) =
     ConstraintsRecord(
       tableId,
       'u',
-      List(catalog.getAttribute(tableId, attribute.name).attributeId),
+      List(dict.getAttribute(tableId, attribute.name).attributeId),
       None,
       None)
 }
 case class AutoIncrement(attribute: Attribute) extends Constraint {
-  def toConstraintsRecord(catalog: Catalog, tableId: Int) =
+  def toConstraintsRecord(dict: DataDictionary, tableId: Int) =
     throw new Exception("AutoIncrement doesn't have a representation as a ConstraintsRecord. It is handled through DDSequenceRecords")
 }

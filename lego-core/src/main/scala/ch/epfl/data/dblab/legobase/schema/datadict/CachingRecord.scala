@@ -27,5 +27,5 @@ class CachingRecord(private val dict: DataDictionary, private val tableId: Int, 
 }
 
 object CachingRecord {
-  def apply(catalog: Catalog, tableId: Int, rowId: Int) = new CachingRecord(dict, tableId, rowId)
+  def apply(dict: DataDictionary, tableId: Int, rowId: Int) = new CachingRecord(dict, tableId, rowId)
 }
