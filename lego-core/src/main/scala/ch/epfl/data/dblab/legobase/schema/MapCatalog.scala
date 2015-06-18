@@ -9,9 +9,12 @@ import scala.collection.mutable.ArrayBuffer
 
 object MapCatalog extends Catalog {
   val schemata = new scala.collection.mutable.HashMap[String, MapSchema]()
-  override def findSchema(name: String): Schema = ???
-  override def getSchemaOrElseCreate(name: String): Schema = ???
-  override def createAttribute(name: String, dataType: Tpe, constraints: Seq[Constraint]): Attribute = ???
+  override def findSchema(name: String): Schema = schemata.get(name) match {
+    case Some(s) => s
+    case None    => throw new Exception("Schema " + name + " not found in catalog!")
+  }
+  override def getSchemaOrElseCreate(name: String): Schema = schemata.getOrElseUpdate(name, new MapSchema())
+  override def createAttribute(name: String, dataType: Tpe, constraints: Seq[Constraint]): Attribute = MapAttribute(name, dataType, constraints)
 }
 case class MapSchema(tables: ArrayBuffer[Table] = ArrayBuffer(), stats: Statistics = Statistics()) extends Schema {
   override def findTable(name: String) = tables.find(t => t.name == name) match {
@@ -22,8 +25,12 @@ case class MapSchema(tables: ArrayBuffer[Table] = ArrayBuffer(), stats: Statisti
     case List() => None //throw new Exception("Attribute " + attrName + " not found in schema!")
     case l      => Some(l.apply(0)) // todo -- OK, but assumes that all attribute names are unique
   }
-  override def addTable(name: String, attributes: Seq[Attribute], constraints: Seq[Constraint], fileName: String, rowCount: Long) = ???
-  override def dropTable(tableName: String): Unit = ???
+  override def addTable(name: String, attributes: Seq[Attribute], fileName: String, rowCount: Long) =
+    tables += MapTable(name, attributes, ArrayBuffer(), fileName, rowCount)
+  override def dropTable(tableName: String): Unit = tables.find(_.name == tableName) match {
+    case Some(t) => tables -= t
+    case None    =>
+  }
   override def toString() = {
     val schemaName = MapCatalog.schemata.find({ case (k, v) => v.equals(this) }).get._1
     val header = "\nSchema " + schemaName + "\n" + "-" * (schemaName.length + 8) + "\n\n"
@@ -32,7 +39,7 @@ case class MapSchema(tables: ArrayBuffer[Table] = ArrayBuffer(), stats: Statisti
     })
   }
 }
-case class MapTable(name: String, attributes: List[Attribute], constraints: ArrayBuffer[Constraint], fileName: String, var rowCount: Long) extends Table {
+case class MapTable(name: String, attributes: Seq[Attribute], constraints: ArrayBuffer[Constraint], fileName: String, var rowCount: Long) extends Table {
   override def primaryKey: Option[PrimaryKey] = constraints.collectFirst { case pk: PrimaryKey => pk }
   override def dropPrimaryKey = primaryKey match {
     case Some(pk) => constraints -= pk
@@ -48,9 +55,9 @@ case class MapTable(name: String, attributes: List[Attribute], constraints: Arra
   override def uniques: List[Unique] = constraints.collect { case unq: Unique => unq }.toList
   override def autoIncrement: Option[AutoIncrement] = constraints.collectFirst { case ainc: AutoIncrement => ainc }
   override def findAttribute(attrName: String): Option[Attribute] = attributes.find(attr => attr.name == attrName)
-  override def addConstraint(cstr: Constraint) = ???
+  override def addConstraint(cstr: Constraint) = constraints += cstr
 }
-case class MapAttribute(name: String, dataType: Tpe, constraints: List[Constraint] = List()) extends Attribute {
+case class MapAttribute(name: String, dataType: Tpe, constraints: Seq[Constraint] = List()) extends Attribute {
   override def hasConstraint(con: Constraint) = constraints.contains(con)
   override def toString() = {
     "    " + "%-20s".format(name) + "%-20s".format(dataType) + constraints.map(c => "@%-10s".format(c)).mkString(" , ")

@@ -14,7 +14,7 @@ trait Catalog {
 trait Schema {
   def stats: Statistics
   def tables: Seq[Table]
-  def addTable(name: String, attributes: Seq[Attribute], constraints: Seq[Constraint], fileName: String, rowCount: Long)
+  def addTable(name: String, attributes: Seq[Attribute], fileName: String, rowCount: Long)
   def dropTable(tableName: String)
   def findTable(name: String): Table
   def findAttribute(name: String): Option[Attribute]
