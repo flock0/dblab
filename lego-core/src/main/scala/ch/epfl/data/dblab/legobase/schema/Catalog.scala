@@ -18,7 +18,7 @@ trait Schema {
   def dropTable(tableName: String)
   def findTable(name: String): Table
   def findAttribute(name: String): Option[Attribute]
-  def toString
+  def toString: String
 }
 
 trait Table {
@@ -36,16 +36,19 @@ trait Table {
   def uniques: List[Unique]
   def autoIncrement: Option[AutoIncrement]
   def fileName: String
-  def toString
+  def toString: String
 }
 
 trait Attribute {
   def name: String
   def dataType: Tpe
   def hasConstraint(con: Constraint)
+  def toString: String
 }
 
-sealed trait Constraint
+sealed trait Constraint {
+  def toString: String
+}
 case class PrimaryKey(attributes: List[Attribute]) extends Constraint {
   override def toString() = "PrimaryKey(" + attributes.map(a => a.name).mkString(",") + ")"
 }
