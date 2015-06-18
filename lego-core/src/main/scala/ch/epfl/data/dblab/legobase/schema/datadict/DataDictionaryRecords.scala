@@ -1,6 +1,6 @@
 package ch.epfl.data
 package dblab.legobase
-package schema
+package schema.datadict
 
 import Catalog._
 import sc.pardis.types._

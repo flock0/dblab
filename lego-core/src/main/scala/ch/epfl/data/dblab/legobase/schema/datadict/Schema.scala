@@ -1,6 +1,6 @@
 package ch.epfl.data
 package dblab.legobase
-package schema
+package schema.datadict
 
 import sc.pardis.types._
 import scala.language.implicitConversions
