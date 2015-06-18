@@ -109,8 +109,8 @@ object Loader {
    * @param schemaName The name of the schema in the catalog
    * @param tableName The name of the table in the schema
    */
-  def loadTable(catalog: Catalog, schemaName: String, tableName: String): Unit =
-    loadTable(catalog, catalog.getTable(schemaName, tableName))
+  def loadTable(catalog: Catalog, schemaName: String, tableName: String): Unit = ???
+    //loadTable(catalog, catalog.getTable(schemaName, tableName))
 
   /**
    * Loads a table into the in-memory DB
@@ -118,7 +118,7 @@ object Loader {
    * @param catalog The catalog that should store the data
    * @param table The table to load into the catalog
    */
-  def loadTable(catalog: Catalog, table: TablesRecord): Unit = {
+  def loadTable(catalog: Catalog, table: TablesRecord): Unit = ??? /*{
     if (!table.isLoaded) {
       val fileName = table.fileName match {
         case Some(fn) => fn
@@ -146,6 +146,6 @@ object Loader {
       }
       table.isLoaded = true
     }
-  }
+  }*/
 
 }
