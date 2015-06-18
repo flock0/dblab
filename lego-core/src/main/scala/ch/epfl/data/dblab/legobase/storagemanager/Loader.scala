@@ -59,9 +59,9 @@ object Loader {
 
   @dontInline
   def loadTable[R](table: Table)(implicit c: ClassTag[R]): Array[R] = {
-    val size = fileLineCount(table.resourceLocator)
+    val size = fileLineCount(table.fileName)
     val arr = new Array[R](size)
-    val ldr = new LegobaseScanner(table.resourceLocator)
+    val ldr = new LegobaseScanner(table.fileName)
     val recordType = currentMirror.staticClass(c.runtimeClass.getName).asType.toTypeConstructor
 
     val classMirror = currentMirror.reflectClass(recordType.typeSymbol.asClass)

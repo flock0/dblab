@@ -40,17 +40,16 @@ object DDLInterpreter {
   def interpret(ddlDef: List[_]): Schema = {
     ddlDef.foreach(ddl => ddl match {
       case UseSchema(schemaName) => {
-        currSchema = Some(Catalog.schemata.getOrElseUpdate(schemaName, new Schema()))
+        currSchema = Some(CurrCatalog.getSchemaOrElseCreate(schemaName))
       }
       case DropTable(tableName) => {
-        val schema = getCurrSchema
-        schema.tables -= schema.findTable(tableName)
+        getCurrSchema.dropTable(tableName)
       }
       case DDLTable(tableName, cols, cons) =>
-        val colDef = cols.map(c => Attribute(c.name, ddlTypeToSCType(c.datatype), c.annotations.map(annonStringToConstraint(_)))).toList
+        val colDef = cols.map(c => CurrCatalog.createAttribute(c.name, ddlTypeToSCType(c.datatype), c.annotations.map(annonStringToConstraint(_)))).toList
         val tablePath = (Config.datapath + tableName + ".tbl").toLowerCase
         val tableCardinality = Utilities.getNumLinesInFile(tablePath)
-        getCurrSchema.tables += new Table(tableName, colDef, ArrayBuffer(),
+        getCurrSchema.addTable(tableName, colDef, ArrayBuffer(),
           tablePath, tableCardinality)
         interpret(cons.toList)
         // Update cardinality stat for this schema
