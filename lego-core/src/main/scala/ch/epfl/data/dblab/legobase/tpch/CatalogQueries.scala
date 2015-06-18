@@ -51,7 +51,7 @@ object CatalogQueries {
   def Q14(numRuns: Int) = ???
 
   def Q15(numRuns: Int) = ???
-  
+
   def Q16(numRuns: Int) = ???
 
   def Q17(numRuns: Int) = ???

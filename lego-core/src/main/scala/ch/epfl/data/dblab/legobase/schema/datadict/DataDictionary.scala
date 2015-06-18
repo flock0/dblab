@@ -5,12 +5,12 @@ package schema.datadict
 import scala.collection.mutable.ArrayBuffer
 import sc.pardis.types._
 import schema._
-import Catalog._
+import DataDictionary._
 import storagemanager.Loader
 /**
  * A catalog of one or multiple table schemata that may also contain their data
  */
-object Catalog {
+object DataDictionary {
   /** The standardized sequence name */
   def constructSequenceName(schemaName: String, tableName: String, attributeName: String) =
     schemaName + "_" + tableName + "_" + attributeName + "_SEQ"
@@ -125,7 +125,7 @@ object Catalog {
  *
  * @param schemata A map from the schema name to the schema itself
  */
-case class Catalog(schemata: Map[String, Schema]) {
+case class DataDictionary(schemata: Map[String, Schema]) {
 
   /* Collections that contain the data in the data dictionary (and thus in the whole catalog) */
   private[schema] val tables: ArrayBuffer[TablesRecord] = ArrayBuffer.empty
