@@ -1,11 +1,12 @@
 package ch.epfl.data
 package dblab.legobase
-package schema
+package schema.map
 
 import sc.pardis.types._
 import scala.language.implicitConversions
 import scala.collection.mutable.ListMap
 import scala.collection.mutable.ArrayBuffer
+import schema._
 
 object MapCatalog extends Catalog {
   val schemata = new scala.collection.mutable.HashMap[String, MapSchema]()
