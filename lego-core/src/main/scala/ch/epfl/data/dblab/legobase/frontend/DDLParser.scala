@@ -53,7 +53,7 @@ object DDLParser extends JavaTokenParsers {
   sealed trait Constraint
   final case class DDLUniqueKey(table: String, uniqueCols: List[String]) extends Constraint
   final case class DDLPrimaryKey(table: String, primaryKeyCols: List[String]) extends Constraint
-  final case class DDLForeignKey(table: String, foreignKeyName: String, foreignKeyCols: List[String],
+  final case class DDLForeignKey(table: String, foreignKeyName: String, foreignKeyCols: List[(String, String)],
                                  foreignTable: String) extends Constraint
 
   def cleanString(str: String) = str.replaceAll("`", "")
@@ -67,7 +67,7 @@ object DDLParser extends JavaTokenParsers {
 
   def uniqueOrPk = ("""(?i)(PRIMARY|UNIQUE)""".r?) ~ ("""(?i)KEY""".r) ~ "(" ~ repsep(columnName, ",") ~ ")" ~ columnDelimiter
 
-  def fk = """FOREIGN KEY""".r ~ keyName ~ "(" ~ repsep(columnName, ",") ~ ")" ~ """(?i)REFERENCES""".r ~ tableName ~ columnDelimiter
+  def fk = """FOREIGN KEY""".r ~ keyName ~ "(" ~ repsep(columnName, ",") ~ ")" ~ """(?i)REFERENCES""".r ~ tableName ~ "(" ~ repsep(columnName, ",") ~ ")" ~ columnDelimiter
 
   def constraint = (uniqueOrPk | fk)
 
@@ -84,8 +84,11 @@ object DDLParser extends JavaTokenParsers {
               case Some(x) if x.equalsIgnoreCase("primary") => ConstraintOp(true, DDLPrimaryKey(name, column))
               case Some(x) if x.equalsIgnoreCase("unique")  => ConstraintOp(true, DDLUniqueKey(name, column))
             }
-          case _ ~ (kn: String) ~ "(" ~ (columnName: List[String]) ~ ")" ~ _ ~ tableName ~ _ =>
-            ConstraintOp(true, DDLForeignKey(name, kn, columnName, tableName))
+          case _ ~ (kn: String) ~ "(" ~ (localColumns: List[String]) ~ ")" ~ _ ~ tableName ~ _ ~ (foreignColumns: List[String]) ~ _ ~ _ => {
+            //TODO Make sure that the two columns lists have the same size
+            val matchedColumns = localColumns zip foreignColumns
+            ConstraintOp(true, DDLForeignKey(name, kn, matchedColumns, tableName))
+          }
         }
 
         val columnsData = columns map {
@@ -105,8 +108,12 @@ object DDLParser extends JavaTokenParsers {
   def alterTableAddPrimary = ("ALTER TABLE" ~> tableName) ~ ("ADD" ~ "PRIMARY KEY (" ~> repsep(columnName, ",") <~ ")") ^^ {
     case tn ~ cols => ConstraintOp(true, DDLPrimaryKey(tn, cols))
   }
-  def alterTableAddForeign = ("ALTER TABLE" ~> tableName) ~ ("ADD" ~ "FOREIGN KEY " ~> keyName) ~ ("(" ~> repsep(columnName, ",") <~ ")") ~ ("REFERENCES" ~> tableName) ^^ {
-    case tn ~ kn ~ cols ~ ftn => ConstraintOp(true, DDLForeignKey(tn, kn, cols, ftn))
+  def alterTableAddForeign = ("ALTER TABLE" ~> tableName) ~ ("ADD" ~ "FOREIGN KEY " ~> keyName) ~ ("(" ~> repsep(columnName, ",") <~ ")") ~ ("REFERENCES" ~> tableName) ~ ("(" ~> repsep(columnName, ",") <~ ")") ^^ {
+    case tn ~ kn ~ localCols ~ ftn ~ foreignCols => {
+      //TODO Make sure that the two columns lists have the same size
+      val matchedColumns = localCols zip foreignCols
+      ConstraintOp(true, DDLForeignKey(tn, kn, matchedColumns, ftn))
+    }
   }
 
   def alterTableAdd = alterTableAddPrimary | alterTableAddForeign

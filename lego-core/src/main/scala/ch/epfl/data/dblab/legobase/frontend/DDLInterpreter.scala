@@ -64,8 +64,15 @@ object DDLInterpreter {
               table.constraints += PrimaryKey(primaryKeyAttrs)
             case fk: DDLForeignKey =>
               val table = getCurrSchema.findTable(fk.table)
-              val foreignKeyAttrs = fk.foreignKeyCols.map(fkc => table.findAttribute(fkc).get)
-              table.constraints += ForeignKey(fk.foreignKeyName, fk.table, fk.foreignTable, foreignKeyAttrs)
+              // Check that all the foreign key attributes exist
+              val allColumnsExist = fk.foreignKeyCols.forall {
+                case (local: String, foreign: String) =>
+                  table.findAttribute(local) != None && table.findAttribute(foreign).get != None
+              }
+              if (!allColumnsExist)
+                throw new Exception("Couldn't find all the attributes specified in the foreign key constraint.")
+
+              table.constraints += ForeignKey(fk.foreignKeyName, fk.table, fk.foreignTable, fk.foreignKeyCols)
           }
         case false => /* drop */
           cons match {
