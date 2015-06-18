@@ -49,8 +49,7 @@ object DDLInterpreter {
         val colDef = cols.map(c => CurrCatalog.createAttribute(c.name, ddlTypeToSCType(c.datatype), c.annotations.map(annonStringToConstraint(_)))).toList
         val tablePath = (Config.datapath + tableName + ".tbl").toLowerCase
         val tableCardinality = Utilities.getNumLinesInFile(tablePath)
-        getCurrSchema.addTable(tableName, colDef, ArrayBuffer(),
-          tablePath, tableCardinality)
+        getCurrSchema.addTable(tableName, colDef, tablePath, tableCardinality)
         interpret(cons.toList)
         // Update cardinality stat for this schema
         getCurrSchema.stats += "CARDINALITY_" + tableName -> tableCardinality
@@ -67,7 +66,7 @@ object DDLInterpreter {
               // Check that all the foreign key attributes exist
               val allColumnsExist = fk.foreignKeyCols.forall {
                 case (local: String, foreign: String) =>
-                  table.findAttribute(local) != None && table.findAttribute(foreign).get != None
+                  table.findAttribute(local) != None && table.findAttribute(foreign) != None
               }
               if (!allColumnsExist)
                 throw new Exception("Couldn't find all the attributes specified in the foreign key constraint.")
