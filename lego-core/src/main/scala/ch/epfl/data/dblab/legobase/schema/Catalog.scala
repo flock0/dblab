@@ -50,17 +50,23 @@ sealed trait Constraint {
   def toString: String
 }
 case class PrimaryKey(attributes: Seq[Attribute]) extends Constraint {
-  override def toString() = "PrimaryKey(" + attributes.map(a => a.name).mkString(",") + ")"
+  override def toString = "PrimaryKey(" + attributes.map(a => a.name).mkString(",") + ")"
 }
 case class ForeignKey(foreignKeyName: String, ownTable: String, referencedTable: String, attributes: Seq[(String, String)]) extends Constraint {
-  override def toString() = "ForeignKey(" + attributes.map(_._1).mkString(",") + ") references " + referencedTable + "(" + attributes.map(_._2).mkString(",") + ")"
+  override def toString = "ForeignKey(" + attributes.map(_._1).mkString(",") + ") references " + referencedTable + "(" + attributes.map(_._2).mkString(",") + ")"
   def foreignTable(implicit s: Schema): Table = s.findTable(referencedTable)
   def thisTable(implicit s: Schema): Table = s.findTable(ownTable)
   def matchingAttributes(implicit s: Schema): Seq[(Attribute, Attribute)] = attributes.map { case (localAttr, foreignAttr) => thisTable.findAttribute(localAttr).get -> foreignTable.findAttribute(foreignAttr).get }
 }
-case class NotNull(attribute: Attribute) extends Constraint
-case class Unique(attribute: Attribute) extends Constraint
-case class AutoIncrement(attribute: Attribute) extends Constraint
+case class NotNull(attribute: Attribute) extends Constraint {
+  override def toString = s"NotNull($attribute)"
+}
+case class Unique(attribute: Attribute) extends Constraint {
+  override def toString = s"Unique($attribute)"
+}
+case class AutoIncrement(attribute: Attribute) extends Constraint {
+  override def toString = s"Unique($attribute)"
+}
 object Compressed extends Constraint {
   override def toString = "COMPRESSED"
 }
