@@ -126,23 +126,17 @@ object DataDictionary {
  *
  * @param schemata A map from the schema name to the schema itself
  */
-case class DataDictionary(schemata: Map[String, Schema]) {
+case class DataDictionary() {
 
   /* Collections that contain the data in the data dictionary (and thus in the whole catalog) */
-  private[schema] val tables: ArrayBuffer[TablesRecord] = ArrayBuffer.empty
-  private[schema] val attributes: ArrayBuffer[AttributesRecord] = ArrayBuffer.empty
-  private[schema] val rows: ArrayBuffer[RowsRecord] = ArrayBuffer.empty
-  private[schema] val fields: ArrayBuffer[FieldsRecord] = ArrayBuffer.empty
-  private[schema] val constraints: ArrayBuffer[ConstraintsRecord] = ArrayBuffer.empty
-  private[schema] val sequences: ArrayBuffer[SequencesRecord] = ArrayBuffer.empty
+  private[datadict] val tables: ArrayBuffer[TablesRecord] = ArrayBuffer.empty
+  private[datadict] val attributes: ArrayBuffer[AttributesRecord] = ArrayBuffer.empty
+  private[datadict] val rows: ArrayBuffer[RowsRecord] = ArrayBuffer.empty
+  private[datadict] val fields: ArrayBuffer[FieldsRecord] = ArrayBuffer.empty
+  private[datadict] val constraints: ArrayBuffer[ConstraintsRecord] = ArrayBuffer.empty
+  private[datadict] val sequences: ArrayBuffer[SequencesRecord] = ArrayBuffer.empty
 
   initializeDD()
-  /* Populate DD with schemata that have been passed to the constructor */
-  schemata.foreach {
-    case (name, Schema(tables)) => tables.foreach { t =>
-      addTableToDD(name, t)
-    }
-  }
 
   /**
    * Initializes the data dictionary with itself
