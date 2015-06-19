@@ -7,6 +7,7 @@ import sc.pardis.annotations.{ deep, metadeep, dontLift, dontInline, needs }
 import queryengine._
 import tpch._
 import schema._
+import schema.datadict.{ DataDictionary, TablesRecord }
 import sc.pardis.shallow.OptimalString
 import sc.pardis.types._
 import scala.reflect._
@@ -105,26 +106,26 @@ object Loader {
   /**
    * Loads a table into the in-memory DB
    *
-   * @param catalog The catalog that should store the data
-   * @param schemaName The name of the schema in the catalog
+   * @param dict The data dictionary that should store the data
+   * @param schemaName The name of the schema in the dictionary
    * @param tableName The name of the table in the schema
    */
-  def loadTable(catalog: Catalog, schemaName: String, tableName: String): Unit = ???
-    //loadTable(catalog, catalog.getTable(schemaName, tableName))
+  def loadTable(dict: DataDictionary, schemaName: String, tableName: String): Unit =
+    loadTable(dict, dict.getTable(schemaName, tableName))
 
   /**
    * Loads a table into the in-memory DB
    *
-   * @param catalog The catalog that should store the data
-   * @param table The table to load into the catalog
+   * @param dict The data dictionary that should store the data
+   * @param table The table to load into the dictionary
    */
-  def loadTable(catalog: Catalog, table: TablesRecord): Unit = ??? /*{
+  def loadTable(dict: DataDictionary, table: TablesRecord): Unit = {
     if (!table.isLoaded) {
       val fileName = table.fileName match {
         case Some(fn) => fn
         case None     => throw new Exception("No filename available in ${table.schemaName}.${table.name} to load data from")
       }
-      val attributes = catalog.getAttributes(table.tableId)
+      val attributes = dict.getAttributes(table.tableId)
       val size = fileLineCount(fileName)
       val ldr = new K2DBScanner(fileName)
 
@@ -140,12 +141,11 @@ object Loader {
           })
         }
 
-        catalog.addTuple(table.tableId, values)
+        dict.addTuple(table.tableId, values)
 
         i += 1
       }
       table.isLoaded = true
     }
-  }*/
-
+  }
 }

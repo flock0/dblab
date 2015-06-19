@@ -28,6 +28,7 @@ case class DDTable() extends Table {
   override def autoIncrement: Option[AutoIncrement] = ???
   override def findAttribute(attrName: String): Option[Attribute] = ???
   override def addConstraint(cstr: Constraint) = ???
+  override def load: Array[_] = ???
 }
 case class DDAttribute() extends Attribute {
   override def hasConstraint(con: Constraint) = ???
