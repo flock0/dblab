@@ -11,6 +11,8 @@ object DDCatalog extends Catalog {
   override def createAttribute(name: String, dataType: Tpe, constraints: Seq[Constraint]): Attribute = ???
 }
 case class DDSchema() extends Schema {
+  override def stats: Statistics = ???
+  override def tables: Seq[Table] = ???
   override def findTable(name: String) = ???
   override def findAttribute(attrName: String): Option[Attribute] = ??? //TODO assumes that all attribute names are unique
   override def addTable(name: String, attributes: Seq[Attribute], fileName: String, rowCount: Long) = ???
@@ -18,6 +20,8 @@ case class DDSchema() extends Schema {
   override def toString = ???
 }
 case class DDTable() extends Table {
+  override def name: String = ???
+  override def fileName: String = ???
   override def primaryKey: Option[PrimaryKey] = ???
   override def dropPrimaryKey = ???
   override def foreignKeys: List[ForeignKey] = ???
@@ -28,9 +32,13 @@ case class DDTable() extends Table {
   override def autoIncrement: Option[AutoIncrement] = ???
   override def findAttribute(attrName: String): Option[Attribute] = ???
   override def addConstraint(cstr: Constraint) = ???
+  override def attributes: Seq[Attribute] = ???
+  override def constraints: Seq[Constraint] = ???
   override def load: Array[_] = ???
 }
 case class DDAttribute() extends Attribute {
+  override def name: String = ???
+  override def dataType: Tpe = ???
   override def hasConstraint(con: Constraint) = ???
   override def toString() = ???
 }
