@@ -3,7 +3,8 @@ package dblab.legobase
 package tpch
 
 import sc.pardis.types._
-import schema._
+import schema.{ DateType, VarCharType }
+import schema.datadict.helper._
 import utils.Utilities._
 
 object TPCHSchema {
