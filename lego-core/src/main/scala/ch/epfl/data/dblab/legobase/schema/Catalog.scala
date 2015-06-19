@@ -6,18 +6,18 @@ import sc.pardis.types.Tpe
 import scala.collection.mutable.ArrayBuffer
 
 trait Catalog {
-  def findSchema(name: String): Schema
-  def getSchemaOrElseCreate(name: String): Schema
-  def createAttribute(name: String, dataType: Tpe, constraints: Seq[Constraint] = List()): Attribute
+  def findSchema(schemaName: String): Schema
+  def getSchemaOrElseCreate(schemaName: String): Schema
+  def createAttribute(attrName: String, dataType: Tpe, constraints: Seq[Constraint] = List()): Attribute
 }
 
 trait Schema {
   def stats: Statistics
   def tables: Seq[Table]
-  def addTable(name: String, attributes: Seq[Attribute], fileName: String, rowCount: Long)
+  def addTable(tableName: String, attributes: Seq[Attribute], fileName: String, rowCount: Long)
   def dropTable(tableName: String)
-  def findTable(name: String): Table
-  def findAttribute(name: String): Option[Attribute]
+  def findTable(tableName: String): Table
+  def findAttribute(attrName: String): Option[Attribute]
   def toString: String
 }
 
@@ -25,7 +25,7 @@ trait Table {
   def name: String
   def attributes: Seq[Attribute]
   def constraints: Seq[Constraint]
-  def findAttribute(name: String): Option[Attribute]
+  def findAttribute(attrName: String): Option[Attribute]
   def primaryKey: Option[PrimaryKey]
   def dropPrimaryKey
   def foreignKeys: Seq[ForeignKey]

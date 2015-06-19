@@ -6,22 +6,39 @@ import sc.pardis.types.Tpe
 import schema._
 
 object DDCatalog extends Catalog {
-  override def findSchema(name: String): Schema = ???
-  override def getSchemaOrElseCreate(name: String): Schema = ???
-  override def createAttribute(name: String, dataType: Tpe, constraints: Seq[Constraint]): Attribute = ???
+
+  lazy val dict = DataDictionary()
+
+  override def findSchema(schemaName: String): Schema = DDSchema(dict, name)
+  override def getSchemaOrElseCreate(schemaName: String): Schema = findSchema(name)
+  override def createAttribute(attrName: String, dataType: Tpe, constraints: Seq[Constraint]): Attribute = DDAttribute(dict, attrName, dataType, constraints)
 }
-case class DDSchema() extends Schema {
-  override def stats: Statistics = ???
-  override def tables: Seq[Table] = ???
-  override def findTable(name: String) = ???
-  override def findAttribute(attrName: String): Option[Attribute] = ??? //TODO assumes that all attribute names are unique
-  override def addTable(name: String, attributes: Seq[Attribute], fileName: String, rowCount: Long) = ???
-  override def dropTable(tableName: String): Unit = ???
-  override def toString = ???
+case class DDSchema(private val dict: DataDictionary, name: String) extends Schema {
+  override def stats: Statistics = dict.getStats(name)
+  override def tables: Seq[Table] = dict.getTables(name).map(DDTable(dict, _))
+  override def findTable(tableName: String) = dict.getTable(name, tableName).map(DDTable(dict, _))
+  override def findAttribute(attrName: String): Option[Attribute] = { //TODO assumes that all attribute names are unique
+    val filteredAttr = dict.getAttributes(attrName)
+    if (filteredAttr.size != 1)
+      throw new Exception(s"Attribute $attrName is not unique")
+    filteredAttr(0)
+  }
+  override def addTable(tableName: String, attributes: Seq[Attribute], fileName: String, rowCount: Long) = ???
+  override def dropTable(tableName: String): Unit = dict.dropTable(name, tableName)
+  override def toString = {
+    val schemaName = name
+    val header = "\nSchema " + schemaName + "\n" + "-" * (schemaName.length + 8) + "\n\n"
+    tables.foldLeft(header)((str, t) => {
+      str + t.name + " (" + t.attributes.mkString("\n", "\n", "\n") + ");\n" + t.constraints.mkString("\n") + "\n\n"
+    })
+  }
 }
-case class DDTable() extends Table {
-  override def name: String = ???
-  override def fileName: String = ???
+case class DDTable(private val dict: DataDictionary, private val rec: TableRecord) extends Table {
+  override def name: String = rec.name   
+  override def fileName: String = rec.fileName match {
+    case Some(fn) => fn
+    case None => ""
+  }
   override def primaryKey: Option[PrimaryKey] = ???
   override def dropPrimaryKey = ???
   override def foreignKeys: List[ForeignKey] = ???
@@ -36,9 +53,7 @@ case class DDTable() extends Table {
   override def constraints: Seq[Constraint] = ???
   override def load: Array[_] = ???
 }
-case class DDAttribute() extends Attribute {
-  override def name: String = ???
-  override def dataType: Tpe = ???
-  override def hasConstraint(con: Constraint) = ???
+case class DDAttribute(private val dict: DataDictionary, name: String, dataType: Tpe, constraints: Seq[Constraint]) extends Attribute {
+  override def hasConstraint(con: Constraint) = constraints contains con
   override def toString() = ???
 }

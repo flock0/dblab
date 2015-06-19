@@ -327,6 +327,9 @@ case class DataDictionary() {
   /** Returns the attribute with the specified name in the given table */
   def getAttribute(tableId: Int, attributeName: String) = getAttributes(tableId, List(attributeName)).head
 
+  /** Returns all attributes */
+  def getAttributes(attrName: String) = attributes.filter(attrName == _.name)
+
   /** Returns all attributes of the specified table */
   def getAttributes(tableId: Int) = attributes.filter(a => tableId == a.tableId)
 
@@ -340,19 +343,21 @@ case class DataDictionary() {
   }
 
   /** Returns the table with specified name in the given schema */
-  def getTable(schemaName: String, tableName: String): TablesRecord = {
-    tables.find(t => t.schemaName == schemaName && t.name == tableName) match {
+  def getTable(schemaName: String, tableName: String): TablesRecord =
+    tables.find(_.schemaName == schemaName && _.name == tableName) match {
       case Some(t) => t
       case None    => throw new Exception(s"Table $tableName does not exist in schema $schemaName")
     }
-  }
 
   /** Returns the table with the specified tableId */
   def getTable(tableId: Int) =
-    tables.find(tbl => tbl.tableId == tableId) match {
+    tables.find(_.tableId == tableId) match {
       case Some(t) => t
       case None    => throw new Exception(s"Table with ID $tableId doesn't exist in this catalog")
     }
+
+  /** Returns the tables in the given schema */
+  def getTables(schemaName: String): Seq[TablesRecord] = tables.filter(_.schemaName == schemaName)
 
   /** Returns the field identified by the given IDs */
   private[schema] def getField[T](tableId: Int, attributeId: Int, rowId: Int): Option[T] =
@@ -394,4 +399,6 @@ case class DataDictionary() {
       case None => false
       case _    => true
     }
+
+  private[datadict] def getStats(schemaName: String): Statistics = ??? //getOrElseUpdate
 }
