@@ -320,17 +320,7 @@ class SQLTreeToQueryPlanConverter(schema: Schema) {
       })
       val tn = table
       val tableName = table.name + r.asInstanceOf[SQLTable].alias.getOrElse("")
-      tableMap += (tableName -> (table.name match {
-        // TODO: Generalize -- make this tpch agnostic
-        case "LINEITEM" => Loader.loadTable[LINEITEMRecord](tn)(classTag[LINEITEMRecord])
-        case "CUSTOMER" => Loader.loadTable[CUSTOMERRecord](tn)(classTag[CUSTOMERRecord])
-        case "ORDERS"   => Loader.loadTable[ORDERSRecord](tn)(classTag[ORDERSRecord])
-        case "REGION"   => Loader.loadTable[REGIONRecord](tn)(classTag[REGIONRecord])
-        case "NATION"   => Loader.loadTable[NATIONRecord](tn)(classTag[NATIONRecord])
-        case "SUPPLIER" => Loader.loadTable[SUPPLIERRecord](tn)(classTag[SUPPLIERRecord])
-        case "PART"     => Loader.loadTable[PARTRecord](tn)(classTag[PARTRecord])
-        case "PARTSUPP" => Loader.loadTable[PARTSUPPRecord](tn)(classTag[PARTSUPPRecord])
-      }))
+      tableMap += (tableName -> tn.load)
     })
   }
 
