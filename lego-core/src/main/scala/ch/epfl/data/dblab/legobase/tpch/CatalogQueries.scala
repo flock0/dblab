@@ -11,7 +11,6 @@ import queryengine._
 import queryengine.push._
 import sc.pardis.annotations.{ deep, metadeep, dontLift }
 import GenericEngine._
-import CatalogTPCHLoader._
 import storagemanager._
 
 @deep
