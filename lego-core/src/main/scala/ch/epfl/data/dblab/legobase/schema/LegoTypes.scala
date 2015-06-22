@@ -2,7 +2,7 @@ package ch.epfl.data
 package dblab.legobase
 package schema
 
-import sc.pardis.types.PardisType
+import sc.pardis.types._
 import scala.reflect.runtime.universe.{ TypeTag, typeTag => tag, Type }
 
 case object DateType extends PardisType[java.util.Date] {
@@ -25,4 +25,11 @@ case class TableType(schema: Schema, table: Table) extends PardisType[Table] {
   val typeArguments = Nil
   override val isRecord = true
   val typeTag = throw new Exception("No type tag available for a TableType type representation.")
+}
+
+case object TpeType extends PardisType[Tpe] {
+  def rebuild(newArguments: PardisType[_]*) = TpeType
+  val name = "Tpe"
+  val typeArguments = Nil
+  val typeTag = tag[Tpe]
 }

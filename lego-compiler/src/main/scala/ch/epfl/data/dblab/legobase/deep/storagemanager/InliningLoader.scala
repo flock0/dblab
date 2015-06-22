@@ -21,9 +21,9 @@ trait InliningLoader extends storagemanager.LoaderImplementations with schema.Sc
     val table = _table match {
       case Constant(v: Table) => v
     }
-    val size = Loader.fileLineCount(unit(table.resourceLocator))
+    val size = Loader.fileLineCount(unit(table.fileName))
     val arr = __newArray[R](size)
-    val ldr = __newK2DBScanner(unit(table.resourceLocator))
+    val ldr = __newK2DBScanner(unit(table.fileName))
     val recordType = currentMirror.staticClass(c.runtimeClass.getName).asType.toTypeConstructor
 
     allTables += table

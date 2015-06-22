@@ -35,8 +35,8 @@ object SQLParser extends StandardTokenParsers {
   }
 
   def parseSelectStatement: Parser[SelectStatement] = (
-    "SELECT" ~> parseProjections ~ "FROM" ~ parseRelations ~ parseWhere.? ~ parseGroupBy.? ~ parseOrderBy.? ~ parseLimit.? <~ ";".? ^^ {
-      case pro ~ _ ~ tab ~ whe ~ grp ~ ord ~ lim => {
+    rep(parseWith) ~ "SELECT" ~ parseProjections ~ "FROM" ~ parseRelations ~ parseWhere.? ~ parseGroupBy.? ~ parseOrderBy.? ~ parseLimit.? <~ ";".? ^^ {
+      case withs ~ pro ~ _ ~ tab ~ whe ~ grp ~ ord ~ lim => {
         val rel = tab.foldLeft(Seq[Relation]())((list, tb) => list ++ extractRelationsFromJoinTree(tb))
         val aliases = pro match {
           case ep: ExpressionProjections => ep.lst.zipWithIndex.filter(p => p._1._2.isDefined).map(al => (al._1._1, al._1._2.get, al._2))
@@ -45,20 +45,27 @@ object SQLParser extends StandardTokenParsers {
         val hasJoin = tab.exists(e => e.isInstanceOf[Join])
         hasJoin match {
           case true => tab.size match {
-            case 1 => SelectStatement(pro, rel, Some(tab(0)), whe, grp, ord, lim, aliases)
+            case 1 => SelectStatement(withs, pro, rel, Some(tab(0)), whe, grp, ord, lim, aliases)
             case _ => throw new Exception("BUG: Invalid number of join trees detected!")
           }
-          case false => SelectStatement(pro, rel, None, whe, grp, ord, lim, aliases)
+          case false => SelectStatement(withs, pro, rel, None, whe, grp, ord, lim, aliases)
         }
       }
     })
+
+  def parseWith: Parser[WithExpression] =
+    "WITH" ~> ident ~ opt(parseWithColumns) ~ "AS" ~ "(" ~ parseSelectStatement <~ ")" ^^
+      { case name ~ cols ~ _ ~ _ ~ stmt => WithExpression(name, cols, stmt) }
+
+  def parseWithColumns: Parser[List[String]] =
+    "(" ~> rep1sep(ident, ",") <~ ")"
 
   def parseProjections: Parser[Projections] = (
     "*" ^^^ AllColumns()
     | rep1sep(parseAliasedExpression, ",") ^^ { case lst => ExpressionProjections(lst) })
 
   def parseAliasedExpression: Parser[(Expression, Option[String])] = (
-    parseExpression ~ ("AS" ~> ident).? ^^ { case expr ~ alias => (expr, alias) })
+    parseExpression ~ ("AS".? ~> (ident | stringLit)).? ^^ { case expr ~ alias => (expr, alias) })
 
   def parseExpression: Parser[Expression] = parseCase | parseOr
 
@@ -104,7 +111,8 @@ object SQLParser extends StandardTokenParsers {
           }
       } |
       "NOT" ~> parseSimpleExpression ^^ (Not(_)) |
-      "EXISTS" ~> "(" ~> parseSelectStatement <~ ")" ^^ { case s => Exists(s) })
+      "EXISTS" ~> "(" ~> parseSelectStatement <~ ")" ^^ { case s => Exists(s) } |
+      parseCaseExpression)
 
   def parseAddition: Parser[Expression] =
     parseMultiplication * (
@@ -128,11 +136,24 @@ object SQLParser extends StandardTokenParsers {
     | "-" ~> parsePrimaryExpression ^^ (UnaryMinus(_)))
 
   def parseKnownFunction: Parser[Expression] = (
-    "COUNT" ~> "(" ~> ("*" ^^^ CountAll() | parseExpression ^^ { case expr => CountExpr(expr) }) <~ ")"
-    | "MIN" ~> "(" ~> parseExpression <~ ")" ^^ (Min(_))
-    | "MAX" ~> "(" ~> parseExpression <~ ")" ^^ (Max(_))
-    | "SUM" ~> "(" ~> parseExpression <~ ")" ^^ (Sum(_))
-    | "AVG" ~> "(" ~> parseExpression <~ ")" ^^ (Avg(_)))
+    "COUNT" ~> "(" ~> ("*" ^^^ CountAll() | parseOpt("DISTINCT") ~ parseExpression ^^ { case distinct ~ expr => CountExpr(expr, distinct) }) <~ ")"
+    | "MIN" ~> "(" ~> parseOpt("DISTINCT") ~ parseExpression <~ ")" ^^ { case distinct ~ expr => Min(expr, distinct) }
+    | "MAX" ~> "(" ~> parseOpt("DISTINCT") ~ parseExpression <~ ")" ^^ { case distinct ~ expr => Max(expr, distinct) }
+    | "SUM" ~> "(" ~> parseOpt("DISTINCT") ~ parseExpression <~ ")" ^^ { case distinct ~ expr => Sum(expr, distinct) }
+    | "AVG" ~> "(" ~> parseOpt("DISTINCT") ~ parseExpression <~ ")" ^^ { case distinct ~ expr => Avg(expr, distinct) }
+    | "EXTRACT" ~> "(" ~> parseYearMonthDay ~ "FROM" ~ parseExpression <~ ")" ^^ { case time ~ _ ~ expr => Extract(time, expr) }
+    | "SUBSTRING" ~> "(" ~> parseExpression ~ "FROM" ~ numericLit ~ "FOR" ~ numericLit <~ ")" ^^ { case expr ~ _ ~ s ~ _ ~ e => Substring(expr, s.toInt, e.toInt) })
+
+  def parseOpt(keyword: String): Parser[Boolean] =
+    opt(keyword) ^^ {
+      case Some(_) => true
+      case None    => false
+    }
+
+  def parseYearMonthDay: Parser[ExtractType] = (
+    "YEAR" ^^^ YEAR
+    | "MONTH" ^^^ MONTH
+    | "DAY" ^^^ DAY)
 
   def parseLiteral: Parser[Expression] = (
     numericLit ^^ { case i => IntLiteral(i.toInt) }
@@ -145,6 +166,14 @@ object SQLParser extends StandardTokenParsers {
     }
     | "NULL" ^^ { case _ => NullLiteral() }
     | "DATE" ~> stringLit ^^ { case s => DateLiteral(GenericEngine.parseDate(s)) })
+
+  def parseCaseExpression: Parser[Expression] =
+    "CASE" ~> opt(parseExpression) ~
+      rep1("WHEN" ~> parseExpression ~ "THEN" ~ parseExpression ^^ { case w ~ _ ~ t => CaseExpressionCase(w, t) }) ~
+      opt("ELSE" ~> parseExpression) <~ "END" ^^ {
+        case Some(e) ~ cases ~ default => SimpleCaseExpression(e, cases, default)
+        case None ~ cases ~ default    => ComplexCaseExpression(cases, default)
+      }
 
   def parseRelations: Parser[Seq[Relation]] = rep1sep(parseRelation, ",")
 
@@ -231,10 +260,12 @@ object SQLParser extends StandardTokenParsers {
 
   lexical.reserved += (
     "SELECT", "AS", "OR", "AND", "GROUP", "ORDER", "BY", "WHERE",
-    "JOIN", "ASC", "DESC", "FROM", "ON", "NOT", "HAVING",
+    "JOIN", "ASC", "DESC", "FROM", "ON", "NOT", "HAVING", "DISTINCT",
     "EXISTS", "BETWEEN", "LIKE", "IN", "NULL", "LEFT", "RIGHT",
-    "FULL", "OUTER", "SEMI", "INNER", "COUNT", "SUM", "AVG", "MIN", "MAX", "YEAR",
-    "DATE", "TOP", "LIMIT", "CASE", "WHEN", "THEN", "ELSE", "END")
+    "FULL", "OUTER", "INNER", "COUNT", "SUM", "AVG", "MIN", "MAX",
+    "DATE", "TOP", "LIMIT", "EXTRACT", "YEAR", "MONTH", "DAY",
+    "CASE", "WHEN", "THEN", "ELSE", "END", "SUBSTRING", "FOR",
+    "WITH")
 
   lexical.delimiters += (
     "*", "+", "-", "<", "=", "<>", "!=", "<=", ">=", ">", "/", "(", ")", ",", ".", ";")

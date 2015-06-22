@@ -6,7 +6,9 @@ import utils.Utilities._
 import sc.pardis.annotations.{ deep, metadeep, dontLift, dontInline, needs }
 import queryengine._
 import tpch._
-import schema._
+import schema.{ DateType, VarCharType }
+import schema.datadict.helper._
+import schema.datadict.{ DataDictionary, TablesRecord }
 import sc.pardis.shallow.OptimalString
 import sc.pardis.types._
 import scala.reflect._
@@ -48,20 +50,23 @@ object Loader {
     Integer.parseInt(((("wc -l " + file) #| "awk {print($1)}").!!).replaceAll("\\s+$", ""))
   }
 
-  // TODO implement the loader method with the following signature.
-  // This method works as follows:
-  //   1. Converts typeTag[R] into a table
-  //   2. Invokes the other method
-  // def loadTable[R](implicit t: TypeTag[R]): Array[R]
-
-  // TODO
-  // def loadTable[R](schema: Schema)(implicit t: TypeTag[R]): Array[R] = {
-
+  /**
+   * Loads a table from disk
+   *
+   * The order of the tuples' values on disk must be the same
+   * as the constructor parameters for the passed class R and
+   * the attributes in the passed table.
+   *
+   * @tparam R The class of the tuples to load
+   * @param table The table to load data for
+   * @return An array of tuples loaded from disk
+   */
   @dontInline
   def loadTable[R](table: Table)(implicit c: ClassTag[R]): Array[R] = {
     val size = fileLineCount(table.fileName)
     val arr = new Array[R](size)
     val ldr = new LegobaseScanner(table.fileName)
+    
     val recordType = currentMirror.staticClass(c.runtimeClass.getName).asType.toTypeConstructor
 
     val classMirror = currentMirror.reflectClass(recordType.typeSymbol.asClass)
@@ -98,5 +103,51 @@ object Loader {
     arr
 
     //TODO update statistics
+  }
+
+  /**
+   * Loads a table into the in-memory DB
+   *
+   * @param dict The data dictionary that should store the data
+   * @param schemaName The name of the schema in the dictionary
+   * @param tableName The name of the table in the schema
+   */
+  def loadTable(dict: DataDictionary, schemaName: String, tableName: String): Unit =
+    loadTable(dict, dict.getTable(schemaName, tableName))
+
+  /**
+   * Loads a table into the in-memory DB
+   *
+   * @param dict The data dictionary that should store the data
+   * @param table The table to load into the dictionary
+   */
+  def loadTable(dict: DataDictionary, table: TablesRecord): Unit = {
+    if (!table.isLoaded) {
+      val fileName = table.fileName match {
+        case Some(fn) => fn
+        case None     => throw new Exception("No filename available in ${table.schemaName}.${table.name} to load data from")
+      }
+      val attributes = dict.getAttributes(table.tableId)
+      val size = fileLineCount(fileName)
+      val ldr = new K2DBScanner(fileName)
+
+      var i = 0
+      while (i < size && ldr.hasNext()) {
+        val values = attributes.map { at =>
+          at.attributeId -> (at.dataType match {
+            case IntType          => ldr.next_int
+            case DoubleType       => ldr.next_double
+            case CharType         => ldr.next_char
+            case DateType         => ldr.next_date
+            case VarCharType(len) => loadString(len, ldr)
+          })
+        }
+
+        dict.addTuple(table.tableId, values)
+
+        i += 1
+      }
+      table.isLoaded = true
+    }
   }
 }

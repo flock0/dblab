@@ -10,8 +10,9 @@ import ru._
  * Based on: https://github.com/stephentu/scala-sql-parser
  */
 
-trait Node
-case class SelectStatement(projections: Projections,
+abstract trait Node
+case class SelectStatement(withs: List[WithExpression],
+                           projections: Projections,
                            relations: Seq[Relation],
                            joinTree: Option[Relation],
                            where: Option[Expression],
@@ -20,7 +21,10 @@ case class SelectStatement(projections: Projections,
                            limit: Option[Limit],
                            aliases: Seq[(Expression, String, Int)]) extends Node with Expression
 
-trait Projections extends Node
+case class WithExpression(name: String, columns: Option[List[String]], stmt: SelectStatement) extends Node with Expression {
+  def gatherFields = Seq.empty // TODO: not sure about that
+}
+abstract trait Projections extends Node
 case class ExpressionProjections(lst: Seq[(Expression, Option[String])]) extends Projections
 case class AllColumns() extends Projections
 
@@ -38,7 +42,7 @@ trait Expression extends Node {
   def isRValueLiteral: Boolean = isLiteral
 }
 
-trait BinaryOperator extends Expression {
+abstract trait BinaryOperator extends Expression {
   val left: Expression
   val right: Expression
 
@@ -47,11 +51,11 @@ trait BinaryOperator extends Expression {
 case class Or(left: Expression, right: Expression) extends BinaryOperator
 case class And(left: Expression, right: Expression) extends BinaryOperator
 
-trait EqualityOperator extends BinaryOperator
+abstract trait EqualityOperator extends BinaryOperator
 case class Equals(left: Expression, right: Expression) extends EqualityOperator
 case class NotEquals(left: Expression, right: Expression) extends EqualityOperator
 
-trait InEqualityOperator extends BinaryOperator
+abstract trait InEqualityOperator extends BinaryOperator
 case class LessOrEqual(left: Expression, right: Expression) extends InEqualityOperator
 case class LessThan(left: Expression, right: Expression) extends InEqualityOperator
 case class GreaterOrEqual(left: Expression, right: Expression) extends InEqualityOperator
@@ -66,7 +70,7 @@ case class Subtract(left: Expression, right: Expression) extends BinaryOperator
 case class Multiply(left: Expression, right: Expression) extends BinaryOperator
 case class Divide(left: Expression, right: Expression) extends BinaryOperator
 
-trait UnaryOperation extends Expression {
+abstract trait UnaryOperation extends Expression {
   val expr: Expression
   override def isLiteral = expr.isLiteral
 }
@@ -79,15 +83,53 @@ case class Case(cond: Expression, thenp: Expression, elsep: Expression) extends 
 
 case class FieldIdent(qualifier: Option[String], name: String, symbol: Symbol = null) extends Expression
 
-trait Aggregation extends Expression
-case class CountAll() extends Aggregation
-case class CountExpr(expr: Expression) extends Aggregation
-case class Sum(expr: Expression) extends Aggregation
-case class Avg(expr: Expression) extends Aggregation
-case class Min(expr: Expression) extends Aggregation
-case class Max(expr: Expression) extends Aggregation
+abstract trait Aggregation extends Expression
+case class CountAll() extends Aggregation {
+  def gatherFields = Seq.empty
+}
+case class CountExpr(expr: Expression, distinct: Boolean) extends Aggregation {
+  def gatherFields = expr.gatherFields.map(_.copy(_2 = true))
+}
+case class Sum(expr: Expression, distinct: Boolean) extends Aggregation {
+  def gatherFields = expr.gatherFields.map(_.copy(_2 = true))
+}
+case class Avg(expr: Expression, distinct: Boolean) extends Aggregation {
+  def gatherFields = expr.gatherFields.map(_.copy(_2 = true))
+}
+case class Min(expr: Expression, distinct: Boolean) extends Aggregation {
+  def gatherFields = expr.gatherFields.map(_.copy(_2 = true))
+}
+case class Max(expr: Expression, distinct: Boolean) extends Aggregation {
+  def gatherFields = expr.gatherFields.map(_.copy(_2 = true))
+}
 
-trait LiteralExpression extends Expression {
+abstract trait Function extends Expression
+case class Extract(what: ExtractType, from: Expression) extends Function {
+  def gatherFields = from.gatherFields
+}
+case class Substring(expr: Expression, start: Int, end: Int) extends Function {
+  def gatherFields = expr.gatherFields
+}
+
+sealed abstract trait CaseExpression extends Expression
+case class SimpleCaseExpression(input: Expression, cases: Seq[CaseExpressionCase], default: Option[Expression]) extends CaseExpression {
+  def gatherFields = input.gatherFields ++ cases.flatMap(_.gatherFields) ++ (default match {
+    case None    => Seq()
+    case Some(e) => e.gatherFields
+  })
+}
+case class ComplexCaseExpression(cases: Seq[CaseExpressionCase], default: Option[Expression]) extends CaseExpression {
+  def gatherFields = cases.flatMap(_.gatherFields) ++ (default match {
+    case None    => Seq[(FieldIdent, Boolean)]()
+    case Some(e) => e.gatherFields
+  })
+}
+
+case class CaseExpressionCase(whenExpr: Expression, thenExpr: Expression) {
+  def gatherFields = whenExpr.gatherFields ++ thenExpr.gatherFields
+}
+
+abstract trait LiteralExpression extends Expression {
   override def isLiteral = true
 }
 case class IntLiteral(v: Int) extends LiteralExpression
@@ -118,3 +160,8 @@ case object DESC extends OrderType
 case class GroupBy(keys: Seq[(Expression, Option[String])], having: Option[Expression]) extends Node
 case class OrderBy(keys: Seq[(Expression, OrderType)]) extends Node
 case class Limit(rows: Long) extends Node
+
+sealed abstract trait ExtractType
+case object YEAR extends ExtractType
+case object MONTH extends ExtractType
+case object DAY extends ExtractType

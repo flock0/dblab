@@ -6,7 +6,7 @@ import utils.Utilities._
 import sc.pardis.annotations.{ deep, metadeep, dontLift, dontInline, needs }
 import queryengine._
 import tpch._
-import schema._
+import schema.datadict.helper._
 import storagemanager._
 import sc.pardis.shallow.OptimalString
 import sc.pardis.types._
