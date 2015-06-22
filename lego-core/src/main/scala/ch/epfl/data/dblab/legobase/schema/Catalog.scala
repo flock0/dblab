@@ -2,7 +2,7 @@ package ch.epfl.data
 package dblab.legobase
 package schema
 
-import sc.pardis.types.Tpe
+import sc.pardis.types.{ Tpe, PardisType }
 import scala.collection.mutable.ArrayBuffer
 
 trait Catalog {
@@ -13,7 +13,7 @@ trait Catalog {
 trait Schema {
   def stats: Statistics
   def tables: Seq[Table]
-  def addTable(tableName: String, attributes: Seq[Attribute], fileName: String, rowCount: Long)
+  def addTable(tableName: String, attributes: Seq[(String, PardisType[_], List[schema.Compressed.type])], fileName: String, rowCount: Long)
   def dropTable(tableName: String)
   def findTable(tableName: String): Table
   def findAttribute(attrName: String): Option[Attribute]

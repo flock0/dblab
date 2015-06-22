@@ -2,7 +2,7 @@ package ch.epfl.data
 package dblab.legobase
 package schema.datadict
 
-import sc.pardis.types.Tpe
+import sc.pardis.types.{ Tpe, PardisType }
 import schema._
 
 object DDCatalog extends Catalog {
@@ -25,7 +25,7 @@ case class DDSchema(private val dict: DataDictionary, name: String) extends Sche
     else
       Some(DDAttribute(dict, filteredAttr(0)))
   }
-  override def addTable(tableName: String, attributes: Seq[Attribute], fileName: String, rowCount: Long) =
+  override def addTable(tableName: String, attributes: Seq[(String, PardisType[_], List[schema.Compressed.type])], fileName: String, rowCount: Long) =
     dict.addTable(tableName, attributes, fileName)
   override def dropTable(tableName: String): Unit = dict.dropTable(name, tableName)
   override def toString = {

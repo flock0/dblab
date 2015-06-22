@@ -66,7 +66,7 @@ object Loader {
     val size = fileLineCount(table.fileName)
     val arr = new Array[R](size)
     val ldr = new LegobaseScanner(table.fileName)
-    
+
     val recordType = currentMirror.staticClass(c.runtimeClass.getName).asType.toTypeConstructor
 
     val classMirror = currentMirror.reflectClass(recordType.typeSymbol.asClass)

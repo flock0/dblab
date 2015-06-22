@@ -32,7 +32,7 @@ case class MapSchema(tables: ArrayBuffer[Table] = ArrayBuffer(), stats: Statisti
     case List() => None //throw new Exception("Attribute " + attrName + " not found in schema!")
     case l      => Some(l.apply(0)) // todo -- OK, but assumes that all attribute names are unique
   }
-  override def addTable(name: String, attributes: Seq[Attribute], fileName: String, rowCount: Long) =
+  override def addTable(name: String, attributes: Seq[(String, PardisType[_], List[schema.Compressed.type])], fileName: String, rowCount: Long) =
     tables += MapTable(name, attributes, ArrayBuffer(), fileName, rowCount)
   override def dropTable(tableName: String): Unit = tables.find(_.name == tableName) match {
     case Some(t) => tables -= t

@@ -403,7 +403,7 @@ case class DataDictionary() {
 
   private[datadict] def getStats(schemaName: String): Statistics = stats.getOrElseUpdate(schemaName, Statistics())
 
-  private[datadict] def addTable(tableName: String, tableAttributes: Seq[Column], fileName: String) = {
+  private[datadict] def addTable(tableName: String, tableAttributes: Seq[(String, PardisType[_], List[schema.Compressed.type])], fileName: String) = {
     if (tableExistsAlreadyInDD(schemaName, tableName)) {
       throw new Exception(s"Table $tableName already exists in schema $schemaName.")
     }
