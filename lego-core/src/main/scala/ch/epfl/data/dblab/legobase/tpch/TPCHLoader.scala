@@ -38,7 +38,7 @@ object TPCHLoader {
   //@dontLift
   //val tpchSchema: Schema = TPCHSchema.getSchema(Config.datapath, getScalingFactor)
   @dontInline
-  def getTable(tableName: String): Table =
+  def getTable(tableName: String): schema.Table =
     // NEWVERSION (not hardcoded tpch schema -- TODO Must be generalized without DDLInterpreter)
     DDLInterpreter.getCurrSchema.tables.find(t => t.name == tableName).get
   // OLDVERSION (when tpchSchema existed)

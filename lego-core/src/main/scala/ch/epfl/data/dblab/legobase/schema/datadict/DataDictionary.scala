@@ -403,7 +403,7 @@ case class DataDictionary() {
 
   private[datadict] def getStats(schemaName: String): Statistics = stats.getOrElseUpdate(schemaName, Statistics())
 
-  private[datadict] def addTable(tableName: String, tableAttributes: Seq[(String, PardisType[_], List[schema.Compressed.type])], fileName: String) = {
+  private[datadict] def addTable(schemaName: String, tableName: String, tableAttributes: Seq[(String, PardisType[_], Seq[schema.Constraint])], fileName: String) = {
     if (tableExistsAlreadyInDD(schemaName, tableName)) {
       throw new Exception(s"Table $tableName already exists in schema $schemaName.")
     }
@@ -414,25 +414,10 @@ case class DataDictionary() {
     addTuple(DDSchemaName, "TABLES", Seq(schemaName, tableName, newTableId))
     //TODO Adapt after merge
     /* Add entries to ATTRIBUTES */
-    val newAttributes: List[AttributesRecord] = for (attr <- tableAttributes) yield AttributesRecord(newTableId, attr.name, attr.dataType, this)
+    val newAttributes: Seq[AttributesRecord] = for (attr <- tableAttributes) yield AttributesRecord(newTableId, attr._1, attr._2, this)
     attributes ++= newAttributes
     newAttributes.foreach(attr => addTuple(DDSchemaName, "ATTRIBUTES", Seq(newTableId, attr.name, attr.dataType, attr.attributeId)))
 
-    /* Add entries to CONSTRAINTS */
-    val newConstraints = for (cstr <- tbl.constraints.filter(filterNotAutoIncrement)) yield cstr.toConstraintsRecord(this, newTableId)
-    constraints ++= newConstraints
-    newConstraints.foreach(cstr => addTuple(DDSchemaName, "CONSTRAINTS", Seq(newTableId, cstr.constraintType, cstr.attributes, cstr.refTableName, cstr.refAttributes)))
-
-    /* Add entries to SEQUENCES */
-    val newSequences: Seq[SequencesRecord] = for (cstr <- tbl.constraints.filter(filterAutoIncrement)) yield {
-      cstr match {
-        case ai: AutoIncrement => SequencesRecord(0, Int.MaxValue, 1, constructSequenceName(DDSchemaName, tbl.name, ai.attribute.name), this)
-        case _                 => throw new ClassCastException
-      }
-
-    }
-    sequences ++= newSequences
-    newSequences.foreach(seq => addTuple(DDSchemaName, "SEQUENCES", Seq(seq.startValue, seq.endValue, seq.incrementBy, seq.sequenceName, seq.sequenceId)))
   }
 
   private[datadict] def dropTable(schemaName: String, tableName: String) = ???

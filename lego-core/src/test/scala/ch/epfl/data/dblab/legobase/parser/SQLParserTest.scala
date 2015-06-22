@@ -1,4 +1,4 @@
-import ch.epfl.data.dblab.legobase.parser._
+import ch.epfl.data.dblab.legobase.frontend.SQLParser
 import org.scalatest._
 import Matchers._
 

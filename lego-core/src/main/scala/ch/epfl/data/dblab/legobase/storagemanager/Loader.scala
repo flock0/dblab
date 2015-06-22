@@ -62,7 +62,7 @@ object Loader {
    * @return An array of tuples loaded from disk
    */
   @dontInline
-  def loadTable[R](table: Table)(implicit c: ClassTag[R]): Array[R] = {
+  def loadTable[R](table: schema.Table)(implicit c: ClassTag[R]): Array[R] = {
     val size = fileLineCount(table.fileName)
     val arr = new Array[R](size)
     val ldr = new LegobaseScanner(table.fileName)
@@ -129,7 +129,7 @@ object Loader {
       }
       val attributes = dict.getAttributes(table.tableId)
       val size = fileLineCount(fileName)
-      val ldr = new K2DBScanner(fileName)
+      val ldr = new LegobaseScanner(fileName)
 
       var i = 0
       while (i < size && ldr.hasNext()) {

@@ -21,9 +21,8 @@ case class SelectStatement(withs: List[WithExpression],
                            limit: Option[Limit],
                            aliases: Seq[(Expression, String, Int)]) extends Node with Expression
 
-case class WithExpression(name: String, columns: Option[List[String]], stmt: SelectStatement) extends Node with Expression {
-  def gatherFields = Seq.empty // TODO: not sure about that
-}
+case class WithExpression(name: String, columns: Option[List[String]], stmt: SelectStatement) extends Node with Expression
+
 abstract trait Projections extends Node
 case class ExpressionProjections(lst: Seq[(Expression, Option[String])]) extends Projections
 case class AllColumns() extends Projections
@@ -84,50 +83,22 @@ case class Case(cond: Expression, thenp: Expression, elsep: Expression) extends 
 case class FieldIdent(qualifier: Option[String], name: String, symbol: Symbol = null) extends Expression
 
 abstract trait Aggregation extends Expression
-case class CountAll() extends Aggregation {
-  def gatherFields = Seq.empty
-}
-case class CountExpr(expr: Expression, distinct: Boolean) extends Aggregation {
-  def gatherFields = expr.gatherFields.map(_.copy(_2 = true))
-}
-case class Sum(expr: Expression, distinct: Boolean) extends Aggregation {
-  def gatherFields = expr.gatherFields.map(_.copy(_2 = true))
-}
-case class Avg(expr: Expression, distinct: Boolean) extends Aggregation {
-  def gatherFields = expr.gatherFields.map(_.copy(_2 = true))
-}
-case class Min(expr: Expression, distinct: Boolean) extends Aggregation {
-  def gatherFields = expr.gatherFields.map(_.copy(_2 = true))
-}
-case class Max(expr: Expression, distinct: Boolean) extends Aggregation {
-  def gatherFields = expr.gatherFields.map(_.copy(_2 = true))
-}
+case class CountAll() extends Aggregation
+case class CountExpr(expr: Expression, distinct: Boolean) extends Aggregation
+case class Sum(expr: Expression, distinct: Boolean) extends Aggregation
+case class Avg(expr: Expression, distinct: Boolean) extends Aggregation
+case class Min(expr: Expression, distinct: Boolean) extends Aggregation
+case class Max(expr: Expression, distinct: Boolean) extends Aggregation
 
 abstract trait Function extends Expression
-case class Extract(what: ExtractType, from: Expression) extends Function {
-  def gatherFields = from.gatherFields
-}
-case class Substring(expr: Expression, start: Int, end: Int) extends Function {
-  def gatherFields = expr.gatherFields
-}
+case class Extract(what: ExtractType, from: Expression) extends Function
+case class Substring(expr: Expression, start: Int, end: Int) extends Function
 
 sealed abstract trait CaseExpression extends Expression
-case class SimpleCaseExpression(input: Expression, cases: Seq[CaseExpressionCase], default: Option[Expression]) extends CaseExpression {
-  def gatherFields = input.gatherFields ++ cases.flatMap(_.gatherFields) ++ (default match {
-    case None    => Seq()
-    case Some(e) => e.gatherFields
-  })
-}
-case class ComplexCaseExpression(cases: Seq[CaseExpressionCase], default: Option[Expression]) extends CaseExpression {
-  def gatherFields = cases.flatMap(_.gatherFields) ++ (default match {
-    case None    => Seq[(FieldIdent, Boolean)]()
-    case Some(e) => e.gatherFields
-  })
-}
+case class SimpleCaseExpression(input: Expression, cases: Seq[CaseExpressionCase], default: Option[Expression]) extends CaseExpression
+case class ComplexCaseExpression(cases: Seq[CaseExpressionCase], default: Option[Expression]) extends CaseExpression
 
-case class CaseExpressionCase(whenExpr: Expression, thenExpr: Expression) {
-  def gatherFields = whenExpr.gatherFields ++ thenExpr.gatherFields
-}
+case class CaseExpressionCase(whenExpr: Expression, thenExpr: Expression)
 
 abstract trait LiteralExpression extends Expression {
   override def isLiteral = true

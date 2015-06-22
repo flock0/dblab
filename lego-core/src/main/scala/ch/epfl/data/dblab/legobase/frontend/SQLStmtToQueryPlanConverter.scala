@@ -395,8 +395,8 @@ class SQLTreeToQueryPlanConverter(schema: Schema) {
       val aggFuncs: Seq[(Record, Double) => Double] = aggProj.map(p => {
         (t: Record, currAgg: Double) =>
           p match {
-            case Sum(e)     => performNumericComputation(currAgg, parseExpression(e, t), (x, y) => x + y)(typeTag[Double], e.tp).asInstanceOf[Double]
-            case Avg(e)     => currAgg + parseExpression(e, t).asInstanceOf[Double]
+            case Sum(e, _)  => performNumericComputation(currAgg, parseExpression(e, t), (x, y) => x + y)(typeTag[Double], e.tp).asInstanceOf[Double]
+            case Avg(e, _)  => currAgg + parseExpression(e, t).asInstanceOf[Double]
             case CountAll() => currAgg + 1
           }
       })

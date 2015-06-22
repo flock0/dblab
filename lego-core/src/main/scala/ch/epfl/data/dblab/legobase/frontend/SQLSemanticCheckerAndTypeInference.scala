@@ -69,10 +69,10 @@ class SQLSemanticCheckerAndTypeInference(schema: Schema) {
       checkAndInferExpr(left)
       checkAndInferExpr(right)
       setResultType(div, left, right)
-    case sum @ Sum(expr) =>
+    case sum @ Sum(expr, _) =>
       checkAndInferExpr(expr)
       sum.setTp(typeTag(expr.tp))
-    case avg @ Avg(expr) =>
+    case avg @ Avg(expr, _) =>
       checkAndInferExpr(expr)
       avg.setTp(typeTag(expr.tp))
     case avg @ CountAll() =>

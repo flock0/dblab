@@ -36,7 +36,7 @@ object SQLParser extends StandardTokenParsers {
 
   def parseSelectStatement: Parser[SelectStatement] = (
     rep(parseWith) ~ "SELECT" ~ parseProjections ~ "FROM" ~ parseRelations ~ parseWhere.? ~ parseGroupBy.? ~ parseOrderBy.? ~ parseLimit.? <~ ";".? ^^ {
-      case withs ~ pro ~ _ ~ tab ~ whe ~ grp ~ ord ~ lim => {
+      case withs ~ _ ~ pro ~ _ ~ tab ~ whe ~ grp ~ ord ~ lim => {
         val rel = tab.foldLeft(Seq[Relation]())((list, tb) => list ++ extractRelationsFromJoinTree(tb))
         val aliases = pro match {
           case ep: ExpressionProjections => ep.lst.zipWithIndex.filter(p => p._1._2.isDefined).map(al => (al._1._1, al._1._2.get, al._2))

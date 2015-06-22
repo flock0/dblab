@@ -13,7 +13,7 @@ trait Catalog {
 trait Schema {
   def stats: Statistics
   def tables: Seq[Table]
-  def addTable(tableName: String, attributes: Seq[(String, PardisType[_], List[schema.Compressed.type])], fileName: String, rowCount: Long)
+  def addTable(tableName: String, attributes: Seq[(String, PardisType[_], Seq[Constraint])], fileName: String, rowCount: Long)
   def dropTable(tableName: String)
   def findTable(tableName: String): Table
   def findAttribute(attrName: String): Option[Attribute]

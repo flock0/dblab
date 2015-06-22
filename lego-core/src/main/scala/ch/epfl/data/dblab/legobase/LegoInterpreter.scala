@@ -17,7 +17,7 @@ object LegoInterpreter extends LegoRunner {
    *
    * @param query the input TPCH query (TODO should be generalized)
    */
-  def executeQuery(query: String, scalingFactor: Double): Unit = query match {
+  def executeQuery(query: String, schema: Schema): Unit = query match {
     case "Q1"     => Queries.Q1(Config.numRuns)
     case "Q2"     => Queries.Q2(Config.numRuns)
     case "Q3"     => Queries.Q3(Config.numRuns)
