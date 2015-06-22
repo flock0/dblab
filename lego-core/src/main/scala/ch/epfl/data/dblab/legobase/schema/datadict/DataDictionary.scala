@@ -2,9 +2,9 @@ package ch.epfl.data
 package dblab.legobase
 package schema.datadict
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{ ArrayBuffer, Map }
 import sc.pardis.types._
-import schema.{ DateType, VarCharType, TableType, TpeType }
+import schema.{ DateType, VarCharType, TableType, TpeType, Statistics }
 import helper._
 import DataDictionary._
 import storagemanager.Loader
@@ -135,6 +135,7 @@ case class DataDictionary() {
   private[datadict] val fields: ArrayBuffer[FieldsRecord] = ArrayBuffer.empty
   private[datadict] val constraints: ArrayBuffer[ConstraintsRecord] = ArrayBuffer.empty
   private[datadict] val sequences: ArrayBuffer[SequencesRecord] = ArrayBuffer.empty
+  private[datadict] val stats: Map[String, Statistics] = Map.empty //TODO Move to data dictionary
 
   initializeDD()
 
@@ -318,7 +319,7 @@ case class DataDictionary() {
    * @param table The table to get the tuples for
    * @return An array of all records for this table
    */
-  private def getTuples(table: TablesRecord): Array[Record] = {
+  private[datadict] def getTuples(table: TablesRecord): Array[Record] = {
     if (!isDataDictionary(table)) /* Only load tables from disk that are not part of the data dictionary */
       Loader.loadTable(this, table)
     rows.filter(row => row.tableId == table.tableId).map(row => Record(this, table.tableId, row.rowId)).toArray
@@ -344,7 +345,7 @@ case class DataDictionary() {
 
   /** Returns the table with specified name in the given schema */
   def getTable(schemaName: String, tableName: String): TablesRecord =
-    tables.find(_.schemaName == schemaName && _.name == tableName) match {
+    tables.find(t => t.schemaName == schemaName && t.name == tableName) match {
       case Some(t) => t
       case None    => throw new Exception(s"Table $tableName does not exist in schema $schemaName")
     }
@@ -400,5 +401,51 @@ case class DataDictionary() {
       case _    => true
     }
 
-  private[datadict] def getStats(schemaName: String): Statistics = ??? //getOrElseUpdate
+  private[datadict] def getStats(schemaName: String): Statistics = stats.getOrElseUpdate(schemaName, Statistics())
+
+  private[datadict] def addTable(tableName: String, tableAttributes: Seq[Column], fileName: String) = {
+    if (tableExistsAlreadyInDD(schemaName, tableName)) {
+      throw new Exception(s"Table $tableName already exists in schema $schemaName.")
+    }
+
+    /* Add entry to TABLES*/
+    val newTableId = getSequenceNext(constructSequenceName(DDSchemaName, "TABLES", "TABLE_ID"))
+    tables += TablesRecord(schemaName, tableName, this, Some(fileName), Some(newTableId))
+    addTuple(DDSchemaName, "TABLES", Seq(schemaName, tableName, newTableId))
+    //TODO Adapt after merge
+    /* Add entries to ATTRIBUTES */
+    val newAttributes: List[AttributesRecord] = for (attr <- tableAttributes) yield AttributesRecord(newTableId, attr.name, attr.dataType, this)
+    attributes ++= newAttributes
+    newAttributes.foreach(attr => addTuple(DDSchemaName, "ATTRIBUTES", Seq(newTableId, attr.name, attr.dataType, attr.attributeId)))
+
+    /* Add entries to CONSTRAINTS */
+    val newConstraints = for (cstr <- tbl.constraints.filter(filterNotAutoIncrement)) yield cstr.toConstraintsRecord(this, newTableId)
+    constraints ++= newConstraints
+    newConstraints.foreach(cstr => addTuple(DDSchemaName, "CONSTRAINTS", Seq(newTableId, cstr.constraintType, cstr.attributes, cstr.refTableName, cstr.refAttributes)))
+
+    /* Add entries to SEQUENCES */
+    val newSequences: Seq[SequencesRecord] = for (cstr <- tbl.constraints.filter(filterAutoIncrement)) yield {
+      cstr match {
+        case ai: AutoIncrement => SequencesRecord(0, Int.MaxValue, 1, constructSequenceName(DDSchemaName, tbl.name, ai.attribute.name), this)
+        case _                 => throw new ClassCastException
+      }
+
+    }
+    sequences ++= newSequences
+    newSequences.foreach(seq => addTuple(DDSchemaName, "SEQUENCES", Seq(seq.startValue, seq.endValue, seq.incrementBy, seq.sequenceName, seq.sequenceId)))
+  }
+
+  private[datadict] def dropTable(schemaName: String, tableName: String) = ???
+
+  private[datadict] def getConstraints(tableId: Int, constraintType: Char) = ???
+
+  private[datadict] def getConstraints(tableId: Int) = ???
+
+  private[datadict] def getConstraints(attrName: String) = ???
+
+  private[datadict] def dropPrimaryKey(tableId: Int) = ???
+
+  private[datadict] def dropForeignKey(tableId: Int, foreignKeyName: String) = ???
+
+  private[datadict] def addConstraint(cstr: schema.Constraint) = ???
 }

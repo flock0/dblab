@@ -8,7 +8,6 @@ import scala.collection.mutable.ArrayBuffer
 trait Catalog {
   def findSchema(schemaName: String): Schema
   def getSchemaOrElseCreate(schemaName: String): Schema
-  def createAttribute(attrName: String, dataType: Tpe, constraints: Seq[Constraint] = List()): Attribute
 }
 
 trait Schema {
