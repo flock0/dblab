@@ -4,16 +4,15 @@ package schema
 
 import ch.epfl.data.dblab.legobase.storagemanager._
 import ch.epfl.data.dblab.legobase.LBString
-import ch.epfl.data.dblab.legobase.tpch.TPCHSchema
 import org.scalatest._
 
 class SchemaTest extends FlatSpec {
-  "Catalog" should "initialize successfully" in {
-    val cat = Catalog(Map())
+  "DDCatalog" should "initialize successfully" in {
+    val schema = DDCatalog.findSchema("DD")
     /* Check the size of a few of the DD relations */
-    assert(cat.tables.size == 6)
-    assert(cat.attributes.size == 24)
-    assert(cat.sequences.size == 4)
+    assert(schema.tables.size == 6)
+    assert(schema.attributes.size == 24)
+    assert(schema.sequences.size == 4)
     /* Check the number of attributes of CONSTRAINTS */
     assert(cat.attributes.filter(a => a.tableId == 4).size == 5)
     /* Check that sequences are working properly */
