@@ -301,7 +301,7 @@ case class DataDictionary() {
    * @param tableName The name of the table
    * @return An array of all records for this table
    */
-  def getTuples(schemaName: String, tableName: String): Array[Record] =
+  def getTuples(schemaName: String, tableName: String): Array[Tuple] =
     getTuples(getTable(schemaName, tableName))
 
   /**
@@ -310,7 +310,7 @@ case class DataDictionary() {
    * @param tableId The id of the table to get the tuples for
    * @return An array of all records for this table
    */
-  def getTuples(tableId: Int): Array[Record] =
+  def getTuples(tableId: Int): Array[Tuple] =
     getTuples(getTable(tableId))
 
   /**
@@ -319,10 +319,10 @@ case class DataDictionary() {
    * @param table The table to get the tuples for
    * @return An array of all records for this table
    */
-  private[datadict] def getTuples(table: TablesRecord): Array[Record] = {
+  private[datadict] def getTuples(table: TablesRecord): Array[Tuple] = {
     if (!isDataDictionary(table)) /* Only load tables from disk that are not part of the data dictionary */
       Loader.loadTable(this, table)
-    rows.filter(row => row.tableId == table.tableId).map(row => Record(this, table.tableId, row.rowId)).toArray
+    rows.filter(row => row.tableId == table.tableId).map(row => Tuple(this, table.tableId, row.rowId)).toArray
   }
 
   /** Returns the attribute with the specified name in the given table */

@@ -36,7 +36,7 @@ trait Table {
   def autoIncrement: Option[AutoIncrement]
   def fileName: String
   def toString: String
-  def load: Array[_]
+  def load: Array[_ <: Record]
 }
 
 trait Attribute {

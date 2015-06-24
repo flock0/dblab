@@ -54,7 +54,7 @@ case class DDTable(private val dict: DataDictionary, private val rec: TablesReco
   override def addConstraint(cstr: Constraint) = dict.addConstraint(cstr)
   override def attributes: Seq[Attribute] = dict.getAttributes(rec.tableId).map(DDAttribute(dict, _))
   override def constraints: Seq[Constraint] = dict.getConstraints(rec.tableId)
-  override def load: Array[_] = dict.getTuples(rec)
+  override def load: Array[_ <: Record] = dict.getTuples(rec)
 }
 case class DDAttribute(private val dict: DataDictionary, private val attr: AttributesRecord) extends Attribute {
   override def name: String = attr.name

@@ -62,7 +62,7 @@ case class MapTable(name: String, attributes: Seq[Attribute], constraints: Array
   override def autoIncrement: Option[AutoIncrement] = constraints.collectFirst { case ainc: AutoIncrement => ainc }
   override def findAttribute(attrName: String): Option[Attribute] = attributes.find(attr => attr.name == attrName)
   override def addConstraint(cstr: Constraint) = constraints += cstr
-  override def load: Array[_] = name match {
+  override def load: Array[_ <: Record] = name match {
     // TODO: Generalize -- make this tpch agnostic
     case "LINEITEM" => Loader.loadTable[LINEITEMRecord](this)(classTag[LINEITEMRecord])
     case "CUSTOMER" => Loader.loadTable[CUSTOMERRecord](this)(classTag[CUSTOMERRecord])

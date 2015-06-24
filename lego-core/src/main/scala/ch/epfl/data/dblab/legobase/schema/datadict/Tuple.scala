@@ -5,13 +5,13 @@ package schema.datadict
 import scala.language.dynamics
 
 /**
- * A single record in the database
+ * A single tuple in the database
  *
- * @param dict The data dictionary that this record is stored in
- * @param tableId The id of the table that describes this records schema
- * @param rowId The id of the row that this record represents
+ * @param dict The data dictionary that this tuple is stored in
+ * @param tableId The id of the table that describes this tuples schema
+ * @param rowId The id of the row that this tuple represents
  */
-case class Record(private val dict: DataDictionary, private val tableId: Int, private val rowId: Int) extends sc.pardis.shallow.Record with Dynamic {
+case class Tuple(private val dict: DataDictionary, private val tableId: Int, private val rowId: Int) extends schema.Record {
   private val tableRecord = dict.getTable(tableId)
   val schema = tableRecord.schemaName
   val table = tableRecord.name
