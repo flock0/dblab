@@ -25,7 +25,21 @@ case class RowsRecord(tableId: Int, private val dict: DataDictionary, private va
     case None     => dict.getSequenceNext(constructSequenceName(DDSchemaName, "ROWS", "ROW_ID"))
   }
 }
-case class ConstraintsRecord(tableId: Int, constraintType: Char, attributes: List[Int], refTableName: Option[String], refAttributes: Option[List[String]])
+case class ConstraintsRecord(tableId: Int, constraintType: Char, attributes: List[Int], refTableName: Option[String], refAttributes: Option[List[String]], foreignKeyName: Option[String] = None)
+
+object ConstraintsRecord {
+  implicit def ConstraintsRecordToConstraint(cr: ConstraintsRecord)(implicit val dict: DataDictionary): Constraint = {
+    cr.constraintType match {
+        case 'p' => PrimaryKey(dict.getAttributes(tableId, attributes).map(a => DDAttribute(dict, a))))
+        case 'f' => //TODO ConstraintRecord is missing an optionalforeignkeyname
+        case 'n' => NotNull(DDAttribute(dict, dict.getAttribute(tableId, attributes.head)))
+        case 'u' => Unique(DDAttribute(dict, dict.getAttribute(tableId, attributes.head)))
+        case 'c' => Compressed(DDAttribute(dict, dict.getAttribute(tableId, attributes.head)))
+        case _ => throw new Exception(s"Constraint in ${cr.tableId} has unknown type '${cr.constraintType}'.")
+      }
+  }
+}
+
 case class SequencesRecord(startValue: Int, endValue: Int, incrementBy: Int, sequenceName: String, private val dict: DataDictionary, private val _sequenceId: Option[Int] = None) {
   /* Catch invalid start/end/incrementBy values*/
   if (incrementBy == 0)

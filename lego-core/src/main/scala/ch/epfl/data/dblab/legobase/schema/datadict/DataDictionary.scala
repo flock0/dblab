@@ -85,7 +85,7 @@ object DataDictionary {
     }
     val constraintsTable = {
       val tableId: Attribute = "TABLE_ID" -> IntType
-      val constraintType: Attribute = "CONSTRAINT_TYPE" -> CharType /* f = foreign key constraint, p = primary key constraint, u = unique constraint, n = notnull constraint */
+      val constraintType: Attribute = "CONSTRAINT_TYPE" -> CharType /* f = foreign key constraint, p = primary key constraint, u = unique constraint, n = notnull constraint, c = compressed */
       val attributes: Attribute = "ATTRIBUTES" -> SeqType(IntType)
 
       new Table("CONSTRAINTS", List(
@@ -93,7 +93,8 @@ object DataDictionary {
         constraintType,
         attributes,
         "REF_TABLE_NAME" -> OptionType(IntType),
-        "REF_ATTRIBUTES" -> OptionType(SeqType(IntType))),
+        "REF_ATTRIBUTES" -> OptionType(SeqType(IntType))
+        "FOREIGN_KEY_NAME" -> OptionType(StringType)),
         List(ForeignKey("CONSTRAINTS", "ATTRIBUTES", List(("TABLE_ID", "TABLE_ID"), ("ATTRIBUTES", "ATTRIBUTE_ID"))),
           ForeignKey("CONSTRAINTS", "TABLES", List(("REF_TABLE_NAME", "NAME"))),
           ForeignKey("CONSTRAINTS", "ATTRIBUTES", List(("REF_ATTRIBUTES", "ATTRIBUTE_ID"))),
@@ -331,6 +332,9 @@ case class DataDictionary() {
   /** Returns the attribute with the specified name in the given table */
   def getAttribute(tableId: Int, attributeName: String) = getAttributes(tableId, List(attributeName)).head
 
+  /** Returns the attribute with the specified id in the given table */
+  def getAttribute(tableId: Int, attributeId: Int) = getAttributes(tableId, List(attributeId)).head
+
   /** Returns all attributes */
   def getAttributes(attrName: String) = attributes.filter(attrName == _.name)
 
@@ -342,6 +346,15 @@ case class DataDictionary() {
     val atts = attributes.filter(at => at.tableId == tableId && attributeNames.contains(at.name)).toList
 
     if (atts.size != attributeNames.size)
+      throw new Exception(s"Couldn't find all requested attributes in $tableId")
+    atts
+  }
+
+  /** Returns a list of attributes with the specified ids that belong to the given table */
+  def getAttributes(tableId: Int, attributeIds: List[Int]) = {
+    val atts = attributes.filter(at => at.tableId == tableId && attributeIds.contains(at.attributeId)).toList
+
+    if (atts.size != attributeIds.size)
       throw new Exception(s"Couldn't find all requested attributes in $tableId")
     atts
   }
@@ -441,7 +454,7 @@ case class DataDictionary() {
     tables -= table
   }
 
-  private[datadict] def getConstraints(tableId: Int, constraintType: Char) = ???
+  private[datadict] def getConstraints[T](tableId: Int, constraintType: Char) = ???
 
   private[datadict] def getConstraints(tableId: Int) = ???
 

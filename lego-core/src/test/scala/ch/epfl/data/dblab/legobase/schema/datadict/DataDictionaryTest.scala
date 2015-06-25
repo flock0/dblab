@@ -11,10 +11,10 @@ class DataDictionaryTest extends FlatSpec {
     val dd = DataDictionary()
     /* Check the size of a few of the DD relations */
     assert(dd.tables.size == 6)
-    assert(dd.attributes.size == 24)
+    assert(dd.attributes.size == 25)
     assert(dd.sequences.size == 4)
     /* Check the number of attributes of CONSTRAINTS */
-    assert(dd.attributes.filter(a => a.tableId == 4).size == 5)
+    assert(dd.attributes.filter(a => a.tableId == 4).size == 6)
     /* Check that sequences are working properly */
     assert(dd.sequences(0).nextVal == 4)
     assert(dd.sequences(0).nextVal == 5)
