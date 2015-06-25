@@ -67,6 +67,6 @@ case class Unique(attribute: Attribute) extends Constraint {
 case class AutoIncrement(attribute: Attribute) extends Constraint {
   override def toString = s"Unique($attribute)"
 }
-object Compressed extends Constraint {
-  override def toString = "COMPRESSED"
+case class Compressed(attribute: Attribute) extends Constraint {
+  override def toString = s"Compressed($attribute)"
 }
