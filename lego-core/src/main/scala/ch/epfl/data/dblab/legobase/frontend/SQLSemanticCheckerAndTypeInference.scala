@@ -23,9 +23,10 @@ class SQLSemanticCheckerAndTypeInference(schema: Schema) {
     val FloatType = typeTag[Float]
     val DoubleType = typeTag[Double]
     (left.tp, right.tp) match {
-      case (IntType, DoubleType)    => e.setTp(DoubleType)
-      case (DoubleType, DoubleType) => e.setTp(DoubleType)
-      case (DoubleType, FloatType)  => e.setTp(DoubleType)
+      case (x, y) if x == y        => e.setTp(x)
+      case (IntType, DoubleType)   => e.setTp(DoubleType)
+      case (DoubleType, IntType)   => e.setTp(DoubleType)
+      case (DoubleType, FloatType) => e.setTp(DoubleType)
     }
   }
 
@@ -48,8 +49,7 @@ class SQLSemanticCheckerAndTypeInference(schema: Schema) {
         case None =>
           aliasesList.find(al => al._2 == name) match {
             case Some(al) => fi.setTp(al._1.tp)
-            case None     =>
-            //throw new Exception("Attribute " + name + " referenced in SQL query does not exist in any relation.")
+            case None     => //throw new Exception("Attribute " + name + " referenced in SQL query does not exist in any relation.")
           }
       }
     // Arithmetic Operators
@@ -75,8 +75,14 @@ class SQLSemanticCheckerAndTypeInference(schema: Schema) {
     case avg @ Avg(expr) =>
       checkAndInferExpr(expr)
       avg.setTp(typeTag(expr.tp))
-    case avg @ CountAll() =>
-      avg.setTp(typeTag[Double])
+    case countAll @ CountAll() =>
+      countAll.setTp(typeTag[Double])
+    case countExpr @ CountExpr(expr) =>
+      checkAndInferExpr(expr)
+      countExpr.setTp(typeTag[Double])
+    case min @ Min(expr) =>
+      checkAndInferExpr(expr)
+      min.setTp(expr.tp)
     // Logical Operators
     case and @ And(left, right) =>
       checkAndInferExpr(left)
@@ -126,6 +132,23 @@ class SQLSemanticCheckerAndTypeInference(schema: Schema) {
       checkAndInferExpr(thenp)
       checkAndInferExpr(elsep)
       setResultType(cs, thenp, elsep)
+    case in @ In(fld, listExpr, _) =>
+      checkAndInferExpr(fld)
+      listExpr.foreach(e => checkAndInferExpr(e))
+      in.setTp(typeTag[Boolean])
+    case substr @ Substring(fld, idx1, idx2) =>
+      checkAndInferExpr(fld)
+      checkAndInferExpr(idx1)
+      checkAndInferExpr(idx2)
+      substr.setTp(fld.tp)
+    case e: SelectStatement => // Nested subquery
+      checkAndInfer(e)
+  }
+
+  def checkAndInferJoinTree(root: Relation): Unit = root match {
+    case Join(leftParent, Subquery(subquery, _), _, _) => checkAndInfer(subquery)
+    case Subquery(parent, _) => checkAndInfer(parent)
+    case _ =>
   }
 
   def checkAndInfer(sqlTree: SelectStatement) {
@@ -139,12 +162,20 @@ class SQLSemanticCheckerAndTypeInference(schema: Schema) {
       case AllColumns()                =>
     }
     sqlTree.groupBy match {
-      case Some(GroupBy(listExpr, having)) => listExpr.map(_._1).foreach(expr => checkAndInferExpr(expr))
-      case None                            =>
+      case Some(GroupBy(listExpr)) => listExpr.map(_._1).foreach(expr => checkAndInferExpr(expr))
+      case None                    =>
     }
     sqlTree.orderBy match {
       case Some(OrderBy(listExpr)) => listExpr.foreach(expr => checkAndInferExpr(expr._1))
       case None                    =>
+    }
+    sqlTree.joinTree match {
+      case Some(tr) => checkAndInferJoinTree(tr)
+      case None     =>
+    }
+    sqlTree.having match {
+      case Some(clause) => checkAndInferExpr(clause.having)
+      case None         =>
     }
   }
 }

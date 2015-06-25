@@ -16,9 +16,24 @@ case class SelectStatement(projections: Projections,
                            joinTree: Option[Relation],
                            where: Option[Expression],
                            groupBy: Option[GroupBy],
+                           having: Option[Having],
                            orderBy: Option[OrderBy],
                            limit: Option[Limit],
-                           aliases: Seq[(Expression, String, Int)]) extends Node with Expression
+                           aliases: Seq[(Expression, String, Int)]) extends Node with Expression {
+  override def toString() = {
+    "      SQL TREE\n====================" +
+      "\n\tPROJECTIONS      :" + projections.toString +
+      "\n\tRELATIONS        :" + relations.mkString(",") +
+      "\n\tJOINTREE         :" + joinTree.getOrElse("").toString +
+      "\n\tWHERE CLAUSES    :" + where.getOrElse("").toString +
+      "\n\tGROUP BY CLAUSES :" + groupBy.getOrElse("").toString +
+      "\n\tHAVING           :" + having.getOrElse("").toString +
+      "\n\tORDER BY CLAUSES :" + orderBy.getOrElse("").toString +
+      "\n\tLIMIT CLAUSE     :" + limit.toString +
+      "\n\tALIASES          :" + aliases.mkString(",") +
+      "\n===================="
+  }
+}
 
 trait Projections extends Node
 case class ExpressionProjections(lst: Seq[(Expression, Option[String])]) extends Projections
@@ -31,18 +46,11 @@ trait Expression extends Node {
     case _              => tp
   }
   def setTp[A](tt: TypeTag[A]) { this.tp = tt }
-
-  def isLiteral: Boolean = false
-
-  // is the r-value of this expression a literal?
-  def isRValueLiteral: Boolean = isLiteral
 }
 
 trait BinaryOperator extends Expression {
   val left: Expression
   val right: Expression
-
-  override def isLiteral = left.isLiteral && right.isLiteral
 }
 case class Or(left: Expression, right: Expression) extends BinaryOperator
 case class And(left: Expression, right: Expression) extends BinaryOperator
@@ -56,10 +64,8 @@ case class LessOrEqual(left: Expression, right: Expression) extends InEqualityOp
 case class LessThan(left: Expression, right: Expression) extends InEqualityOperator
 case class GreaterOrEqual(left: Expression, right: Expression) extends InEqualityOperator
 case class GreaterThan(left: Expression, right: Expression) extends InEqualityOperator
-case class In(elem: Expression, set: Seq[Expression], negate: Boolean) extends Expression {
-  override def isLiteral =
-    elem.isLiteral && set.filter(e => !e.isLiteral).isEmpty
-}
+case class In(elem: Expression, set: Seq[Expression], negate: Boolean) extends Expression
+
 case class Like(left: Expression, right: Expression, negate: Boolean) extends BinaryOperator
 case class Add(left: Expression, right: Expression) extends BinaryOperator
 case class Subtract(left: Expression, right: Expression) extends BinaryOperator
@@ -68,7 +74,6 @@ case class Divide(left: Expression, right: Expression) extends BinaryOperator
 
 trait UnaryOperation extends Expression {
   val expr: Expression
-  override def isLiteral = expr.isLiteral
 }
 case class Not(expr: Expression) extends UnaryOperation
 case class UnaryPlus(expr: Expression) extends UnaryOperation
@@ -77,7 +82,12 @@ case class Exists(select: SelectStatement) extends Expression
 
 case class Case(cond: Expression, thenp: Expression, elsep: Expression) extends Expression
 
-case class FieldIdent(qualifier: Option[String], name: String, symbol: Symbol = null) extends Expression
+case class FieldIdent(qualifier: Option[String], name: String, symbol: Symbol = null) extends Expression {
+  override def toString = qualifier match {
+    case Some(q) => q + "." + name
+    case None    => name
+  }
+}
 
 trait Aggregation extends Expression
 case class CountAll() extends Aggregation
@@ -87,17 +97,28 @@ case class Avg(expr: Expression) extends Aggregation
 case class Min(expr: Expression) extends Aggregation
 case class Max(expr: Expression) extends Aggregation
 case class Year(expr: Expression) extends Expression
+case class Substring(expr: Expression, idx1: Expression, idx2: Expression) extends Expression
 
-trait LiteralExpression extends Expression {
-  override def isLiteral = true
+trait LiteralExpression extends Expression
+case class IntLiteral(v: Int) extends LiteralExpression {
+  override def toString = v.toString
 }
-case class IntLiteral(v: Int) extends LiteralExpression
-case class DoubleLiteral(v: Double) extends LiteralExpression
-case class FloatLiteral(v: Float) extends LiteralExpression
-case class StringLiteral(v: LBString) extends LiteralExpression
-case class CharLiteral(v: Char) extends LiteralExpression
+case class DoubleLiteral(v: Double) extends LiteralExpression {
+  override def toString = v.toString
+}
+case class FloatLiteral(v: Float) extends LiteralExpression {
+  override def toString = v.toString
+}
+case class StringLiteral(v: LBString) extends LiteralExpression {
+  override def toString = "'" + v.toString + "'"
+}
+case class CharLiteral(v: Char) extends LiteralExpression {
+  override def toString = v.toString
+}
 case class NullLiteral() extends LiteralExpression
-case class DateLiteral(d: Int) extends LiteralExpression
+case class DateLiteral(v: Int) extends LiteralExpression {
+  override def toString = "DATE '" + v.toString + "'"
+}
 
 trait Relation extends Node
 case class SQLTable(name: String, alias: Option[String]) extends Relation
@@ -109,6 +130,7 @@ case object LeftSemiJoin extends JoinType
 case object LeftOuterJoin extends JoinType
 case object RightOuterJoin extends JoinType
 case object FullOuterJoin extends JoinType
+case object AntiJoin extends JoinType
 
 case class Join(left: Relation, right: Relation, tpe: JoinType, clause: Expression) extends Relation
 
@@ -116,6 +138,7 @@ sealed abstract trait OrderType
 case object ASC extends OrderType
 case object DESC extends OrderType
 
-case class GroupBy(keys: Seq[(Expression, Option[String])], having: Option[Expression]) extends Node
+case class GroupBy(keys: Seq[(Expression, Option[String])]) extends Node
+case class Having(having: Expression) extends Node
 case class OrderBy(keys: Seq[(Expression, OrderType)]) extends Node
 case class Limit(rows: Long) extends Node

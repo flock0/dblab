@@ -4,6 +4,7 @@ package dblab.legobase
 import tpch._
 import schema._
 import frontend._
+import frontend.optimizer._
 import utils.Utilities._
 import java.io.PrintStream
 
@@ -91,9 +92,14 @@ trait LegoRunner {
       Console.withOut(new PrintStream(getOutputName)) {
         //executeQuery(currQuery, schema)
         val qStmt = SQLParser.parse(scala.io.Source.fromFile("tpch/" + currQuery + ".sql").mkString)
-        System.out.println(qStmt)
+        System.out.println(qStmt + "\n\n")
         new SQLSemanticCheckerAndTypeInference(schema).checkAndInfer(qStmt)
-        val qp = new SQLTreeToQueryPlanConverter(schema).convert(qStmt)
+        val operatorTree = new SQLTreeToOperatorTreeConverter(schema).convert(qStmt)
+        val optimizerTree = if (q != "Q19" && q != "Q16" && q != "Q22") new NaiveOptimizer(schema).optimize(operatorTree) else operatorTree // TODO -- FIX OPTIMIZER FOR Q19
+        //System.out.println(optimizezr.registeredPushedUpSelections.map({ case (k, v) => (k.name, v) }).mkString(","))
+        System.out.println(optimizerTree + "\n\n")
+
+        val qp = new SQLTreeToQueryPlanConverter(schema).convert(optimizerTree)
 
         // Check results
         if (Config.checkResults) {

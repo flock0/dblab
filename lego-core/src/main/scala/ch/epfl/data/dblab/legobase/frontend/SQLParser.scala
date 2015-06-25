@@ -31,24 +31,35 @@ object SQLParser extends StandardTokenParsers {
       case Join(left, right, _, _) =>
         extractRelationsFromJoinTree(left) ++ extractRelationsFromJoinTree(right)
       case tbl: SQLTable => Seq(tbl)
+      case sq: Subquery => sq.subquery.joinTree match {
+        case Some(tr) => extractRelationsFromJoinTree(tr)
+        case None     => sq.subquery.relations
+      }
     }
   }
 
   def parseSelectStatement: Parser[SelectStatement] = (
-    "SELECT" ~> parseProjections ~ "FROM" ~ parseRelations ~ parseWhere.? ~ parseGroupBy.? ~ parseOrderBy.? ~ parseLimit.? <~ ";".? ^^ {
-      case pro ~ _ ~ tab ~ whe ~ grp ~ ord ~ lim => {
+    "SELECT" ~> parseProjections ~ "FROM" ~ parseRelations ~ parseWhere.? ~ parseGroupBy.? ~ parseHaving.? ~ parseOrderBy.? ~ parseLimit.? <~ ";".? ^^ {
+      case pro ~ _ ~ tab ~ whe ~ grp ~ hav ~ ord ~ lim => {
         val rel = tab.foldLeft(Seq[Relation]())((list, tb) => list ++ extractRelationsFromJoinTree(tb))
-        val aliases = pro match {
+        val aliases = (pro match {
           case ep: ExpressionProjections => ep.lst.zipWithIndex.filter(p => p._1._2.isDefined).map(al => (al._1._1, al._1._2.get, al._2))
           case ac: AllColumns            => Seq()
-        }
-        val hasJoin = tab.exists(e => e.isInstanceOf[Join])
+        }) ++ (grp match {
+          case Some(gb) => gb.keys.zipWithIndex.filter(p => p._1._2.isDefined).map(gb => (gb._1._1, gb._1._2.get, gb._2))
+          case None     => Seq()
+        })
+        val hasJoin = tab(0).isInstanceOf[Join]
+        //System.out.println(tab)
         hasJoin match {
           case true => tab.size match {
-            case 1 => SelectStatement(pro, rel, Some(tab(0)), whe, grp, ord, lim, aliases)
+            case 1 => SelectStatement(pro, rel, Some(tab(0)), whe, grp, hav, ord, lim, aliases)
             case _ => throw new Exception("BUG: Invalid number of join trees detected!")
           }
-          case false => SelectStatement(pro, rel, None, whe, grp, ord, lim, aliases)
+          case false => tab.size match {
+            case 1 => SelectStatement(pro, rel, Some(tab(0)), whe, grp, hav, ord, lim, aliases)
+            case _ => throw new Exception("Error in query: There are multiple input relations but no join! Cannot process such query statement!")
+          }
         }
       }
     })
@@ -121,7 +132,7 @@ object SQLParser extends StandardTokenParsers {
     parseKnownFunction |
     ident ~ opt("." ~> ident | "(" ~> repsep(parseExpression, ",") <~ ")") ^^ {
       case id ~ None           => FieldIdent(None, id)
-      case a ~ Some(b: String) => FieldIdent(Some(a), a + "_" + b)
+      case a ~ Some(b: String) => FieldIdent(Some(a), b)
     } |
     "(" ~> (parseExpression | parseSelectStatement) <~ ")"
     | "+" ~> parsePrimaryExpression ^^ (UnaryPlus(_))
@@ -133,7 +144,10 @@ object SQLParser extends StandardTokenParsers {
     | "MAX" ~> "(" ~> parseExpression <~ ")" ^^ (Max(_))
     | "SUM" ~> "(" ~> parseExpression <~ ")" ^^ (Sum(_))
     | "AVG" ~> "(" ~> parseExpression <~ ")" ^^ (Avg(_))
-    | "YEAR" ~> "(" ~> parseExpression <~ ")" ^^ (Year(_)))
+    | "YEAR" ~> "(" ~> parseExpression <~ ")" ^^ (Year(_))
+    | "SUBSTRING" ~> "(" ~> parseExpression ~ "," ~ parseExpression ~ "," ~ parseExpression <~ ")" ^^ {
+      case str ~ _ ~ idx1 ~ _ ~ idx2 => Substring(str, idx1, idx2)
+    })
 
   def parseLiteral: Parser[Expression] = (
     numericLit ^^ { case i => IntLiteral(i.toInt) }
@@ -165,11 +179,12 @@ object SQLParser extends StandardTokenParsers {
     })
 
   def parseJoinType: Parser[JoinType] = (
-    ("LEFT" ~ "OUTER" | "LEFT" ~ "SEMI" | "RIGHT" <~ "OUTER".? | "FULL" ~ "OUTER") ^^ {
+    ("LEFT" ~ "OUTER" | "LEFT" ~ "SEMI" | "RIGHT" <~ "OUTER".? | "FULL" ~ "OUTER" | "ANTI") ^^ {
       case "LEFT" ~ "OUTER" => LeftOuterJoin
       case "LEFT" ~ "SEMI"  => LeftSemiJoin
       case "RIGHT"          => RightOuterJoin
       case "FULL" ~ "OUTER" => FullOuterJoin
+      case "ANTI"           => AntiJoin
     }
     | "INNER" ^^^ InnerJoin)
 
@@ -177,8 +192,11 @@ object SQLParser extends StandardTokenParsers {
     "WHERE" ~> parseExpression)
 
   def parseGroupBy: Parser[GroupBy] = (
-    "GROUP" ~> "BY" ~> rep1sep(parseAliasedExpression, ",") ~ ("HAVING" ~> parseExpression).? ^^
-    { case exp ~ hav => GroupBy(exp, hav) })
+    "GROUP" ~> "BY" ~> rep1sep(parseAliasedExpression, ",") ^^
+    { case exp => GroupBy(exp) })
+
+  def parseHaving: Parser[Having] = ("HAVING" ~> parseExpression ^^
+    { case exp => Having(exp) })
 
   def parseOrderBy: Parser[OrderBy] = (
     "ORDER" ~> "BY" ~> rep1sep(parseOrderKey, ",") ^^ { case keys => OrderBy(keys) })
@@ -234,8 +252,8 @@ object SQLParser extends StandardTokenParsers {
     "SELECT", "AS", "OR", "AND", "GROUP", "ORDER", "BY", "WHERE",
     "JOIN", "ASC", "DESC", "FROM", "ON", "NOT", "HAVING",
     "EXISTS", "BETWEEN", "LIKE", "IN", "NULL", "LEFT", "RIGHT",
-    "FULL", "OUTER", "SEMI", "INNER", "COUNT", "SUM", "AVG", "MIN", "MAX", "YEAR",
-    "DATE", "TOP", "LIMIT", "CASE", "WHEN", "THEN", "ELSE", "END")
+    "FULL", "OUTER", "SEMI", "INNER", "ANTI", "COUNT", "SUM", "AVG", "MIN", "MAX", "YEAR",
+    "DATE", "TOP", "LIMIT", "CASE", "WHEN", "THEN", "ELSE", "END", "SUBSTRING")
 
   lexical.delimiters += (
     "*", "+", "-", "<", "=", "<>", "!=", "<=", ">=", ">", "/", "(", ")", ",", ".", ";")

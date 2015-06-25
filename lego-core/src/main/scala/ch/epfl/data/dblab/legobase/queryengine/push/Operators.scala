@@ -387,7 +387,10 @@ class NestedLoopsJoinOp[A <: Record, B <: Record](leftParent: Operator[A], right
 class SubquerySingleResult[A](parent: Operator[A]) extends Operator[A] {
   var result = null.asInstanceOf[A]
   def open() {
-    throw new Exception("PUSH ENGINE BUG:: Open function in SubqueryResult should never be called!!!!\n")
+    parent.child = this
+    parent.open
+    parent.next
+    //throw new Exception("PUSH ENGINE BUG:: Open function in SubqueryResult should never be called!!!!\n")
   }
   def next() {
     throw new Exception("PUSH ENGINE BUG:: Next function in SubqueryResult should never be called!!!!\n")
@@ -399,9 +402,10 @@ class SubquerySingleResult[A](parent: Operator[A]) extends Operator[A] {
     result = tuple.asInstanceOf[A]
   }
   def getResult = {
-    parent.child = this
-    parent.open
-    parent.next
+    if (result == null) {
+      //System.out.println("Opening subquery");
+      this.open()
+    }
     result
   }
 }
@@ -508,7 +512,14 @@ class ViewOp[A: Manifest](parent: Operator[A]) extends Operator[A] {
 class LeftOuterJoinOp[A <: Record, B <: Record: Manifest, C](val leftParent: Operator[A], val rightParent: Operator[B])(val joinCond: (A, B) => Boolean)(val leftHash: A => C)(val rightHash: B => C) extends Operator[DynamicCompositeRecord[A, B]] {
   @inline var mode: scala.Int = 0
   val hm = MultiMap[C, B]
-  val defaultB = Record.getDefaultRecord[B]()
+  import sc.pardis.shallow.utils.DefaultValue
+
+  def getDefault[T <: Record: Manifest](rec: Record): T = {
+    val values = rec.getClass.getDeclaredFields().map(x => DefaultValue(x.getType.getName))
+    rec.getClass.getConstructors()(0).newInstance(values.toSeq.asInstanceOf[Seq[Object]]: _*).asInstanceOf[T]
+  }
+
+  var defaultB: Record = null // Record.getDefaultRecord[B]()
   def open() = {
     leftParent.child = this
     leftParent.open
@@ -531,6 +542,7 @@ class LeftOuterJoinOp[A <: Record, B <: Record: Manifest, C](val leftParent: Ope
       if (hmGet.nonEmpty) {
         val tmpBuffer = hmGet.get
         tmpBuffer foreach { bufElem =>
+          if (defaultB == null) defaultB = getDefault(bufElem)
           val elem = {
             if (joinCond(tuple.asInstanceOf[A], bufElem)) {
               tuple.asInstanceOf[A].concatenateDynamic(bufElem, "", "")
