@@ -51,7 +51,7 @@ object ConstraintsRecord {
       }
       case 'n' => NotNull(DDAttribute(dict, dict.getAttribute(cr.tableId, cr.attributes.head)))
       case 'u' => Unique(DDAttribute(dict, dict.getAttribute(cr.tableId, cr.attributes.head)))
-      case 'c' => Compressed(DDAttribute(dict, dict.getAttribute(cr.tableId, cr.attributes.head)))
+      case 'c' => Compressed //(DDAttribute(dict, dict.getAttribute(cr.tableId, cr.attributes.head)))
       case _   => throw new Exception(s"Constraint in ${cr.tableId} has unknown type '${cr.constraintType}'.")
     }
   }
