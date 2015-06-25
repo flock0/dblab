@@ -212,6 +212,7 @@ case class DataDictionary() {
         fields += FieldsRecord(4, constraintAttributes(2).attributeId, constraintRow.rowId, newConstraint.attributes)
         fields += FieldsRecord(4, constraintAttributes(3).attributeId, constraintRow.rowId, newConstraint.refTableName)
         fields += FieldsRecord(4, constraintAttributes(4).attributeId, constraintRow.rowId, newConstraint.refAttributes)
+        fields += FieldsRecord(4, constraintAttributes(5).attributeId, constraintRow.rowId, newConstraint.foreignKeyName)
       }
     }
 
