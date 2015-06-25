@@ -456,8 +456,9 @@ case class DataDictionary() {
     tables -= table
   }
 
-  private[datadict] def getConstraints[T](tableId: Int, constraintType: Char) = ???
-
+  private[datadict] def getConstraints[T](tableId: Int, constraintType: Char) = {
+    constraints.filter(c => c.tableId == tableId && c.constraintType == constraintType)
+  }
   private[datadict] def getConstraints(tableId: Int) = ???
 
   private[datadict] def getConstraints(attrName: String) = ???

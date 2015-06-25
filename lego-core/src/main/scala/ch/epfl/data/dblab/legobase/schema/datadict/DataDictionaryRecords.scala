@@ -2,6 +2,7 @@ package ch.epfl.data
 package dblab.legobase
 package schema.datadict
 
+import scala.language.implicitConversions
 import DataDictionary._
 import sc.pardis.types._
 import schema.{ Constraint, PrimaryKey, ForeignKey, NotNull, Unique, Compressed }

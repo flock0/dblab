@@ -42,7 +42,13 @@ case class DDTable(private val dict: DataDictionary, private val rec: TablesReco
     case Some(fn) => fn
     case None     => ""
   }
-  override def primaryKey: Option[PrimaryKey] = dict.getConstraints(rec.tableId, 'p')
+  override def primaryKey: Option[PrimaryKey] = {
+    val pks: List[Constraint] = dict.getConstraints(rec.tableId, 'p')
+    if (pks.size == 0)
+      None
+    else if (pks.size == 1)
+      Some(pks.head)
+  }
   override def dropPrimaryKey = dict.dropPrimaryKey(rec.tableId)
   override def foreignKeys: List[ForeignKey] = dict.getConstraints(rec.tableId, 'f')
   override def foreignKey(foreignKeyName: String): Option[ForeignKey] = foreignKeys.find(_.foreignKeyName == foreignKeyName)
