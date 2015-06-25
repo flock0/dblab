@@ -335,7 +335,7 @@ case class DataDictionary() {
   def getAttribute(tableId: Int, attributeName: String) = getAttributes(tableId, List(attributeName)).head
 
   /** Returns the attribute with the specified id in the given table */
-  def getAttribute(tableId: Int, attributeId: Int) = getAttributes(tableId, List(attributeId)).head
+  def getAttribute(tableId: Int, attributeId: Int) = getAttributesFromIds(tableId, List(attributeId)).head
 
   /** Returns all attributes */
   def getAttributes(attrName: String) = attributes.filter(attrName == _.name)
@@ -353,7 +353,7 @@ case class DataDictionary() {
   }
 
   /** Returns a list of attributes with the specified ids that belong to the given table */
-  def getAttributes(tableId: Int, attributeIds: List[Int]) = {
+  def getAttributesFromIds(tableId: Int, attributeIds: List[Int]) = {
     val atts = attributes.filter(at => at.tableId == tableId && attributeIds.contains(at.attributeId)).toList
 
     if (atts.size != attributeIds.size)
@@ -443,15 +443,15 @@ case class DataDictionary() {
     val table = getTable(schemaName, tableName)
 
     val start = constructSchemaTableSequenceNamePart(schemaName, tableName)
-    sequences -= sequences.filter(s => s.sequenceName.startsWith(start))
+    sequences --= sequences.filter(s => s.sequenceName.startsWith(start))
 
-    constraits -= constraints.filter(c => c.tableId == table.tableId)
+    constraints --= constraints.filter(c => c.tableId == table.tableId)
 
-    fields -= fields.filter(f => f.tableId == table.tableId)
+    fields --= fields.filter(f => f.tableId == table.tableId)
 
-    rows -= rows.filter(r => r.tableId == table.tableId)
+    rows --= rows.filter(r => r.tableId == table.tableId)
 
-    attributes -= attributes.filter(a => a.tableId == table.tableId)
+    attributes --= attributes.filter(a => a.tableId == table.tableId)
 
     tables -= table
   }
