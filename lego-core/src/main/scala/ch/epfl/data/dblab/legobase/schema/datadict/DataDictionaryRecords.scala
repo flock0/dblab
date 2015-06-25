@@ -4,6 +4,7 @@ package schema.datadict
 
 import DataDictionary._
 import sc.pardis.types._
+import schema.Constraint
 
 /* Case classes for the tables in the data dictionary */
 case class TablesRecord(schemaName: String, name: String, private val dict: DataDictionary, val fileName: Option[String] = None, private val _tableId: Option[Int] = None, var isLoaded: Boolean = false) {
@@ -28,27 +29,27 @@ case class RowsRecord(tableId: Int, private val dict: DataDictionary, private va
 case class ConstraintsRecord(tableId: Int, constraintType: Char, attributes: List[Int], refTableName: Option[String], refAttributes: Option[List[String]], foreignKeyName: Option[String] = None)
 
 object ConstraintsRecord {
-  implicit def ConstraintsRecordToConstraint(cr: ConstraintsRecord)(implicit val dict: DataDictionary): Constraint = {
+  implicit def ConstraintsRecordToConstraint(cr: ConstraintsRecord)(implicit dict: DataDictionary): Constraint = {
     cr.constraintType match {
-        case 'p' => PrimaryKey(dict.getAttributes(cr.tableId, cr.attributes).map(a => DDAttribute(dict, a))))
-        case 'f' => {
-          val referencedTableName = cr.refTableName match {
-            case Some(name) => name
-            case None => throw new Exception(s"ForeignKey ${cr.foreignKeyName} is missing the name of the referenced table.")
-          }
-          val referencedAttributes = cr.refAttributes match {
-            case None => throw new Exception(s"ForeignKey ${cr.foreignKeyName} is missing attributes that it refers to.")
-            case Some(attrNames) => 
-          }
-          val ownTable = dict.getTable(cr.tableId).name
-          val columnAssignments = dict.getAttributes(cr.tableId, attributeIds).map(at => at.name).zip(referencedAttributes)
-          ForeignKey(cr.foreignKeyName, ownTable, referencedTable, columnAssignments)
+      case 'p' => PrimaryKey(dict.getAttributes(cr.tableId, cr.attributes).map(a => DDAttribute(dict, a)))
+      case 'f' => {
+        val referencedTableName = cr.refTableName match {
+          case Some(name) => name
+          case None       => throw new Exception(s"ForeignKey ${cr.foreignKeyName} is missing the name of the referenced table.")
         }
-        case 'n' => NotNull(DDAttribute(dict, dict.getAttribute(cr.tableId, cr.attributes.head)))
-        case 'u' => Unique(DDAttribute(dict, dict.getAttribute(cr.tableId, cr.attributes.head)))
-        case 'c' => Compressed(DDAttribute(dict, dict.getAttribute(cr.tableId, cr.attributes.head)))
-        case _ => throw new Exception(s"Constraint in ${cr.tableId} has unknown type '${cr.constraintType}'.")
+        val referencedAttributes = cr.refAttributes match {
+          case None            => throw new Exception(s"ForeignKey ${cr.foreignKeyName} is missing attributes that it refers to.")
+          case Some(attrNames) =>
+        }
+        val ownTable = dict.getTable(cr.tableId).name
+        val columnAssignments = dict.getAttributes(cr.tableId, attributeIds).map(at => at.name).zip(referencedAttributes)
+        ForeignKey(cr.foreignKeyName, ownTable, referencedTable, columnAssignments)
       }
+      case 'n' => NotNull(DDAttribute(dict, dict.getAttribute(cr.tableId, cr.attributes.head)))
+      case 'u' => Unique(DDAttribute(dict, dict.getAttribute(cr.tableId, cr.attributes.head)))
+      case 'c' => Compressed(DDAttribute(dict, dict.getAttribute(cr.tableId, cr.attributes.head)))
+      case _   => throw new Exception(s"Constraint in ${cr.tableId} has unknown type '${cr.constraintType}'.")
+    }
   }
 }
 

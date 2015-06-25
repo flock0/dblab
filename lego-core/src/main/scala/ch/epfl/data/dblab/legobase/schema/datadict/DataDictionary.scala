@@ -14,7 +14,7 @@ import storagemanager.Loader
 object DataDictionary {
   /** The standardized sequence name */
   def constructSequenceName(schemaName: String, tableName: String, attributeName: String) =
-    constructSchemaTableSequenceNamePart + attributeName + "_SEQ"
+    constructSchemaTableSequenceNamePart(schemaName, tableName) + attributeName + "_SEQ"
 
   /** The part of the sequence name that denotes the schema and table this sequence belongs to */
   def constructSchemaTableSequenceNamePart(schemaName: String, tableName: String) = schemaName + "_" + tableName + "_"
@@ -88,12 +88,12 @@ object DataDictionary {
       val constraintType: Attribute = "CONSTRAINT_TYPE" -> CharType /* f = foreign key constraint, p = primary key constraint, u = unique constraint, n = notnull constraint, c = compressed */
       val attributes: Attribute = "ATTRIBUTES" -> SeqType(IntType)
       val foreignKeyName: Attribute = "FOREIGN_KEY_NAME" -> OptionType(StringType)
+
       new Table("CONSTRAINTS", List(
         tableId,
         constraintType,
         attributes,
         "REF_TABLE_NAME" -> OptionType(IntType),
-        "REF_ATTRIBUTES" -> OptionType(SeqType(IntType))
         foreignKeyName),
         List(ForeignKey("CONSTRAINTS", "ATTRIBUTES", List(("TABLE_ID", "TABLE_ID"), ("ATTRIBUTES", "ATTRIBUTE_ID"))),
           ForeignKey("CONSTRAINTS", "TABLES", List(("REF_TABLE_NAME", "NAME"))),
