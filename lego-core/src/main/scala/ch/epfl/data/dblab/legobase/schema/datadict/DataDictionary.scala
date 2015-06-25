@@ -14,7 +14,10 @@ import storagemanager.Loader
 object DataDictionary {
   /** The standardized sequence name */
   def constructSequenceName(schemaName: String, tableName: String, attributeName: String) =
-    schemaName + "_" + tableName + "_" + attributeName + "_SEQ"
+    constructSchemaTableSequenceNamePart + attributeName + "_SEQ"
+
+  /** The part of the sequence name that denotes the schema and table this sequence belongs to */
+  def constructSchemaTableSequenceNamePart(schemaName: String, tableName: String) = schemaName + "_" + tableName + "_"
 
   /** The default name of the schema for the data dictionary itself */
   val DDSchemaName = "DD"
@@ -412,15 +415,31 @@ case class DataDictionary() {
     val newTableId = getSequenceNext(constructSequenceName(DDSchemaName, "TABLES", "TABLE_ID"))
     tables += TablesRecord(schemaName, tableName, this, Some(fileName), Some(newTableId))
     addTuple(DDSchemaName, "TABLES", Seq(schemaName, tableName, newTableId))
-    //TODO Adapt after merge
+
     /* Add entries to ATTRIBUTES */
     val newAttributes: Seq[AttributesRecord] = for (attr <- tableAttributes) yield AttributesRecord(newTableId, attr._1, attr._2, this)
     attributes ++= newAttributes
     newAttributes.foreach(attr => addTuple(DDSchemaName, "ATTRIBUTES", Seq(newTableId, attr.name, attr.dataType, attr.attributeId)))
 
+    /* We don't add the constraints here, as there's the seperate addConstraint()-method to do that */
   }
 
-  private[datadict] def dropTable(schemaName: String, tableName: String) = ???
+  private[datadict] def dropTable(schemaName: String, tableName: String) = {
+    val table = getTable(schemaName, tableName)
+
+    val start = constructSchemaTableSequenceNamePart(schemaName, tableName)
+    sequences -= sequences.filter(s => s.sequenceName.startsWith(start))
+
+    constraits -= constraints.filter(c => c.tableId == table.tableId)
+
+    fields -= fields.filter(f => f.tableId == table.tableId)
+
+    rows -= rows.filter(r => r.tableId == table.tableId)
+
+    attributes -= attributes.filter(a => a.tableId == table.tableId)
+
+    tables -= table
+  }
 
   private[datadict] def getConstraints(tableId: Int, constraintType: Char) = ???
 
