@@ -87,19 +87,20 @@ object DataDictionary {
       val tableId: Attribute = "TABLE_ID" -> IntType
       val constraintType: Attribute = "CONSTRAINT_TYPE" -> CharType /* f = foreign key constraint, p = primary key constraint, u = unique constraint, n = notnull constraint, c = compressed */
       val attributes: Attribute = "ATTRIBUTES" -> SeqType(IntType)
-
+      val foreignKeyName: Attribute = "FOREIGN_KEY_NAME" -> OptionType(StringType)
       new Table("CONSTRAINTS", List(
         tableId,
         constraintType,
         attributes,
         "REF_TABLE_NAME" -> OptionType(IntType),
         "REF_ATTRIBUTES" -> OptionType(SeqType(IntType))
-        "FOREIGN_KEY_NAME" -> OptionType(StringType)),
+        foreignKeyName),
         List(ForeignKey("CONSTRAINTS", "ATTRIBUTES", List(("TABLE_ID", "TABLE_ID"), ("ATTRIBUTES", "ATTRIBUTE_ID"))),
           ForeignKey("CONSTRAINTS", "TABLES", List(("REF_TABLE_NAME", "NAME"))),
           ForeignKey("CONSTRAINTS", "ATTRIBUTES", List(("REF_ATTRIBUTES", "ATTRIBUTE_ID"))),
           NotNull(constraintType),
-          NotNull(attributes)))
+          NotNull(attributes),
+          Unique(foreignKeyName)))
     }
     val sequencesTable = {
       val startValue: Attribute = "START_VALUE" -> IntType
