@@ -10,118 +10,118 @@ import pardis.deep._
 import pardis.deep.scalalib._
 import pardis.deep.scalalib.collection._
 import pardis.deep.scalalib.io._
-trait K2DBScannerOps extends Base {
+trait LegobaseScannerOps extends Base  {  
   // Type representation
-  val K2DBScannerType = K2DBScannerIRs.K2DBScannerType
-  implicit val typeK2DBScanner: TypeRep[K2DBScanner] = K2DBScannerType
-  implicit class K2DBScannerRep(self: Rep[K2DBScanner]) {
-    def next_int(): Rep[Int] = k2DBScannerNext_int(self)
-    def next_double(): Rep[Double] = k2DBScannerNext_double(self)
-    def next_char(): Rep[Char] = k2DBScannerNext_char(self)
-    def next(buf: Rep[Array[Byte]])(implicit overload1: Overloaded1): Rep[Int] = k2DBScannerNext1(self, buf)
-    def next(buf: Rep[Array[Byte]], offset: Rep[Int])(implicit overload2: Overloaded2): Rep[Int] = k2DBScannerNext2(self, buf, offset)
-    def next_date: Rep[Int] = k2DBScannerNext_date(self)
-    def hasNext(): Rep[Boolean] = k2DBScannerHasNext(self)
-    def filename: Rep[String] = k2DBScanner_Field_Filename(self)
+  val LegobaseScannerType = LegobaseScannerIRs.LegobaseScannerType
+  implicit val typeLegobaseScanner: TypeRep[LegobaseScanner] = LegobaseScannerType
+  implicit class LegobaseScannerRep(self : Rep[LegobaseScanner]) {
+     def next_int() : Rep[Int] = legobaseScannerNext_int(self)
+     def next_double() : Rep[Double] = legobaseScannerNext_double(self)
+     def next_char() : Rep[Char] = legobaseScannerNext_char(self)
+     def next(buf : Rep[Array[Byte]])(implicit overload1 : Overloaded1) : Rep[Int] = legobaseScannerNext1(self, buf)
+     def next(buf : Rep[Array[Byte]], offset : Rep[Int])(implicit overload2 : Overloaded2) : Rep[Int] = legobaseScannerNext2(self, buf, offset)
+     def next_date : Rep[Int] = legobaseScannerNext_date(self)
+     def hasNext() : Rep[Boolean] = legobaseScannerHasNext(self)
+     def filename : Rep[String] = legobaseScanner_Field_Filename(self)
   }
-  object K2DBScanner {
+  object LegobaseScanner {
 
   }
   // constructors
-  def __newK2DBScanner(filename: Rep[String]): Rep[K2DBScanner] = k2DBScannerNew(filename)
+   def __newLegobaseScanner(filename : Rep[String]) : Rep[LegobaseScanner] = legobaseScannerNew(filename)
   // IR defs
-  val K2DBScannerNew = K2DBScannerIRs.K2DBScannerNew
-  type K2DBScannerNew = K2DBScannerIRs.K2DBScannerNew
-  val K2DBScannerNext_int = K2DBScannerIRs.K2DBScannerNext_int
-  type K2DBScannerNext_int = K2DBScannerIRs.K2DBScannerNext_int
-  val K2DBScannerNext_double = K2DBScannerIRs.K2DBScannerNext_double
-  type K2DBScannerNext_double = K2DBScannerIRs.K2DBScannerNext_double
-  val K2DBScannerNext_char = K2DBScannerIRs.K2DBScannerNext_char
-  type K2DBScannerNext_char = K2DBScannerIRs.K2DBScannerNext_char
-  val K2DBScannerNext1 = K2DBScannerIRs.K2DBScannerNext1
-  type K2DBScannerNext1 = K2DBScannerIRs.K2DBScannerNext1
-  val K2DBScannerNext2 = K2DBScannerIRs.K2DBScannerNext2
-  type K2DBScannerNext2 = K2DBScannerIRs.K2DBScannerNext2
-  val K2DBScannerNext_date = K2DBScannerIRs.K2DBScannerNext_date
-  type K2DBScannerNext_date = K2DBScannerIRs.K2DBScannerNext_date
-  val K2DBScannerHasNext = K2DBScannerIRs.K2DBScannerHasNext
-  type K2DBScannerHasNext = K2DBScannerIRs.K2DBScannerHasNext
-  val K2DBScanner_Field_Filename = K2DBScannerIRs.K2DBScanner_Field_Filename
-  type K2DBScanner_Field_Filename = K2DBScannerIRs.K2DBScanner_Field_Filename
+  val LegobaseScannerNew = LegobaseScannerIRs.LegobaseScannerNew
+  type LegobaseScannerNew = LegobaseScannerIRs.LegobaseScannerNew
+  val LegobaseScannerNext_int = LegobaseScannerIRs.LegobaseScannerNext_int
+  type LegobaseScannerNext_int = LegobaseScannerIRs.LegobaseScannerNext_int
+  val LegobaseScannerNext_double = LegobaseScannerIRs.LegobaseScannerNext_double
+  type LegobaseScannerNext_double = LegobaseScannerIRs.LegobaseScannerNext_double
+  val LegobaseScannerNext_char = LegobaseScannerIRs.LegobaseScannerNext_char
+  type LegobaseScannerNext_char = LegobaseScannerIRs.LegobaseScannerNext_char
+  val LegobaseScannerNext1 = LegobaseScannerIRs.LegobaseScannerNext1
+  type LegobaseScannerNext1 = LegobaseScannerIRs.LegobaseScannerNext1
+  val LegobaseScannerNext2 = LegobaseScannerIRs.LegobaseScannerNext2
+  type LegobaseScannerNext2 = LegobaseScannerIRs.LegobaseScannerNext2
+  val LegobaseScannerNext_date = LegobaseScannerIRs.LegobaseScannerNext_date
+  type LegobaseScannerNext_date = LegobaseScannerIRs.LegobaseScannerNext_date
+  val LegobaseScannerHasNext = LegobaseScannerIRs.LegobaseScannerHasNext
+  type LegobaseScannerHasNext = LegobaseScannerIRs.LegobaseScannerHasNext
+  val LegobaseScanner_Field_Filename = LegobaseScannerIRs.LegobaseScanner_Field_Filename
+  type LegobaseScanner_Field_Filename = LegobaseScannerIRs.LegobaseScanner_Field_Filename
   // method definitions
-  def k2DBScannerNew(filename: Rep[String]): Rep[K2DBScanner] = K2DBScannerNew(filename)
-  def k2DBScannerNext_int(self: Rep[K2DBScanner]): Rep[Int] = K2DBScannerNext_int(self)
-  def k2DBScannerNext_double(self: Rep[K2DBScanner]): Rep[Double] = K2DBScannerNext_double(self)
-  def k2DBScannerNext_char(self: Rep[K2DBScanner]): Rep[Char] = K2DBScannerNext_char(self)
-  def k2DBScannerNext1(self: Rep[K2DBScanner], buf: Rep[Array[Byte]]): Rep[Int] = K2DBScannerNext1(self, buf)
-  def k2DBScannerNext2(self: Rep[K2DBScanner], buf: Rep[Array[Byte]], offset: Rep[Int]): Rep[Int] = K2DBScannerNext2(self, buf, offset)
-  def k2DBScannerNext_date(self: Rep[K2DBScanner]): Rep[Int] = K2DBScannerNext_date(self)
-  def k2DBScannerHasNext(self: Rep[K2DBScanner]): Rep[Boolean] = K2DBScannerHasNext(self)
-  def k2DBScanner_Field_Filename(self: Rep[K2DBScanner]): Rep[String] = K2DBScanner_Field_Filename(self)
-  type K2DBScanner = ch.epfl.data.dblab.legobase.storagemanager.K2DBScanner
+   def legobaseScannerNew(filename : Rep[String]) : Rep[LegobaseScanner] = LegobaseScannerNew(filename)
+   def legobaseScannerNext_int(self : Rep[LegobaseScanner]) : Rep[Int] = LegobaseScannerNext_int(self)
+   def legobaseScannerNext_double(self : Rep[LegobaseScanner]) : Rep[Double] = LegobaseScannerNext_double(self)
+   def legobaseScannerNext_char(self : Rep[LegobaseScanner]) : Rep[Char] = LegobaseScannerNext_char(self)
+   def legobaseScannerNext1(self : Rep[LegobaseScanner], buf : Rep[Array[Byte]]) : Rep[Int] = LegobaseScannerNext1(self, buf)
+   def legobaseScannerNext2(self : Rep[LegobaseScanner], buf : Rep[Array[Byte]], offset : Rep[Int]) : Rep[Int] = LegobaseScannerNext2(self, buf, offset)
+   def legobaseScannerNext_date(self : Rep[LegobaseScanner]) : Rep[Int] = LegobaseScannerNext_date(self)
+   def legobaseScannerHasNext(self : Rep[LegobaseScanner]) : Rep[Boolean] = LegobaseScannerHasNext(self)
+   def legobaseScanner_Field_Filename(self : Rep[LegobaseScanner]) : Rep[String] = LegobaseScanner_Field_Filename(self)
+  type LegobaseScanner = ch.epfl.data.dblab.legobase.storagemanager.LegobaseScanner
 }
-object K2DBScannerIRs extends Base {
+object LegobaseScannerIRs extends Base {
   // Type representation
-  case object K2DBScannerType extends TypeRep[K2DBScanner] {
-    def rebuild(newArguments: TypeRep[_]*): TypeRep[_] = K2DBScannerType
-    val name = "K2DBScanner"
+  case object LegobaseScannerType extends TypeRep[LegobaseScanner] {
+    def rebuild(newArguments: TypeRep[_]*): TypeRep[_] = LegobaseScannerType
+    val name = "LegobaseScanner"
     val typeArguments = Nil
-
-    val typeTag = scala.reflect.runtime.universe.typeTag[K2DBScanner]
+    
+    val typeTag = scala.reflect.runtime.universe.typeTag[LegobaseScanner]
   }
-  implicit val typeK2DBScanner: TypeRep[K2DBScanner] = K2DBScannerType
+      implicit val typeLegobaseScanner: TypeRep[LegobaseScanner] = LegobaseScannerType
   // case classes
-  case class K2DBScannerNew(filename: Rep[String]) extends ConstructorDef[K2DBScanner](List(), "K2DBScanner", List(List(filename))) {
+  case class LegobaseScannerNew(filename : Rep[String]) extends ConstructorDef[LegobaseScanner](List(), "LegobaseScanner", List(List(filename))){
     override def curriedConstructor = (copy _)
   }
 
-  case class K2DBScannerNext_int(self: Rep[K2DBScanner]) extends FunctionDef[Int](Some(self), "next_int", List(List())) {
+  case class LegobaseScannerNext_int(self : Rep[LegobaseScanner]) extends FunctionDef[Int](Some(self), "next_int", List(List())){
     override def curriedConstructor = (copy _)
   }
 
-  case class K2DBScannerNext_double(self: Rep[K2DBScanner]) extends FunctionDef[Double](Some(self), "next_double", List(List())) {
+  case class LegobaseScannerNext_double(self : Rep[LegobaseScanner]) extends FunctionDef[Double](Some(self), "next_double", List(List())){
     override def curriedConstructor = (copy _)
   }
 
-  case class K2DBScannerNext_char(self: Rep[K2DBScanner]) extends FunctionDef[Char](Some(self), "next_char", List(List())) {
+  case class LegobaseScannerNext_char(self : Rep[LegobaseScanner]) extends FunctionDef[Char](Some(self), "next_char", List(List())){
     override def curriedConstructor = (copy _)
   }
 
-  case class K2DBScannerNext1(self: Rep[K2DBScanner], buf: Rep[Array[Byte]]) extends FunctionDef[Int](Some(self), "next", List(List(buf))) {
+  case class LegobaseScannerNext1(self : Rep[LegobaseScanner], buf : Rep[Array[Byte]]) extends FunctionDef[Int](Some(self), "next", List(List(buf))){
     override def curriedConstructor = (copy _).curried
   }
 
-  case class K2DBScannerNext2(self: Rep[K2DBScanner], buf: Rep[Array[Byte]], offset: Rep[Int]) extends FunctionDef[Int](Some(self), "next", List(List(buf, offset))) {
+  case class LegobaseScannerNext2(self : Rep[LegobaseScanner], buf : Rep[Array[Byte]], offset : Rep[Int]) extends FunctionDef[Int](Some(self), "next", List(List(buf,offset))){
     override def curriedConstructor = (copy _).curried
   }
 
-  case class K2DBScannerNext_date(self: Rep[K2DBScanner]) extends FunctionDef[Int](Some(self), "next_date", List()) {
+  case class LegobaseScannerNext_date(self : Rep[LegobaseScanner]) extends FunctionDef[Int](Some(self), "next_date", List()){
     override def curriedConstructor = (copy _)
   }
 
-  case class K2DBScannerHasNext(self: Rep[K2DBScanner]) extends FunctionDef[Boolean](Some(self), "hasNext", List(List())) {
+  case class LegobaseScannerHasNext(self : Rep[LegobaseScanner]) extends FunctionDef[Boolean](Some(self), "hasNext", List(List())){
     override def curriedConstructor = (copy _)
   }
 
-  case class K2DBScanner_Field_Filename(self: Rep[K2DBScanner]) extends FieldDef[String](self, "filename") {
+  case class LegobaseScanner_Field_Filename(self : Rep[LegobaseScanner]) extends FieldDef[String](self, "filename"){
     override def curriedConstructor = (copy _)
     override def isPure = true
 
   }
 
-  type K2DBScanner = ch.epfl.data.dblab.legobase.storagemanager.K2DBScanner
+  type LegobaseScanner = ch.epfl.data.dblab.legobase.storagemanager.LegobaseScanner
 }
-trait K2DBScannerImplicits extends K2DBScannerOps {
+trait LegobaseScannerImplicits extends LegobaseScannerOps { 
   // Add implicit conversions here!
 }
-trait K2DBScannerPartialEvaluation extends K2DBScannerComponent with BasePartialEvaluation {
+trait LegobaseScannerPartialEvaluation extends LegobaseScannerComponent with BasePartialEvaluation {  
   // Immutable field inlining 
-  override def k2DBScanner_Field_Filename(self: Rep[K2DBScanner]): Rep[String] = self match {
-    case Def(node: K2DBScannerNew) => node.filename
-    case _                         => super.k2DBScanner_Field_Filename(self)
+  override def legobaseScanner_Field_Filename(self : Rep[LegobaseScanner]) : Rep[String] = self match {
+    case Def(node: LegobaseScannerNew) => node.filename
+    case _ => super.legobaseScanner_Field_Filename(self)
   }
 
   // Mutable field inlining 
   // Pure function partial evaluation
 }
-trait K2DBScannerComponent extends K2DBScannerOps with K2DBScannerImplicits {}
+trait LegobaseScannerComponent extends LegobaseScannerOps with LegobaseScannerImplicits {  }

@@ -24,33 +24,33 @@ class ScalaScannerToCFScanfTransformer(override val IR: LoweringLegoBase) extend
   // TODO: Brainstorm about rewrite += tp abstraction for transforming types
   override def transformType[T: PardisType]: PardisType[Any] = ({
     val tp = typeRep[T]
-    if (tp == typeK2DBScanner) typePointer(typeFILE)
+    if (tp == typeLegobaseScanner) typePointer(typeFILE)
     else super.transformType[T]
   }).asInstanceOf[PardisType[Any]]
 
   rewrite += rule {
-    case K2DBScannerNew(f) => CStdIO.fopen(f.asInstanceOf[Rep[LPointer[Char]]], unit("r"))
+    case LegobaseScannerNew(f) => CStdIO.fopen(f.asInstanceOf[Rep[LPointer[Char]]], unit("r"))
   }
   rewrite += rule {
-    case K2DBScannerNext_int(s) =>
+    case LegobaseScannerNext_int(s) =>
       val v = readVar(__newVar[Int](0))
       __ifThenElse(fscanf(apply(s), unit("%d|"), &(v)) __== eof, break, unit(()))
       v
   }
   rewrite += rule {
-    case K2DBScannerNext_double(s) =>
+    case LegobaseScannerNext_double(s) =>
       val v = readVar(__newVar(unit(0.0)))
       __ifThenElse(fscanf(apply(s), unit("%lf|"), &(v)) __== eof, break, unit)
       v
   }
   rewrite += rule {
-    case K2DBScannerNext_char(s) =>
+    case LegobaseScannerNext_char(s) =>
       val v = readVar(__newVar(unit('a')))
       __ifThenElse(fscanf(apply(s), unit("%c|"), &(v)) __== eof, break, unit)
       v
   }
   rewrite += rule {
-    case nn @ K2DBScannerNext1(s, buf) =>
+    case nn @ LegobaseScannerNext1(s, buf) =>
       var i = __newVar[Int](0)
       __whileDo(unit(true), {
         val v = readVar(__newVar[Byte](unit('a')))
@@ -64,14 +64,14 @@ class ScalaScannerToCFScanfTransformer(override val IR: LoweringLegoBase) extend
       readVar(i)
   }
   rewrite += rule {
-    case K2DBScannerNext_date(s) =>
+    case LegobaseScannerNext_date(s) =>
       val x = readVar(__newVar[Int](unit(0)))
       val y = readVar(__newVar[Int](unit(0)))
       val z = readVar(__newVar[Int](unit(0)))
       __ifThenElse(fscanf(apply(s), unit("%d-%d-%d|"), &(x), &(y), &(z)) __== eof, break, unit)
       (x * unit(10000)) + (y * unit(100)) + z
   }
-  rewrite += rule { case K2DBScannerHasNext(s) => unit(true) }
+  rewrite += rule { case LegobaseScannerHasNext(s) => unit(true) }
   rewrite += rule {
     case LoaderFileLineCountObject(Constant(x: String)) =>
       val p = CStdIO.popen(unit("wc -l " + x), unit("r"))

@@ -15,23 +15,23 @@ import ch.epfl.data.dblab.legobase.deep.queryengine._
 import ch.epfl.data.dblab.legobase.deep.storagemanager._
 import ch.epfl.data.dblab.legobase.deep.schema._
 import scala.reflect._
-trait TPCHLoaderOps extends Base with K2DBScannerOps with ArrayOps with REGIONRecordOps with PARTSUPPRecordOps with PARTRecordOps with NATIONRecordOps with SUPPLIERRecordOps with LINEITEMRecordOps with ORDERSRecordOps with CUSTOMERRecordOps with OptimalStringOps with LoaderOps with TableOps { this: ch.epfl.data.dblab.legobase.deep.DeepDSL =>
+trait TPCHLoaderOps extends Base with LegobaseScannerOps with ArrayOps with REGIONRecordOps with PARTSUPPRecordOps with PARTRecordOps with NATIONRecordOps with SUPPLIERRecordOps with LINEITEMRecordOps with ORDERSRecordOps with CUSTOMERRecordOps with OptimalStringOps with LoaderOps with TableOps { this: ch.epfl.data.dblab.legobase.deep.DeepDSL =>  
   // Type representation
   val TPCHLoaderType = TPCHLoaderIRs.TPCHLoaderType
   implicit val typeTPCHLoader: TypeRep[TPCHLoader] = TPCHLoaderType
-  implicit class TPCHLoaderRep(self: Rep[TPCHLoader]) {
+  implicit class TPCHLoaderRep(self : Rep[TPCHLoader]) {
 
   }
   object TPCHLoader {
-    def getTable(tableName: Rep[String]): Rep[Table] = tPCHLoaderGetTableObject(tableName)
-    def loadRegion(): Rep[Array[REGIONRecord]] = tPCHLoaderLoadRegionObject()
-    def loadPartsupp(): Rep[Array[PARTSUPPRecord]] = tPCHLoaderLoadPartsuppObject()
-    def loadPart(): Rep[Array[PARTRecord]] = tPCHLoaderLoadPartObject()
-    def loadNation(): Rep[Array[NATIONRecord]] = tPCHLoaderLoadNationObject()
-    def loadSupplier(): Rep[Array[SUPPLIERRecord]] = tPCHLoaderLoadSupplierObject()
-    def loadLineitem(): Rep[Array[LINEITEMRecord]] = tPCHLoaderLoadLineitemObject()
-    def loadOrders(): Rep[Array[ORDERSRecord]] = tPCHLoaderLoadOrdersObject()
-    def loadCustomer(): Rep[Array[CUSTOMERRecord]] = tPCHLoaderLoadCustomerObject()
+     def getTable(tableName : Rep[String]) : Rep[Table] = tPCHLoaderGetTableObject(tableName)
+     def loadRegion() : Rep[Array[REGIONRecord]] = tPCHLoaderLoadRegionObject()
+     def loadPartsupp() : Rep[Array[PARTSUPPRecord]] = tPCHLoaderLoadPartsuppObject()
+     def loadPart() : Rep[Array[PARTRecord]] = tPCHLoaderLoadPartObject()
+     def loadNation() : Rep[Array[NATIONRecord]] = tPCHLoaderLoadNationObject()
+     def loadSupplier() : Rep[Array[SUPPLIERRecord]] = tPCHLoaderLoadSupplierObject()
+     def loadLineitem() : Rep[Array[LINEITEMRecord]] = tPCHLoaderLoadLineitemObject()
+     def loadOrders() : Rep[Array[ORDERSRecord]] = tPCHLoaderLoadOrdersObject()
+     def loadCustomer() : Rep[Array[CUSTOMERRecord]] = tPCHLoaderLoadCustomerObject()
   }
   // constructors
 
@@ -55,19 +55,19 @@ trait TPCHLoaderOps extends Base with K2DBScannerOps with ArrayOps with REGIONRe
   val TPCHLoaderLoadCustomerObject = TPCHLoaderIRs.TPCHLoaderLoadCustomerObject
   type TPCHLoaderLoadCustomerObject = TPCHLoaderIRs.TPCHLoaderLoadCustomerObject
   // method definitions
-  def tPCHLoaderGetTableObject(tableName: Rep[String]): Rep[Table] = TPCHLoaderGetTableObject(tableName)
-  def tPCHLoaderLoadRegionObject(): Rep[Array[REGIONRecord]] = TPCHLoaderLoadRegionObject()
-  def tPCHLoaderLoadPartsuppObject(): Rep[Array[PARTSUPPRecord]] = TPCHLoaderLoadPartsuppObject()
-  def tPCHLoaderLoadPartObject(): Rep[Array[PARTRecord]] = TPCHLoaderLoadPartObject()
-  def tPCHLoaderLoadNationObject(): Rep[Array[NATIONRecord]] = TPCHLoaderLoadNationObject()
-  def tPCHLoaderLoadSupplierObject(): Rep[Array[SUPPLIERRecord]] = TPCHLoaderLoadSupplierObject()
-  def tPCHLoaderLoadLineitemObject(): Rep[Array[LINEITEMRecord]] = TPCHLoaderLoadLineitemObject()
-  def tPCHLoaderLoadOrdersObject(): Rep[Array[ORDERSRecord]] = TPCHLoaderLoadOrdersObject()
-  def tPCHLoaderLoadCustomerObject(): Rep[Array[CUSTOMERRecord]] = TPCHLoaderLoadCustomerObject()
+   def tPCHLoaderGetTableObject(tableName : Rep[String]) : Rep[Table] = TPCHLoaderGetTableObject(tableName)
+   def tPCHLoaderLoadRegionObject() : Rep[Array[REGIONRecord]] = TPCHLoaderLoadRegionObject()
+   def tPCHLoaderLoadPartsuppObject() : Rep[Array[PARTSUPPRecord]] = TPCHLoaderLoadPartsuppObject()
+   def tPCHLoaderLoadPartObject() : Rep[Array[PARTRecord]] = TPCHLoaderLoadPartObject()
+   def tPCHLoaderLoadNationObject() : Rep[Array[NATIONRecord]] = TPCHLoaderLoadNationObject()
+   def tPCHLoaderLoadSupplierObject() : Rep[Array[SUPPLIERRecord]] = TPCHLoaderLoadSupplierObject()
+   def tPCHLoaderLoadLineitemObject() : Rep[Array[LINEITEMRecord]] = TPCHLoaderLoadLineitemObject()
+   def tPCHLoaderLoadOrdersObject() : Rep[Array[ORDERSRecord]] = TPCHLoaderLoadOrdersObject()
+   def tPCHLoaderLoadCustomerObject() : Rep[Array[CUSTOMERRecord]] = TPCHLoaderLoadCustomerObject()
   type TPCHLoader = ch.epfl.data.dblab.legobase.tpch.TPCHLoader
 }
 object TPCHLoaderIRs extends Base {
-  import K2DBScannerIRs._
+  import LegobaseScannerIRs._
   import ArrayIRs._
   import REGIONRecordIRs._
   import PARTSUPPRecordIRs._
@@ -85,83 +85,83 @@ object TPCHLoaderIRs extends Base {
     def rebuild(newArguments: TypeRep[_]*): TypeRep[_] = TPCHLoaderType
     val name = "TPCHLoader"
     val typeArguments = Nil
-
+    
     val typeTag = scala.reflect.runtime.universe.typeTag[TPCHLoader]
   }
-  implicit val typeTPCHLoader: TypeRep[TPCHLoader] = TPCHLoaderType
+      implicit val typeTPCHLoader: TypeRep[TPCHLoader] = TPCHLoaderType
   // case classes
-  case class TPCHLoaderGetTableObject(tableName: Rep[String]) extends FunctionDef[Table](None, "TPCHLoader.getTable", List(List(tableName))) {
+  case class TPCHLoaderGetTableObject(tableName : Rep[String]) extends FunctionDef[Table](None, "TPCHLoader.getTable", List(List(tableName))){
     override def curriedConstructor = (copy _)
   }
 
-  case class TPCHLoaderLoadRegionObject() extends FunctionDef[Array[REGIONRecord]](None, "TPCHLoader.loadRegion", List(List())) {
+  case class TPCHLoaderLoadRegionObject() extends FunctionDef[Array[REGIONRecord]](None, "TPCHLoader.loadRegion", List(List())){
     override def curriedConstructor = (x: Any) => copy()
   }
 
-  case class TPCHLoaderLoadPartsuppObject() extends FunctionDef[Array[PARTSUPPRecord]](None, "TPCHLoader.loadPartsupp", List(List())) {
+  case class TPCHLoaderLoadPartsuppObject() extends FunctionDef[Array[PARTSUPPRecord]](None, "TPCHLoader.loadPartsupp", List(List())){
     override def curriedConstructor = (x: Any) => copy()
   }
 
-  case class TPCHLoaderLoadPartObject() extends FunctionDef[Array[PARTRecord]](None, "TPCHLoader.loadPart", List(List())) {
+  case class TPCHLoaderLoadPartObject() extends FunctionDef[Array[PARTRecord]](None, "TPCHLoader.loadPart", List(List())){
     override def curriedConstructor = (x: Any) => copy()
   }
 
-  case class TPCHLoaderLoadNationObject() extends FunctionDef[Array[NATIONRecord]](None, "TPCHLoader.loadNation", List(List())) {
+  case class TPCHLoaderLoadNationObject() extends FunctionDef[Array[NATIONRecord]](None, "TPCHLoader.loadNation", List(List())){
     override def curriedConstructor = (x: Any) => copy()
   }
 
-  case class TPCHLoaderLoadSupplierObject() extends FunctionDef[Array[SUPPLIERRecord]](None, "TPCHLoader.loadSupplier", List(List())) {
+  case class TPCHLoaderLoadSupplierObject() extends FunctionDef[Array[SUPPLIERRecord]](None, "TPCHLoader.loadSupplier", List(List())){
     override def curriedConstructor = (x: Any) => copy()
   }
 
-  case class TPCHLoaderLoadLineitemObject() extends FunctionDef[Array[LINEITEMRecord]](None, "TPCHLoader.loadLineitem", List(List())) {
+  case class TPCHLoaderLoadLineitemObject() extends FunctionDef[Array[LINEITEMRecord]](None, "TPCHLoader.loadLineitem", List(List())){
     override def curriedConstructor = (x: Any) => copy()
   }
 
-  case class TPCHLoaderLoadOrdersObject() extends FunctionDef[Array[ORDERSRecord]](None, "TPCHLoader.loadOrders", List(List())) {
+  case class TPCHLoaderLoadOrdersObject() extends FunctionDef[Array[ORDERSRecord]](None, "TPCHLoader.loadOrders", List(List())){
     override def curriedConstructor = (x: Any) => copy()
   }
 
-  case class TPCHLoaderLoadCustomerObject() extends FunctionDef[Array[CUSTOMERRecord]](None, "TPCHLoader.loadCustomer", List(List())) {
+  case class TPCHLoaderLoadCustomerObject() extends FunctionDef[Array[CUSTOMERRecord]](None, "TPCHLoader.loadCustomer", List(List())){
     override def curriedConstructor = (x: Any) => copy()
   }
 
   type TPCHLoader = ch.epfl.data.dblab.legobase.tpch.TPCHLoader
 }
-trait TPCHLoaderImplicits extends TPCHLoaderOps { this: ch.epfl.data.dblab.legobase.deep.DeepDSL =>
+trait TPCHLoaderImplicits extends TPCHLoaderOps { this: ch.epfl.data.dblab.legobase.deep.DeepDSL => 
   // Add implicit conversions here!
 }
-trait TPCHLoaderImplementations extends TPCHLoaderOps { this: ch.epfl.data.dblab.legobase.deep.DeepDSL =>
-  override def tPCHLoaderLoadRegionObject(): Rep[Array[REGIONRecord]] = {
-    Loader.loadTable[ch.epfl.data.dblab.legobase.tpch.REGIONRecord](TPCHLoader.getTable(unit("REGION")))
-  }
-  override def tPCHLoaderLoadPartsuppObject(): Rep[Array[PARTSUPPRecord]] = {
-    Loader.loadTable[ch.epfl.data.dblab.legobase.tpch.PARTSUPPRecord](TPCHLoader.getTable(unit("PARTSUPP")))
-  }
-  override def tPCHLoaderLoadPartObject(): Rep[Array[PARTRecord]] = {
-    Loader.loadTable[ch.epfl.data.dblab.legobase.tpch.PARTRecord](TPCHLoader.getTable(unit("PART")))
-  }
-  override def tPCHLoaderLoadNationObject(): Rep[Array[NATIONRecord]] = {
-    Loader.loadTable[ch.epfl.data.dblab.legobase.tpch.NATIONRecord](TPCHLoader.getTable(unit("NATION")))
-  }
-  override def tPCHLoaderLoadSupplierObject(): Rep[Array[SUPPLIERRecord]] = {
-    Loader.loadTable[ch.epfl.data.dblab.legobase.tpch.SUPPLIERRecord](TPCHLoader.getTable(unit("SUPPLIER")))
-  }
-  override def tPCHLoaderLoadLineitemObject(): Rep[Array[LINEITEMRecord]] = {
-    Loader.loadTable[ch.epfl.data.dblab.legobase.tpch.LINEITEMRecord](TPCHLoader.getTable(unit("LINEITEM")))
-  }
-  override def tPCHLoaderLoadOrdersObject(): Rep[Array[ORDERSRecord]] = {
-    Loader.loadTable[ch.epfl.data.dblab.legobase.tpch.ORDERSRecord](TPCHLoader.getTable(unit("ORDERS")))
-  }
-  override def tPCHLoaderLoadCustomerObject(): Rep[Array[CUSTOMERRecord]] = {
-    Loader.loadTable[ch.epfl.data.dblab.legobase.tpch.CUSTOMERRecord](TPCHLoader.getTable(unit("CUSTOMER")))
-  }
+trait TPCHLoaderImplementations extends TPCHLoaderOps { this: ch.epfl.data.dblab.legobase.deep.DeepDSL => 
+    override def tPCHLoaderLoadRegionObject() : Rep[Array[REGIONRecord]] = {
+Loader.loadTable[ch.epfl.data.dblab.legobase.tpch.REGIONRecord](TPCHLoader.getTable(unit("REGION")))
+    }
+    override def tPCHLoaderLoadPartsuppObject() : Rep[Array[PARTSUPPRecord]] = {
+Loader.loadTable[ch.epfl.data.dblab.legobase.tpch.PARTSUPPRecord](TPCHLoader.getTable(unit("PARTSUPP")))
+    }
+    override def tPCHLoaderLoadPartObject() : Rep[Array[PARTRecord]] = {
+Loader.loadTable[ch.epfl.data.dblab.legobase.tpch.PARTRecord](TPCHLoader.getTable(unit("PART")))
+    }
+    override def tPCHLoaderLoadNationObject() : Rep[Array[NATIONRecord]] = {
+Loader.loadTable[ch.epfl.data.dblab.legobase.tpch.NATIONRecord](TPCHLoader.getTable(unit("NATION")))
+    }
+    override def tPCHLoaderLoadSupplierObject() : Rep[Array[SUPPLIERRecord]] = {
+Loader.loadTable[ch.epfl.data.dblab.legobase.tpch.SUPPLIERRecord](TPCHLoader.getTable(unit("SUPPLIER")))
+    }
+    override def tPCHLoaderLoadLineitemObject() : Rep[Array[LINEITEMRecord]] = {
+Loader.loadTable[ch.epfl.data.dblab.legobase.tpch.LINEITEMRecord](TPCHLoader.getTable(unit("LINEITEM")))
+    }
+    override def tPCHLoaderLoadOrdersObject() : Rep[Array[ORDERSRecord]] = {
+Loader.loadTable[ch.epfl.data.dblab.legobase.tpch.ORDERSRecord](TPCHLoader.getTable(unit("ORDERS")))
+    }
+    override def tPCHLoaderLoadCustomerObject() : Rep[Array[CUSTOMERRecord]] = {
+Loader.loadTable[ch.epfl.data.dblab.legobase.tpch.CUSTOMERRecord](TPCHLoader.getTable(unit("CUSTOMER")))
+    }
 }
 
-trait TPCHLoaderPartialEvaluation extends TPCHLoaderComponent with BasePartialEvaluation { this: ch.epfl.data.dblab.legobase.deep.DeepDSL =>
+trait TPCHLoaderPartialEvaluation extends TPCHLoaderComponent with BasePartialEvaluation { this: ch.epfl.data.dblab.legobase.deep.DeepDSL =>  
   // Immutable field inlining 
 
   // Mutable field inlining 
   // Pure function partial evaluation
 }
-trait TPCHLoaderComponent extends TPCHLoaderOps with TPCHLoaderImplicits { this: ch.epfl.data.dblab.legobase.deep.DeepDSL => }
+trait TPCHLoaderComponent extends TPCHLoaderOps with TPCHLoaderImplicits { this: ch.epfl.data.dblab.legobase.deep.DeepDSL =>  }

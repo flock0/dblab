@@ -23,7 +23,7 @@ trait InliningLoader extends storagemanager.LoaderImplementations with schema.Sc
     }
     val size = Loader.fileLineCount(unit(table.resourceLocator))
     val arr = __newArray[R](size)
-    val ldr = __newK2DBScanner(unit(table.resourceLocator))
+    val ldr = __newLegobaseScanner(unit(table.resourceLocator))
     val recordType = currentMirror.staticClass(c.runtimeClass.getName).asType.toTypeConstructor
 
     allTables += table

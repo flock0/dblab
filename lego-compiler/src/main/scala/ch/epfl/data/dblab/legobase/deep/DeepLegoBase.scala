@@ -49,7 +49,7 @@ trait DeepDSL extends queryengine.push.OperatorsComponent
   with ORDERSRecordComponent
   with OptimalStringComponent
   with LoaderComponent
-  with K2DBScannerComponent
+  with LegobaseScannerComponent
   with IntegerComponent
   with HashMapComponent
   with SetComponent

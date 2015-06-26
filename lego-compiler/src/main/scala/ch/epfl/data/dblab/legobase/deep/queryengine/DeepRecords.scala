@@ -10,21 +10,21 @@ import pardis.deep._
 import pardis.deep.scalalib._
 import pardis.deep.scalalib.collection._
 import pardis.deep.scalalib.io._
-trait AGGRecordOps extends Base {
+trait AGGRecordOps extends Base  {  
   // Type representation
   val AGGRecordType = AGGRecordIRs.AGGRecordType
   type AGGRecordType[B] = AGGRecordIRs.AGGRecordType[B]
   implicit def typeAGGRecord[B: TypeRep]: TypeRep[AGGRecord[B]] = AGGRecordType(implicitly[TypeRep[B]])
-  implicit class AGGRecordRep[B](self: Rep[AGGRecord[B]])(implicit typeB: TypeRep[B]) {
-    def getField(key: Rep[String]): Rep[Option[Any]] = aGGRecordGetField[B](self, key)(typeB)
-    def aggs: Rep[Array[Double]] = aGGRecord_Field_Aggs[B](self)(typeB)
-    def key: Rep[B] = aGGRecord_Field_Key[B](self)(typeB)
+  implicit class AGGRecordRep[B](self : Rep[AGGRecord[B]])(implicit typeB : TypeRep[B]) {
+     def getField(key : Rep[String]) : Rep[Option[Any]] = aGGRecordGetField[B](self, key)(typeB)
+     def aggs : Rep[Array[Double]] = aGGRecord_Field_Aggs[B](self)(typeB)
+     def key : Rep[B] = aGGRecord_Field_Key[B](self)(typeB)
   }
   object AGGRecord {
 
   }
   // constructors
-  def __newAGGRecord[B](key: Rep[B], aggs: Rep[Array[Double]])(implicit typeB: TypeRep[B]): Rep[AGGRecord[B]] = aGGRecordNew[B](key, aggs)(typeB)
+   def __newAGGRecord[B](key : Rep[B], aggs : Rep[Array[Double]])(implicit typeB : TypeRep[B]) : Rep[AGGRecord[B]] = aGGRecordNew[B](key, aggs)(typeB)
   // IR defs
   val AGGRecordNew = AGGRecordIRs.AGGRecordNew
   type AGGRecordNew[B] = AGGRecordIRs.AGGRecordNew[B]
@@ -35,10 +35,10 @@ trait AGGRecordOps extends Base {
   val AGGRecord_Field_Key = AGGRecordIRs.AGGRecord_Field_Key
   type AGGRecord_Field_Key[B] = AGGRecordIRs.AGGRecord_Field_Key[B]
   // method definitions
-  def aGGRecordNew[B](key: Rep[B], aggs: Rep[Array[Double]])(implicit typeB: TypeRep[B]): Rep[AGGRecord[B]] = AGGRecordNew[B](key, aggs)
-  def aGGRecordGetField[B](self: Rep[AGGRecord[B]], key: Rep[String])(implicit typeB: TypeRep[B]): Rep[Option[Any]] = AGGRecordGetField[B](self, key)
-  def aGGRecord_Field_Aggs[B](self: Rep[AGGRecord[B]])(implicit typeB: TypeRep[B]): Rep[Array[Double]] = AGGRecord_Field_Aggs[B](self)
-  def aGGRecord_Field_Key[B](self: Rep[AGGRecord[B]])(implicit typeB: TypeRep[B]): Rep[B] = AGGRecord_Field_Key[B](self)
+   def aGGRecordNew[B](key : Rep[B], aggs : Rep[Array[Double]])(implicit typeB : TypeRep[B]) : Rep[AGGRecord[B]] = AGGRecordNew[B](key, aggs)
+   def aGGRecordGetField[B](self : Rep[AGGRecord[B]], key : Rep[String])(implicit typeB : TypeRep[B]) : Rep[Option[Any]] = AGGRecordGetField[B](self, key)
+   def aGGRecord_Field_Aggs[B](self : Rep[AGGRecord[B]])(implicit typeB : TypeRep[B]) : Rep[Array[Double]] = AGGRecord_Field_Aggs[B](self)
+   def aGGRecord_Field_Key[B](self : Rep[AGGRecord[B]])(implicit typeB : TypeRep[B]) : Rep[B] = AGGRecord_Field_Key[B](self)
   type AGGRecord[B] = ch.epfl.data.dblab.legobase.queryengine.AGGRecord[B]
 }
 object AGGRecordIRs extends Base {
@@ -51,17 +51,17 @@ object AGGRecordIRs extends Base {
     override val isRecord = true
     val typeTag = scala.reflect.runtime.universe.typeTag[AGGRecord[B]]
   }
-  implicit def typeAGGRecord[B: TypeRep]: TypeRep[AGGRecord[B]] = AGGRecordType(implicitly[TypeRep[B]])
+      implicit def typeAGGRecord[B: TypeRep]: TypeRep[AGGRecord[B]] = AGGRecordType(implicitly[TypeRep[B]])
   // case classes
-  case class AGGRecordNew[B](key: Rep[B], aggs: Rep[Array[Double]])(implicit val typeB: TypeRep[B]) extends ConstructorDef[AGGRecord[B]](List(typeB), "AGGRecord", List(List(key, aggs))) {
+  case class AGGRecordNew[B](key : Rep[B], aggs : Rep[Array[Double]])(implicit val typeB : TypeRep[B]) extends ConstructorDef[AGGRecord[B]](List(typeB), "AGGRecord", List(List(key,aggs))){
     override def curriedConstructor = (copy[B] _).curried
   }
 
-  case class AGGRecordGetField[B](self: Rep[AGGRecord[B]], key: Rep[String])(implicit val typeB: TypeRep[B]) extends FunctionDef[Option[Any]](Some(self), "getField", List(List(key))) {
+  case class AGGRecordGetField[B](self : Rep[AGGRecord[B]], key : Rep[String])(implicit val typeB : TypeRep[B]) extends FunctionDef[Option[Any]](Some(self), "getField", List(List(key))){
     override def curriedConstructor = (copy[B] _).curried
   }
 
-  case class AGGRecord_Field_Aggs[B](self: Rep[AGGRecord[B]])(implicit val typeB: TypeRep[B]) extends FieldDef[Array[Double]](self, "aggs") {
+  case class AGGRecord_Field_Aggs[B](self : Rep[AGGRecord[B]])(implicit val typeB : TypeRep[B]) extends FieldDef[Array[Double]](self, "aggs"){
     override def curriedConstructor = (copy[B] _)
     override def isPure = true
 
@@ -73,7 +73,7 @@ object AGGRecordIRs extends Base {
 
   }
 
-  case class AGGRecord_Field_Key[B](self: Rep[AGGRecord[B]])(implicit val typeB: TypeRep[B]) extends FieldDef[B](self, "key") {
+  case class AGGRecord_Field_Key[B](self : Rep[AGGRecord[B]])(implicit val typeB : TypeRep[B]) extends FieldDef[B](self, "key"){
     override def curriedConstructor = (copy[B] _)
     override def isPure = true
 
@@ -87,43 +87,43 @@ object AGGRecordIRs extends Base {
 
   type AGGRecord[B] = ch.epfl.data.dblab.legobase.queryengine.AGGRecord[B]
 }
-trait AGGRecordImplicits extends AGGRecordOps {
+trait AGGRecordImplicits extends AGGRecordOps { 
   // Add implicit conversions here!
 }
-trait AGGRecordImplementations extends AGGRecordOps {
+trait AGGRecordImplementations extends AGGRecordOps { 
 
 }
 
-trait AGGRecordPartialEvaluation extends AGGRecordComponent with BasePartialEvaluation {
+trait AGGRecordPartialEvaluation extends AGGRecordComponent with BasePartialEvaluation {  
   // Immutable field inlining 
-  override def aGGRecord_Field_Aggs[B](self: Rep[AGGRecord[B]])(implicit typeB: TypeRep[B]): Rep[Array[Double]] = self match {
+  override def aGGRecord_Field_Aggs[B](self : Rep[AGGRecord[B]])(implicit typeB : TypeRep[B]) : Rep[Array[Double]] = self match {
     case Def(node: AGGRecordNew[_]) => node.aggs
-    case _                          => super.aGGRecord_Field_Aggs[B](self)(typeB)
+    case _ => super.aGGRecord_Field_Aggs[B](self)(typeB)
   }
-  override def aGGRecord_Field_Key[B](self: Rep[AGGRecord[B]])(implicit typeB: TypeRep[B]): Rep[B] = self match {
+  override def aGGRecord_Field_Key[B](self : Rep[AGGRecord[B]])(implicit typeB : TypeRep[B]) : Rep[B] = self match {
     case Def(node: AGGRecordNew[_]) => node.key
-    case _                          => super.aGGRecord_Field_Key[B](self)(typeB)
+    case _ => super.aGGRecord_Field_Key[B](self)(typeB)
   }
 
   // Mutable field inlining 
   // Pure function partial evaluation
 }
-trait AGGRecordComponent extends AGGRecordOps with AGGRecordImplicits {}
-trait WindowRecordOps extends Base {
+trait AGGRecordComponent extends AGGRecordOps with AGGRecordImplicits {  }
+trait WindowRecordOps extends Base  {  
   // Type representation
   val WindowRecordType = WindowRecordIRs.WindowRecordType
   type WindowRecordType[B, C] = WindowRecordIRs.WindowRecordType[B, C]
   implicit def typeWindowRecord[B: TypeRep, C: TypeRep]: TypeRep[WindowRecord[B, C]] = WindowRecordType(implicitly[TypeRep[B]], implicitly[TypeRep[C]])
-  implicit class WindowRecordRep[B, C](self: Rep[WindowRecord[B, C]])(implicit typeB: TypeRep[B], typeC: TypeRep[C]) {
-    def getField(key: Rep[String]): Rep[Option[Any]] = windowRecordGetField[B, C](self, key)(typeB, typeC)
-    def wnd: Rep[C] = windowRecord_Field_Wnd[B, C](self)(typeB, typeC)
-    def key: Rep[B] = windowRecord_Field_Key[B, C](self)(typeB, typeC)
+  implicit class WindowRecordRep[B, C](self : Rep[WindowRecord[B, C]])(implicit typeB : TypeRep[B], typeC : TypeRep[C]) {
+     def getField(key : Rep[String]) : Rep[Option[Any]] = windowRecordGetField[B, C](self, key)(typeB, typeC)
+     def wnd : Rep[C] = windowRecord_Field_Wnd[B, C](self)(typeB, typeC)
+     def key : Rep[B] = windowRecord_Field_Key[B, C](self)(typeB, typeC)
   }
   object WindowRecord {
 
   }
   // constructors
-  def __newWindowRecord[B, C](key: Rep[B], wnd: Rep[C])(implicit typeB: TypeRep[B], typeC: TypeRep[C]): Rep[WindowRecord[B, C]] = windowRecordNew[B, C](key, wnd)(typeB, typeC)
+   def __newWindowRecord[B, C](key : Rep[B], wnd : Rep[C])(implicit typeB : TypeRep[B], typeC : TypeRep[C]) : Rep[WindowRecord[B, C]] = windowRecordNew[B, C](key, wnd)(typeB, typeC)
   // IR defs
   val WindowRecordNew = WindowRecordIRs.WindowRecordNew
   type WindowRecordNew[B, C] = WindowRecordIRs.WindowRecordNew[B, C]
@@ -134,10 +134,10 @@ trait WindowRecordOps extends Base {
   val WindowRecord_Field_Key = WindowRecordIRs.WindowRecord_Field_Key
   type WindowRecord_Field_Key[B, C] = WindowRecordIRs.WindowRecord_Field_Key[B, C]
   // method definitions
-  def windowRecordNew[B, C](key: Rep[B], wnd: Rep[C])(implicit typeB: TypeRep[B], typeC: TypeRep[C]): Rep[WindowRecord[B, C]] = WindowRecordNew[B, C](key, wnd)
-  def windowRecordGetField[B, C](self: Rep[WindowRecord[B, C]], key: Rep[String])(implicit typeB: TypeRep[B], typeC: TypeRep[C]): Rep[Option[Any]] = WindowRecordGetField[B, C](self, key)
-  def windowRecord_Field_Wnd[B, C](self: Rep[WindowRecord[B, C]])(implicit typeB: TypeRep[B], typeC: TypeRep[C]): Rep[C] = WindowRecord_Field_Wnd[B, C](self)
-  def windowRecord_Field_Key[B, C](self: Rep[WindowRecord[B, C]])(implicit typeB: TypeRep[B], typeC: TypeRep[C]): Rep[B] = WindowRecord_Field_Key[B, C](self)
+   def windowRecordNew[B, C](key : Rep[B], wnd : Rep[C])(implicit typeB : TypeRep[B], typeC : TypeRep[C]) : Rep[WindowRecord[B, C]] = WindowRecordNew[B, C](key, wnd)
+   def windowRecordGetField[B, C](self : Rep[WindowRecord[B, C]], key : Rep[String])(implicit typeB : TypeRep[B], typeC : TypeRep[C]) : Rep[Option[Any]] = WindowRecordGetField[B, C](self, key)
+   def windowRecord_Field_Wnd[B, C](self : Rep[WindowRecord[B, C]])(implicit typeB : TypeRep[B], typeC : TypeRep[C]) : Rep[C] = WindowRecord_Field_Wnd[B, C](self)
+   def windowRecord_Field_Key[B, C](self : Rep[WindowRecord[B, C]])(implicit typeB : TypeRep[B], typeC : TypeRep[C]) : Rep[B] = WindowRecord_Field_Key[B, C](self)
   type WindowRecord[B, C] = ch.epfl.data.dblab.legobase.queryengine.WindowRecord[B, C]
 }
 object WindowRecordIRs extends Base {
@@ -145,23 +145,23 @@ object WindowRecordIRs extends Base {
   case class WindowRecordType[B, C](typeB: TypeRep[B], typeC: TypeRep[C]) extends TypeRep[WindowRecord[B, C]] {
     def rebuild(newArguments: TypeRep[_]*): TypeRep[_] = WindowRecordType(newArguments(0).asInstanceOf[TypeRep[_]], newArguments(1).asInstanceOf[TypeRep[_]])
     private implicit val tagB = typeB.typeTag
-    private implicit val tagC = typeC.typeTag
+private implicit val tagC = typeC.typeTag
     val name = s"WindowRecord[${typeB.name}, ${typeC.name}]"
     val typeArguments = List(typeB, typeC)
     override val isRecord = true
     val typeTag = scala.reflect.runtime.universe.typeTag[WindowRecord[B, C]]
   }
-  implicit def typeWindowRecord[B: TypeRep, C: TypeRep]: TypeRep[WindowRecord[B, C]] = WindowRecordType(implicitly[TypeRep[B]], implicitly[TypeRep[C]])
+      implicit def typeWindowRecord[B: TypeRep, C: TypeRep]: TypeRep[WindowRecord[B, C]] = WindowRecordType(implicitly[TypeRep[B]], implicitly[TypeRep[C]])
   // case classes
-  case class WindowRecordNew[B, C](key: Rep[B], wnd: Rep[C])(implicit val typeB: TypeRep[B], val typeC: TypeRep[C]) extends ConstructorDef[WindowRecord[B, C]](List(typeB, typeC), "WindowRecord", List(List(key, wnd))) {
+  case class WindowRecordNew[B, C](key : Rep[B], wnd : Rep[C])(implicit val typeB : TypeRep[B], val typeC : TypeRep[C]) extends ConstructorDef[WindowRecord[B, C]](List(typeB, typeC), "WindowRecord", List(List(key,wnd))){
     override def curriedConstructor = (copy[B, C] _).curried
   }
 
-  case class WindowRecordGetField[B, C](self: Rep[WindowRecord[B, C]], key: Rep[String])(implicit val typeB: TypeRep[B], val typeC: TypeRep[C]) extends FunctionDef[Option[Any]](Some(self), "getField", List(List(key))) {
+  case class WindowRecordGetField[B, C](self : Rep[WindowRecord[B, C]], key : Rep[String])(implicit val typeB : TypeRep[B], val typeC : TypeRep[C]) extends FunctionDef[Option[Any]](Some(self), "getField", List(List(key))){
     override def curriedConstructor = (copy[B, C] _).curried
   }
 
-  case class WindowRecord_Field_Wnd[B, C](self: Rep[WindowRecord[B, C]])(implicit val typeB: TypeRep[B], val typeC: TypeRep[C]) extends FieldDef[C](self, "wnd") {
+  case class WindowRecord_Field_Wnd[B, C](self : Rep[WindowRecord[B, C]])(implicit val typeB : TypeRep[B], val typeC : TypeRep[C]) extends FieldDef[C](self, "wnd"){
     override def curriedConstructor = (copy[B, C] _)
     override def isPure = true
 
@@ -173,7 +173,7 @@ object WindowRecordIRs extends Base {
 
   }
 
-  case class WindowRecord_Field_Key[B, C](self: Rep[WindowRecord[B, C]])(implicit val typeB: TypeRep[B], val typeC: TypeRep[C]) extends FieldDef[B](self, "key") {
+  case class WindowRecord_Field_Key[B, C](self : Rep[WindowRecord[B, C]])(implicit val typeB : TypeRep[B], val typeC : TypeRep[C]) extends FieldDef[B](self, "key"){
     override def curriedConstructor = (copy[B, C] _)
     override def isPure = true
 
@@ -187,25 +187,25 @@ object WindowRecordIRs extends Base {
 
   type WindowRecord[B, C] = ch.epfl.data.dblab.legobase.queryengine.WindowRecord[B, C]
 }
-trait WindowRecordImplicits extends WindowRecordOps {
+trait WindowRecordImplicits extends WindowRecordOps { 
   // Add implicit conversions here!
 }
-trait WindowRecordImplementations extends WindowRecordOps {
+trait WindowRecordImplementations extends WindowRecordOps { 
 
 }
 
-trait WindowRecordPartialEvaluation extends WindowRecordComponent with BasePartialEvaluation {
+trait WindowRecordPartialEvaluation extends WindowRecordComponent with BasePartialEvaluation {  
   // Immutable field inlining 
-  override def windowRecord_Field_Wnd[B, C](self: Rep[WindowRecord[B, C]])(implicit typeB: TypeRep[B], typeC: TypeRep[C]): Rep[C] = self match {
+  override def windowRecord_Field_Wnd[B, C](self : Rep[WindowRecord[B, C]])(implicit typeB : TypeRep[B], typeC : TypeRep[C]) : Rep[C] = self match {
     case Def(node: WindowRecordNew[_, _]) => node.wnd
-    case _                                => super.windowRecord_Field_Wnd[B, C](self)(typeB, typeC)
+    case _ => super.windowRecord_Field_Wnd[B, C](self)(typeB, typeC)
   }
-  override def windowRecord_Field_Key[B, C](self: Rep[WindowRecord[B, C]])(implicit typeB: TypeRep[B], typeC: TypeRep[C]): Rep[B] = self match {
+  override def windowRecord_Field_Key[B, C](self : Rep[WindowRecord[B, C]])(implicit typeB : TypeRep[B], typeC : TypeRep[C]) : Rep[B] = self match {
     case Def(node: WindowRecordNew[_, _]) => node.key
-    case _                                => super.windowRecord_Field_Key[B, C](self)(typeB, typeC)
+    case _ => super.windowRecord_Field_Key[B, C](self)(typeB, typeC)
   }
 
   // Mutable field inlining 
   // Pure function partial evaluation
 }
-trait WindowRecordComponent extends WindowRecordOps with WindowRecordImplicits {}
+trait WindowRecordComponent extends WindowRecordOps with WindowRecordImplicits {  }

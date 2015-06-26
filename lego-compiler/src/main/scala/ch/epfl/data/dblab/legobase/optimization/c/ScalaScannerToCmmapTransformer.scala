@@ -21,12 +21,12 @@ class ScalaScannerToCmmapTransformer(override val IR: LoweringLegoBase, val sett
   import CNodes._
   import CTypes._
 
-  implicit def toArrayChar(s: Expression[K2DBScanner]): Expression[Pointer[Char]] =
+  implicit def toArrayChar(s: Expression[LegobaseScanner]): Expression[Pointer[Char]] =
     s.asInstanceOf[Expression[Pointer[Char]]]
 
   override def transformType[T: PardisType]: PardisType[Any] = ({
     val tp = typeRep[T]
-    if (tp == typeK2DBScanner) typePointer(typeChar)
+    if (tp == typeLegobaseScanner) typePointer(typeChar)
     else super.transformType[T]
   }).asInstanceOf[PardisType[Any]]
 
@@ -40,7 +40,7 @@ class ScalaScannerToCmmapTransformer(override val IR: LoweringLegoBase, val sett
 
   // rewritings
   rewrite += rule {
-    case K2DBScannerNew(f) => {
+    case LegobaseScannerNew(f) => {
       val fd: Expression[Int] = open(f, O_RDONLY)
       val st = &(__newVar[StructStat](infix_asInstanceOf(unit(0))(typeStat)))
       stat(f, st)
@@ -49,10 +49,10 @@ class ScalaScannerToCmmapTransformer(override val IR: LoweringLegoBase, val sett
     }
   }
 
-  rewrite += rule { case K2DBScannerNext_int(s) => readInt(s) }
+  rewrite += rule { case LegobaseScannerNext_int(s) => readInt(s) }
 
   rewrite += rule {
-    case K2DBScannerNext_double(s) =>
+    case LegobaseScannerNext_double(s) =>
       val num = readVar(__newVar[Double](unit(0.0)))
       pointer_assign(s,
         toAtom(NameAlias[Pointer[Char]](None, "strntod_unchecked", List(List(s, &(num))))))
@@ -60,7 +60,7 @@ class ScalaScannerToCmmapTransformer(override val IR: LoweringLegoBase, val sett
   }
 
   rewrite += rule {
-    case K2DBScannerNext_char(s) =>
+    case LegobaseScannerNext_char(s) =>
       val tmp = __newVar[Char](*(s));
       pointer_increase(s) // move to next char, which is the delimiter
       pointer_increase(s) // skip '|'
@@ -68,7 +68,7 @@ class ScalaScannerToCmmapTransformer(override val IR: LoweringLegoBase, val sett
   }
 
   rewrite += rule {
-    case K2DBScannerNext_date(s) => {
+    case LegobaseScannerNext_date(s) => {
       val year = readInt(s)
       val month = readInt(s)
       val day = readInt(s)
@@ -77,7 +77,7 @@ class ScalaScannerToCmmapTransformer(override val IR: LoweringLegoBase, val sett
   }
 
   rewrite += rule {
-    case nn @ K2DBScannerNext1(s, buf) =>
+    case nn @ LegobaseScannerNext1(s, buf) =>
       // val array = field(buf, "array")(typePointer(typeChar))
       // val array = buf.asInstanceOf[Rep[Pointer[Char]]]
       val array = if (settings.oldCArrayHandling)
@@ -104,7 +104,7 @@ class ScalaScannerToCmmapTransformer(override val IR: LoweringLegoBase, val sett
   }
 
   rewrite += rule {
-    case K2DBScannerHasNext(s) => infix_!=(*(s), unit('\u0000'))
+    case LegobaseScannerHasNext(s) => infix_!=(*(s), unit('\u0000'))
 
   }
   rewrite += rule {

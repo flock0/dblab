@@ -134,8 +134,8 @@ class SQLTreeToQueryPlanConverter(schema: Schema) {
     val FloatType = typeTag[Float]
     val DoubleType = typeTag[Double]
     // Check that we have inferred typetags correctly
-    //if (typeTag[A] == null || typeTag[B] == null)
-    //throw new Exception("LegoBase type inferrence BUG: inferred types should never be NULL (detected types (" + typeTag[A] + "," + typeTag[B] + ")")
+    if (typeTag[A] == null || typeTag[B] == null)
+      throw new Exception("LegoBase type inferrence BUG: inferred types should never be NULL (detected types (" + typeTag[A] + "," + typeTag[B] + ")")
 
     ((typeTag[A], typeTag[B]) match {
       case (x, y) if x == y      => n1 -> n2
@@ -144,7 +144,7 @@ class SQLTreeToQueryPlanConverter(schema: Schema) {
       //case (FloatType, DoubleType) => n1.asInstanceOf[Float].toDouble -> n2
       //case (DoubleType, FloatType) => n1 -> n2.asInstanceOf[Float].toDouble
       case (DoubleType, IntType) => n1 -> n2.asInstanceOf[Int].toDouble
-      case _                     => n1.asInstanceOf[Double].toDouble -> n2.asInstanceOf[Double].toDouble // FIXME FIXME FIXME THIS SHOULD BE HAPPENING, TYPE INFERENCE BUG
+      //case _                     => n1.asInstanceOf[Double].toDouble -> n2.asInstanceOf[Double].toDouble // FIXME FIXME FIXME THIS SHOULD BE HAPPENING, TYPE INFERENCE BUG
       //case (x, y)                  => throw new Exception(s"Does not know how to find the common type for $x and $y")
     }).asInstanceOf[(Any, Any)]
   }
@@ -264,13 +264,19 @@ class SQLTreeToQueryPlanConverter(schema: Schema) {
     val leftOp = convertOperator(leftParent).asInstanceOf[Operator[Record]]
     val rightOp = convertOperator(rightParent).asInstanceOf[Operator[Record]]
     val (leftCond, rightCond) = parseJoinClause(joinCond)
+
     joinType match {
       case LeftSemiJoin =>
         new LeftHashSemiJoinOp(leftOp, rightOp)((x, y) => parseExpression(joinCond, x, y).asInstanceOf[Boolean])(
           x => parseExpression(leftCond, x)(leftCond.tp))(x => parseExpression(rightCond, x)(rightCond.tp))
       case LeftOuterJoin =>
+        //TODO Generalize!
+        val rightTp = Manifest.classType((rightParent match {
+          case ScanOpNode(_, _, _, tp)                     => tp
+          case SelectOpNode(ScanOpNode(_, _, _, tp), _, _) => tp
+        }).runtimeClass).asInstanceOf[Manifest[Record]]
         new LeftOuterJoinOp(leftOp, rightOp)((x, y) => parseExpression(joinCond, x, y).asInstanceOf[Boolean])(
-          x => parseExpression(leftCond, x)(leftCond.tp))(x => parseExpression(rightCond, x)(rightCond.tp))
+          x => parseExpression(leftCond, x)(leftCond.tp))(x => parseExpression(rightCond, x)(rightCond.tp))(rightTp)
       case AntiJoin =>
         new HashJoinAnti(leftOp, rightOp)((x, y) => parseExpression(joinCond, x, y).asInstanceOf[Boolean])(
           x => parseExpression(leftCond, x)(leftCond.tp))(x => parseExpression(rightCond, x)(rightCond.tp))

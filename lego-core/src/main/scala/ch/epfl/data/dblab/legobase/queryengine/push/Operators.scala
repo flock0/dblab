@@ -404,7 +404,7 @@ class SubquerySingleResult[A](parent: Operator[A]) extends Operator[A] {
   def getResult = {
     if (result == null) {
       //System.out.println("Opening subquery");
-      this.open()
+      open()
     }
     result
   }
@@ -509,17 +509,12 @@ class ViewOp[A: Manifest](parent: Operator[A]) extends Operator[A] {
  */
 @needs[scala.collection.mutable.MultiMap[Any, Any]]
 @deep
-class LeftOuterJoinOp[A <: Record, B <: Record: Manifest, C](val leftParent: Operator[A], val rightParent: Operator[B])(val joinCond: (A, B) => Boolean)(val leftHash: A => C)(val rightHash: B => C) extends Operator[DynamicCompositeRecord[A, B]] {
+class LeftOuterJoinOp[A <: Record, B <: Record, C](val leftParent: Operator[A], val rightParent: Operator[B])(val joinCond: (A, B) => Boolean)(val leftHash: A => C)(val rightHash: B => C)(implicit val mb: Manifest[B]) extends Operator[DynamicCompositeRecord[A, B]] {
   @inline var mode: scala.Int = 0
   val hm = MultiMap[C, B]
-  import sc.pardis.shallow.utils.DefaultValue
 
-  def getDefault[T <: Record: Manifest](rec: Record): T = {
-    val values = rec.getClass.getDeclaredFields().map(x => DefaultValue(x.getType.getName))
-    rec.getClass.getConstructors()(0).newInstance(values.toSeq.asInstanceOf[Seq[Object]]: _*).asInstanceOf[T]
-  }
+  val defaultB: Record = Record.getDefaultRecord()(mb)
 
-  var defaultB: Record = null // Record.getDefaultRecord[B]()
   def open() = {
     leftParent.child = this
     leftParent.open
@@ -542,7 +537,6 @@ class LeftOuterJoinOp[A <: Record, B <: Record: Manifest, C](val leftParent: Ope
       if (hmGet.nonEmpty) {
         val tmpBuffer = hmGet.get
         tmpBuffer foreach { bufElem =>
-          if (defaultB == null) defaultB = getDefault(bufElem)
           val elem = {
             if (joinCond(tuple.asInstanceOf[A], bufElem)) {
               tuple.asInstanceOf[A].concatenateDynamic(bufElem, "", "")
