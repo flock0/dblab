@@ -66,9 +66,10 @@ case class DDTable(private val dict: DataDictionary, private val rec: TablesReco
   override def load: Array[_ <: Record] = dict.getTuples(rec)
 }
 case class DDAttribute(private val dict: DataDictionary, private val attr: AttributesRecord) extends Attribute {
+  implicit val d = dict
   override def name: String = attr.name
   override def dataType: Tpe = attr.dataType
-  def constraints: Seq[Constraint] = dict.getConstraints(attr.name)
+  def constraints: Seq[Constraint] = dict.getConstraints(attr.name).toList.map(Constraint.ConstraintsRecordToConstraint(_))
   override def hasConstraint(con: Constraint) = constraints contains con
   override def toString =
     "    " + "%-20s".format(name) + "%-20s".format(dataType) + constraints.map(c => "@%-10s".format(c)).mkString(" , ")
