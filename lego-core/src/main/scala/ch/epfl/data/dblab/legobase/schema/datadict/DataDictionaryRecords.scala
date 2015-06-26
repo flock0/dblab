@@ -2,6 +2,7 @@ package ch.epfl.data
 package dblab.legobase
 package schema.datadict
 
+import scala.language.implicitConversions
 import DataDictionary._
 import sc.pardis.types._
 import schema.{ Constraint, PrimaryKey, ForeignKey, NotNull, Unique, Compressed }
@@ -68,14 +69,9 @@ case class SequencesRecord(startValue: Int, endValue: Int, incrementBy: Int, seq
 
 object ConstraintsRecord {
   implicit def ConstraintToConstraintsRecord(cr: Constraint)(implicit dict: DataDictionary): ConstraintsRecord = cr match {
-    case PrimaryKey(attributes) => {
-      val attrRecords = dict.getAttributes(attributes)
-      val tableId = attrRecords.head.tableId
-      val attributeIds = attrRecords.map(a => a.attributeId)
-      ConstraintsRecord(tableId, 'p', attributeIds)
-    }
+    case PrimaryKey(attributes)              => ???
     case ForeignKey(fkName, own, ref, attrs) => ???
-    case NotNull(attr) => ???
-    case Unique(attr) => ???
+    case NotNull(attr)                       => ???
+    case Unique(attr)                        => ???
   }
 }
