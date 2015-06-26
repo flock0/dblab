@@ -37,24 +37,27 @@ case class DDSchema(private val dict: DataDictionary, name: String) extends Sche
   }
 }
 case class DDTable(private val dict: DataDictionary, private val rec: TablesRecord) extends Table {
+  implicit val d = dict
   override def name: String = rec.name
   override def fileName: String = rec.fileName match {
     case Some(fn) => fn
     case None     => ""
   }
   override def primaryKey: Option[PrimaryKey] = {
-    val pks: List[Constraint] = dict.getConstraints(rec.tableId, 'p')
+    val pks: List[PrimaryKey] = dict.getConstraints(rec.tableId, 'p').toList
     if (pks.size == 0)
       None
     else if (pks.size == 1)
       Some(pks.head)
+    else
+      throw new Exception(s"Expected exactly 1 PrimaryKey constraint but found ${pks.size}.")
   }
   override def dropPrimaryKey = dict.dropPrimaryKey(rec.tableId)
-  override def foreignKeys: List[ForeignKey] = dict.getConstraints(rec.tableId, 'f')
+  override def foreignKeys: List[ForeignKey] = dict.getConstraints(rec.tableId, 'f').toList
   override def foreignKey(foreignKeyName: String): Option[ForeignKey] = foreignKeys.find(_.foreignKeyName == foreignKeyName)
   override def dropForeignKey(foreignKeyName: String) = dict.dropForeignKey(rec.tableId, foreignKeyName)
-  override def notNulls: List[NotNull] = dict.getConstraints(rec.tableId, 'n')
-  override def uniques: List[Unique] = dict.getConstraints(rec.tableId, 'u')
+  override def notNulls: List[NotNull] = dict.getConstraints(rec.tableId, 'n').toList
+  override def uniques: List[Unique] = dict.getConstraints(rec.tableId, 'u').toList
   override def autoIncrement: Option[AutoIncrement] = ??? //TODO AutoIncrement is represented as a sequence in the data dictionary
   override def findAttribute(attrName: String): Option[Attribute] = Some(DDAttribute(dict, dict.getAttribute(rec.tableId, attrName))) //TODO None case is handeled through exception
   override def addConstraint(cstr: Constraint) = dict.addConstraint(cstr)
