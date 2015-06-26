@@ -513,7 +513,7 @@ class LeftOuterJoinOp[A <: Record, B <: Record, C](val leftParent: Operator[A], 
   @inline var mode: scala.Int = 0
   val hm = MultiMap[C, B]
 
-  val defaultB: Record = Record.getDefaultRecord()(mb)
+  val defaultB: B = Record.getDefaultRecord[B]()
 
   def open() = {
     leftParent.child = this
