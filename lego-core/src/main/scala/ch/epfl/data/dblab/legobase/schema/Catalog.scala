@@ -74,8 +74,7 @@ object Compressed extends Constraint {
 
 object Constraint {
   import datadict.{ ConstraintsRecord, DataDictionary, DDAttribute }
-  implicit def ConstraintsRecordToConstraint(cr: ConstraintsRecord)(implicit d: DataDictionary): Constraint = {
-    val dict = DataDictionary()
+  def ConstraintsRecordToConstraint(cr: ConstraintsRecord)(implicit dict: DataDictionary): Constraint = {
     cr.constraintType match {
       case 'p' => PrimaryKey(dict.getAttributesFromIds(cr.tableId, cr.attributes).map(a => DDAttribute(dict, a)))
       case 'f' => {
@@ -101,5 +100,29 @@ object Constraint {
       case _   => throw new Exception(s"Constraint in ${cr.tableId} has unknown type '${cr.constraintType}'.")
     }
   }
-  implicit def ConstraintsRecordListToConstraintList(lst: List[ConstraintsRecord])(implicit d: DataDictionary): List[Constraint] = lst.map(ConstraintsRecordToConstraint(_))
+  implicit def ConstraintsRecordToPrimaryKey(cr: ConstraintsRecord)(implicit dict: DataDictionary): PrimaryKey =
+    ConstraintsRecordToConstraint(cr) match {
+      case x: PrimaryKey => x
+      case x             => throw new Exception(s"Expected to obtain a PrimaryKey but found a ${x.getClass.getName}.")
+    }
+  implicit def ConstraintsRecordToForeignKey(cr: ConstraintsRecord)(implicit dict: DataDictionary): ForeignKey =
+    ConstraintsRecordToConstraint(cr) match {
+      case x: ForeignKey => x
+      case x             => throw new Exception(s"Expected to obtain a ForeignKey but found a ${x.getClass.getName}.")
+    }
+  implicit def ConstraintsRecordToNotNull(cr: ConstraintsRecord)(implicit dict: DataDictionary): NotNull =
+    ConstraintsRecordToConstraint(cr) match {
+      case x: NotNull => x
+      case x          => throw new Exception(s"Expected to obtain a NotNull but found a ${x.getClass.getName}.")
+    }
+  implicit def ConstraintsRecordToUnique(cr: ConstraintsRecord)(implicit dict: DataDictionary): Unique =
+    ConstraintsRecordToConstraint(cr) match {
+      case x: Unique => x
+      case x         => throw new Exception(s"Expected to obtain a Unique but found a ${x.getClass.getName}.")
+    }
+  def ConstraintsRecordListToConstraintList(lst: List[ConstraintsRecord])(implicit dict: DataDictionary): List[Constraint] = lst.map(ConstraintsRecordToConstraint(_))
+  implicit def ConstraintsRecordListToPrimaryKeyList(lst: List[ConstraintsRecord])(implicit dict: DataDictionary): List[PrimaryKey] = lst.map(ConstraintsRecordToPrimaryKey(_))
+  implicit def ConstraintsRecordListToForeignKeyList(lst: List[ConstraintsRecord])(implicit dict: DataDictionary): List[ForeignKey] = lst.map(ConstraintsRecordToForeignKey(_))
+  implicit def ConstraintsRecordListToNotNullList(lst: List[ConstraintsRecord])(implicit dict: DataDictionary): List[NotNull] = lst.map(ConstraintsRecordToNotNull(_))
+  implicit def ConstraintsRecordListToUniqueList(lst: List[ConstraintsRecord])(implicit dict: DataDictionary): List[Unique] = lst.map(ConstraintsRecordToUnique(_))
 }
