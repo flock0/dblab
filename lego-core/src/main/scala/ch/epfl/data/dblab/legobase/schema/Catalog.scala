@@ -2,6 +2,7 @@ package ch.epfl.data
 package dblab.legobase
 package schema
 
+import scala.language.implicitConversions
 import sc.pardis.types.{ Tpe, PardisType }
 import scala.collection.mutable.ArrayBuffer
 
@@ -69,4 +70,36 @@ case class AutoIncrement(attribute: Attribute) extends Constraint {
 }
 object Compressed extends Constraint {
   override def toString = "COMPRESSED"
+}
+
+object Constraint {
+  import datadict.{ ConstraintsRecord, DataDictionary, DDAttribute }
+  implicit def ConstraintsRecordToConstraint(cr: ConstraintsRecord)(implicit d: DataDictionary): Constraint = {
+    val dict = DataDictionary()
+    cr.constraintType match {
+      case 'p' => PrimaryKey(dict.getAttributesFromIds(cr.tableId, cr.attributes).map(a => DDAttribute(dict, a)))
+      case 'f' => {
+        val referencedTableName = cr.refTableName match {
+          case Some(name) => name
+          case None       => throw new Exception(s"ForeignKey ${cr.foreignKeyName} is missing the name of the referenced table.")
+        }
+        val referencedAttributes = cr.refAttributes match {
+          case None            => throw new Exception(s"ForeignKey ${cr.foreignKeyName} is missing the attributes it refers to.")
+          case Some(attrNames) => attrNames
+        }
+        val foreignKeyName = cr.foreignKeyName match {
+          case None       => throw new Exception(s"ForeignKey ${cr.foreignKeyName} is missing a name.")
+          case Some(name) => name
+        }
+        val ownTable = dict.getTable(cr.tableId).name
+        val columnAssignments = dict.getAttributesFromIds(cr.tableId, cr.attributes).map(at => at.name).zip(referencedAttributes)
+        ForeignKey(foreignKeyName, ownTable, referencedTableName, columnAssignments)
+      }
+      case 'n' => NotNull(DDAttribute(dict, dict.getAttribute(cr.tableId, cr.attributes.head)))
+      case 'u' => Unique(DDAttribute(dict, dict.getAttribute(cr.tableId, cr.attributes.head)))
+      case 'c' => Compressed //(DDAttribute(dict, dict.getAttribute(cr.tableId, cr.attributes.head)))
+      case _   => throw new Exception(s"Constraint in ${cr.tableId} has unknown type '${cr.constraintType}'.")
+    }
+  }
+  implicit def ConstraintsRecordListToConstraintList(lst: List[ConstraintsRecord])(implicit d: DataDictionary): List[Constraint] = lst.map(ConstraintsRecordToConstraint(_))
 }
