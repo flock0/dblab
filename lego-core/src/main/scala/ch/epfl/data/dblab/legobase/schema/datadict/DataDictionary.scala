@@ -352,6 +352,15 @@ case class DataDictionary() {
     atts
   }
 
+  /** Returns a list of attributes with the specified names */
+  def getAttributes(attributeNames: List[String]) = {
+    val atts = attributes.filter(attributeNames.contains(at.name)).toList
+
+    if (atts.size != attributeNames.size)
+      throw new Exception(s"Couldn't find all requested attributes")
+    atts
+  }
+
   /** Returns a list of attributes with the specified ids that belong to the given table */
   def getAttributesFromIds(tableId: Int, attributeIds: List[Int]) = {
     val atts = attributes.filter(at => at.tableId == tableId && attributeIds.contains(at.attributeId)).toList
@@ -459,13 +468,22 @@ case class DataDictionary() {
   private[datadict] def getConstraints[T](tableId: Int, constraintType: Char) = {
     constraints.filter(c => c.tableId == tableId && c.constraintType == constraintType)
   }
-  private[datadict] def getConstraints(tableId: Int) = ???
+  private[datadict] def getConstraints(tableId: Int) = constraints.filter(c => c.tableId == tableId)
 
-  private[datadict] def getConstraints(attrName: String) = ???
+  private[datadict] def getConstraints(attrName: String) = {
+    val attrs = getAttributes(attrnames)
+    if (attrs.size == 0)
+      Seq.empty
+    else { // Assume attribute names are unique
+      val at = attrs.head
+      constraints.filter(c => c.tableId == at.tableId && at.attributes contains at.attributeId)
+    }
+  }
 
-  private[datadict] def dropPrimaryKey(tableId: Int) = ???
+  private[datadict] def dropPrimaryKey(tableId: Int) = constraints --= getConstraints(tableId, 'p')
 
-  private[datadict] def dropForeignKey(tableId: Int, foreignKeyName: String) = ???
+  private[datadict] def dropForeignKey(tableId: Int, foreignKeyName: String) =
+    constraints --= constraints.filter(c => c.tableId == tableId && c.constraintType == constraintType && c.foreignKeyName == Some(foreignKeyName))
 
-  private[datadict] def addConstraint(cstr: schema.Constraint) = ???
+  private[datadict] def addConstraint(cstr: schema.Constraint) = constraints += cstr
 }

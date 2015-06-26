@@ -26,7 +26,7 @@ case class RowsRecord(tableId: Int, private val dict: DataDictionary, private va
     case None     => dict.getSequenceNext(constructSequenceName(DDSchemaName, "ROWS", "ROW_ID"))
   }
 }
-case class ConstraintsRecord(tableId: Int, constraintType: Char, attributes: List[Int], refTableName: Option[String], refAttributes: Option[List[String]], foreignKeyName: Option[String] = None)
+case class ConstraintsRecord(tableId: Int, constraintType: Char, attributes: List[Int], refTableName: Option[String] = None, refAttributes: Option[List[String]] = None, foreignKeyName: Option[String] = None)
 
 case class SequencesRecord(startValue: Int, endValue: Int, incrementBy: Int, sequenceName: String, private val dict: DataDictionary, private val _sequenceId: Option[Int] = None) {
   /* Catch invalid start/end/incrementBy values*/
@@ -63,5 +63,19 @@ case class SequencesRecord(startValue: Int, endValue: Int, incrementBy: Int, seq
     next += incrementBy
     //TODO Update field value in FIELD for this sequence
     value
+  }
+}
+
+object ConstraintsRecord {
+  implicit def ConstraintToConstraintsRecord(cr: Constraint)(implicit dict: DataDictionary): ConstraintsRecord = cr match {
+    case PrimaryKey(attributes) => {
+      val attrRecords = dict.getAttributes(attributes)
+      val tableId = attrRecords.head.tableId
+      val attributeIds = attrRecords.map(a => a.attributeId)
+      ConstraintsRecord(tableId, 'p', attributeIds)
+    }
+    case ForeignKey(fkName, own, ref, attrs) => ???
+    case NotNull(attr) => ???
+    case Unique(attr) => ???
   }
 }
