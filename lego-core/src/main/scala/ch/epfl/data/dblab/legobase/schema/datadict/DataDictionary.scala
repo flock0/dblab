@@ -485,7 +485,7 @@ case class DataDictionary() {
   private[datadict] def dropForeignKey(tableId: Int, foreignKeyName: String) =
     constraints --= constraints.filter(c => c.tableId == tableId && c.foreignKeyName == Some(foreignKeyName))
 
-  private[datadict] def addConstraint(cstr: schema.Constraint) = {
+  private[datadict] def addConstraint(cstr: schema.Constraint)(implicit tableId: Int) = {
     implicit val d = this
     constraints += cstr
   }

@@ -5,7 +5,7 @@ package schema.datadict
 import scala.language.implicitConversions
 import DataDictionary._
 import sc.pardis.types._
-import schema.{ Constraint, PrimaryKey, ForeignKey, NotNull, Unique, Compressed }
+import schema.{ Constraint, PrimaryKey, ForeignKey, NotNull, Unique, AutoIncrement, Compressed }
 
 /* Case classes for the tables in the data dictionary */
 case class TablesRecord(schemaName: String, name: String, private val dict: DataDictionary, val fileName: Option[String] = None, private val _tableId: Option[Int] = None, var isLoaded: Boolean = false) {
@@ -68,10 +68,20 @@ case class SequencesRecord(startValue: Int, endValue: Int, incrementBy: Int, seq
 }
 
 object ConstraintsRecord {
-  implicit def ConstraintToConstraintsRecord(cr: Constraint)(implicit dict: DataDictionary): ConstraintsRecord = cr match {
-    case PrimaryKey(attributes)              => ???
+  implicit def ConstraintToConstraintsRecord(cr: Constraint)(implicit dict: DataDictionary, tableId: Int): ConstraintsRecord = cr match {
+    case PrimaryKey(attributes) => {
+      val attributeIds = dict.getAttributes(tableId, attributes.map(_.name).toList).map(a => a.attributeId)
+      ConstraintsRecord(tableId, 'p', attributeIds)
+    }
     case ForeignKey(fkName, own, ref, attrs) => ???
-    case NotNull(attr)                       => ???
-    case Unique(attr)                        => ???
+    case NotNull(attr) => {
+      val attributeId = List(dict.getAttribute(tableId, attr.name).attributeId)
+      ConstraintsRecord(tableId, 'n', attributeId)
+    }
+    case Unique(attr) => {
+      val attributeId = List(dict.getAttribute(tableId, attr.name).attributeId)
+      ConstraintsRecord(tableId, 'u', attributeId)
+    }
+    case Compressed => ??? //TODO Compressed is currently not a constraint in the data dictionary
   }
 }

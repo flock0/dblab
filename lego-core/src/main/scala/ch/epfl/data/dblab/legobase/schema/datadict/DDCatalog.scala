@@ -60,7 +60,10 @@ case class DDTable private[schema] (private val dict: DataDictionary, private va
   override def uniques: List[Unique] = dict.getConstraints(rec.tableId, 'u').toList
   override def autoIncrement: Option[AutoIncrement] = ??? //TODO AutoIncrement is represented as a sequence in the data dictionary
   override def findAttribute(attrName: String): Option[Attribute] = Some(DDAttribute(dict, dict.getAttribute(rec.tableId, attrName))) //TODO None case is handeled through exception
-  override def addConstraint(cstr: Constraint) = dict.addConstraint(cstr)
+  override def addConstraint(cstr: Constraint) = {
+    implicit val tableId = rec.tableId
+    dict.addConstraint(cstr)
+  }
   override def attributes: Seq[Attribute] = dict.getAttributes(rec.tableId).map(DDAttribute(dict, _))
   override def constraints: Seq[Constraint] = dict.getConstraints(rec.tableId).toList.map(Constraint.ConstraintsRecordToConstraint(_))
   override def load: Array[_ <: Record] = dict.getTuples(rec)
