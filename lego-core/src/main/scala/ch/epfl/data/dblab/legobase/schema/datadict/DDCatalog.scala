@@ -12,7 +12,7 @@ object DDCatalog extends Catalog {
   override def findSchema(schemaName: String): Schema = DDSchema(dict, schemaName)
   override def getSchemaOrElseCreate(schemaName: String): Schema = findSchema(schemaName)
 }
-case class DDSchema(private val dict: DataDictionary, name: String) extends Schema {
+case class DDSchema private[schema] (private val dict: DataDictionary, name: String) extends Schema {
   override def stats: Statistics = dict.getStats(name)
   override def tables: Seq[Table] = dict.getTables(name).map(DDTable(dict, _))
   override def findTable(tableName: String) = DDTable(dict, dict.getTable(name, tableName))
@@ -36,7 +36,7 @@ case class DDSchema(private val dict: DataDictionary, name: String) extends Sche
     })
   }
 }
-case class DDTable(private val dict: DataDictionary, private val rec: TablesRecord) extends Table {
+case class DDTable private[schema] (private val dict: DataDictionary, private val rec: TablesRecord) extends Table {
   implicit val d = dict
   override def name: String = rec.name
   override def fileName: String = rec.fileName match {
@@ -65,7 +65,7 @@ case class DDTable(private val dict: DataDictionary, private val rec: TablesReco
   override def constraints: Seq[Constraint] = dict.getConstraints(rec.tableId).toList.map(Constraint.ConstraintsRecordToConstraint(_))
   override def load: Array[_ <: Record] = dict.getTuples(rec)
 }
-case class DDAttribute(private val dict: DataDictionary, private val attr: AttributesRecord) extends Attribute {
+case class DDAttribute private[schema] (private val dict: DataDictionary, private val attr: AttributesRecord) extends Attribute {
   implicit val d = dict
   override def name: String = attr.name
   override def dataType: Tpe = attr.dataType
