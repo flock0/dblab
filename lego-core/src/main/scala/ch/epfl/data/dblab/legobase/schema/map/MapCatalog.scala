@@ -62,17 +62,19 @@ case class MapTable(name: String, attributes: Seq[Attribute], constraints: Array
   override def autoIncrement: Option[AutoIncrement] = constraints.collectFirst { case ainc: AutoIncrement => ainc }
   override def findAttribute(attrName: String): Option[Attribute] = attributes.find(attr => attr.name == attrName)
   override def addConstraint(cstr: Constraint) = constraints += cstr
-  override def load: Array[_ <: Record] = name match {
-    // TODO: Generalize -- make this tpch agnostic
-    case "LINEITEM" => Loader.loadTable[LINEITEMRecord](this)(classTag[LINEITEMRecord])
-    case "CUSTOMER" => Loader.loadTable[CUSTOMERRecord](this)(classTag[CUSTOMERRecord])
-    case "ORDERS"   => Loader.loadTable[ORDERSRecord](this)(classTag[ORDERSRecord])
-    case "REGION"   => Loader.loadTable[REGIONRecord](this)(classTag[REGIONRecord])
-    case "NATION"   => Loader.loadTable[NATIONRecord](this)(classTag[NATIONRecord])
-    case "SUPPLIER" => Loader.loadTable[SUPPLIERRecord](this)(classTag[SUPPLIERRecord])
-    case "PART"     => Loader.loadTable[PARTRecord](this)(classTag[PARTRecord])
-    case "PARTSUPP" => Loader.loadTable[PARTSUPPRecord](this)(classTag[PARTSUPPRecord])
-  }
+  override def load: Array[DynamicRecord] = {
+    name match {
+      // TODO: Generalize -- make this tpch agnostic
+      case "LINEITEM" => Loader.loadTable[LINEITEMRecord](this)(classTag[LINEITEMRecord])
+      case "CUSTOMER" => Loader.loadTable[CUSTOMERRecord](this)(classTag[CUSTOMERRecord])
+      case "ORDERS"   => Loader.loadTable[ORDERSRecord](this)(classTag[ORDERSRecord])
+      case "REGION"   => Loader.loadTable[REGIONRecord](this)(classTag[REGIONRecord])
+      case "NATION"   => Loader.loadTable[NATIONRecord](this)(classTag[NATIONRecord])
+      case "SUPPLIER" => Loader.loadTable[SUPPLIERRecord](this)(classTag[SUPPLIERRecord])
+      case "PART"     => Loader.loadTable[PARTRecord](this)(classTag[PARTRecord])
+      case "PARTSUPP" => Loader.loadTable[PARTSUPPRecord](this)(classTag[PARTSUPPRecord])
+    }
+  }.asInstanceOf[Array[DynamicRecord]]
 }
 case class MapAttribute(name: String, dataType: Tpe, constraints: Seq[Constraint] = List()) extends Attribute {
   override def hasConstraint(con: Constraint) = constraints.contains(con)

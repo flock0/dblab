@@ -66,7 +66,7 @@ case class DDTable private[schema] (private val dict: DataDictionary, private va
   }
   override def attributes: Seq[Attribute] = dict.getAttributes(rec.tableId).map(DDAttribute(dict, _))
   override def constraints: Seq[Constraint] = dict.getConstraints(rec.tableId).toList.map(Constraint.ConstraintsRecordToConstraint(_))
-  override def load: Array[_ <: Record] = dict.getTuples(rec)
+  override def load: Array[DynamicRecord] = dict.getTuples(rec).asInstanceOf[Array[DynamicRecord]]
 }
 case class DDAttribute private[schema] (private val dict: DataDictionary, private val attr: AttributesRecord) extends Attribute {
   implicit val d = dict

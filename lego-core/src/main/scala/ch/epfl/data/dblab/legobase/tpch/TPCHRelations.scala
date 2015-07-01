@@ -22,7 +22,7 @@ import sc.pardis.shallow.{ CaseClassRecord, OptimalString }
   val L_RECEIPTDATE: Int,
   val L_SHIPINSTRUCT: LBString,
   val L_SHIPMODE: LBString,
-  val L_COMMENT: LBString) extends CaseClassRecord with schema.Record
+  val L_COMMENT: LBString) extends CaseClassRecord with schema.DynamicRecord
 
 @needs[OptimalString] @deep case class ORDERSRecord(
   val O_ORDERKEY: Int,
@@ -33,7 +33,7 @@ import sc.pardis.shallow.{ CaseClassRecord, OptimalString }
   val O_ORDERPRIORITY: LBString,
   val O_CLERK: LBString,
   val O_SHIPPRIORITY: Int,
-  val O_COMMENT: LBString) extends CaseClassRecord with schema.Record
+  val O_COMMENT: LBString) extends CaseClassRecord with schema.DynamicRecord
 
 @needs[OptimalString] @deep case class CUSTOMERRecord(
   val C_CUSTKEY: Int,
@@ -43,7 +43,7 @@ import sc.pardis.shallow.{ CaseClassRecord, OptimalString }
   val C_PHONE: LBString,
   val C_ACCTBAL: Double,
   val C_MKTSEGMENT: LBString,
-  val C_COMMENT: LBString) extends CaseClassRecord with schema.Record
+  val C_COMMENT: LBString) extends CaseClassRecord with schema.DynamicRecord
 
 @needs[OptimalString] @deep case class SUPPLIERRecord(
   val S_SUPPKEY: Int,
@@ -52,25 +52,25 @@ import sc.pardis.shallow.{ CaseClassRecord, OptimalString }
   val S_NATIONKEY: Int,
   val S_PHONE: LBString,
   val S_ACCTBAL: Double,
-  val S_COMMENT: LBString) extends CaseClassRecord with schema.Record
+  val S_COMMENT: LBString) extends CaseClassRecord with schema.DynamicRecord
 
 @needs[OptimalString] @deep case class PARTSUPPRecord(
   val PS_PARTKEY: Int,
   val PS_SUPPKEY: Int,
   val PS_AVAILQTY: Int,
   val PS_SUPPLYCOST: Double,
-  val PS_COMMENT: LBString) extends CaseClassRecord with schema.Record
+  val PS_COMMENT: LBString) extends CaseClassRecord with schema.DynamicRecord
 
 @needs[OptimalString] @deep case class REGIONRecord(
   val R_REGIONKEY: Int,
   val R_NAME: LBString,
-  val R_COMMENT: LBString) extends CaseClassRecord with schema.Record
+  val R_COMMENT: LBString) extends CaseClassRecord with schema.DynamicRecord
 
 @needs[OptimalString] @deep case class NATIONRecord(
   val N_NATIONKEY: Int,
   val N_NAME: LBString,
   val N_REGIONKEY: Int,
-  val N_COMMENT: LBString) extends CaseClassRecord with schema.Record
+  val N_COMMENT: LBString) extends CaseClassRecord with schema.DynamicRecord
 
 @needs[OptimalString] @deep case class PARTRecord(
   val P_PARTKEY: Int,
@@ -81,4 +81,4 @@ import sc.pardis.shallow.{ CaseClassRecord, OptimalString }
   val P_SIZE: Int,
   val P_CONTAINER: LBString,
   val P_RETAILPRICE: Double,
-  val P_COMMENT: LBString) extends CaseClassRecord with schema.Record
+  val P_COMMENT: LBString) extends CaseClassRecord with schema.DynamicRecord

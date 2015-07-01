@@ -11,19 +11,21 @@ import scala.language.dynamics
  * @param tableId The id of the table that describes this tuples schema
  * @param rowId The id of the row that this tuple represents
  */
-case class Tuple(private val dict: DataDictionary, private val tableId: Int, private val rowId: Int) extends schema.Record {
+case class Tuple(private val dict: DataDictionary, private val tableId: Int, private val rowId: Int) extends schema.DynamicRecord {
   private val tableRecord = dict.getTable(tableId)
   val schema = tableRecord.schemaName
   val table = tableRecord.name
 
-  def selectDynamic[T](name: String): T = {
-    if (!dict.rowExists(tableId, rowId))
-      throw new Exception(s"Row $rowId doesn't exist in $schema.$table")
-    dict.getField[T](tableId, dict.getAttribute(tableId, name).attributeId, rowId) match {
-      case Some(v) => v
-      case None    => throw new Exception(s"Field value for $name doesn't exist in row $rowId of $schema.$table")
-    }
+  override def selectDynamic[T](name: String): T = getField(name) match {
+    case Some(v) => v.asInstanceOf[T]
+    case None => throw new Exception(s"Field value for $name doesn't exist in row $rowId of $schema.$table" +
+      s"OR Row $rowId doesn't exist in $schema.$table")
   }
 
-  def getField(key: String): Option[Any] = ???
+  def getField(name: String): Option[Any] = {
+    if (!dict.rowExists(tableId, rowId))
+      None
+    else
+      dict.getField[Any](tableId, dict.getAttribute(tableId, name).attributeId, rowId)
+  }
 }
