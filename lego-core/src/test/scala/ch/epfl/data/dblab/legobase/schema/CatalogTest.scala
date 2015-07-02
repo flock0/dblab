@@ -26,6 +26,7 @@ class CatalogTest extends FlatSpec with BeforeAndAfterEach {
 
   val DATAPATH = System.getenv("LEGO_DATA_FOLDER")
   if (DATAPATH != null) {
+    Config.datapath = DATAPATH + "/sf0.1/"
     executeTests(DDCatalog, "DDCatalog")
     executeTests(MapCatalog, "MapCatalog")
   } else {
