@@ -94,6 +94,7 @@ object DataDictionary {
         constraintType,
         attributes,
         "REF_TABLE_NAME" -> OptionType(IntType),
+        "REF_ATTRIBUTES" -> OptionType(SeqType(IntType)),
         foreignKeyName),
         List(ForeignKey("CONSTRAINTS", "ATTRIBUTES", List(("TABLE_ID", "TABLE_ID"), ("ATTRIBUTES", "ATTRIBUTE_ID"))),
           ForeignKey("CONSTRAINTS", "TABLES", List(("REF_TABLE_NAME", "NAME"))),
