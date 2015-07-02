@@ -14,7 +14,7 @@ trait Catalog {
 trait Schema {
   def stats: Statistics
   def tables: Seq[Table]
-  def addTable(tableName: String, attributes: Seq[(String, PardisType[_], Seq[Constraint])], fileName: String, rowCount: Long)
+  def addTable(tableName: String, attributes: Seq[(String, PardisType[_])], fileName: String, rowCount: Long)
   def dropTable(tableName: String)
   def findTable(tableName: String): Table
   def findAttribute(attrName: String): Option[Attribute]
@@ -68,8 +68,8 @@ case class Unique(attribute: Attribute) extends Constraint {
 case class AutoIncrement(attribute: Attribute) extends Constraint {
   override def toString = s"Unique($attribute)"
 }
-object Compressed extends Constraint {
-  override def toString = "COMPRESSED"
+case class Compressed(attribute: Attribute) extends Constraint {
+  override def toString = s"Compressed($attribute)"
 }
 
 object Constraint {
@@ -96,7 +96,7 @@ object Constraint {
       }
       case 'n' => NotNull(DDAttribute(dict, dict.getAttribute(cr.tableId, cr.attributes.head)))
       case 'u' => Unique(DDAttribute(dict, dict.getAttribute(cr.tableId, cr.attributes.head)))
-      case 'c' => Compressed //(DDAttribute(dict, dict.getAttribute(cr.tableId, cr.attributes.head)))
+      case 'c' => Compressed(DDAttribute(dict, dict.getAttribute(cr.tableId, cr.attributes.head)))
       case _   => throw new Exception(s"Constraint in ${cr.tableId} has unknown type '${cr.constraintType}'.")
     }
   }

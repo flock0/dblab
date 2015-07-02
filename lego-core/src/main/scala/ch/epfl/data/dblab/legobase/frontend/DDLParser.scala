@@ -49,9 +49,10 @@ object DDLParser extends JavaTokenParsers {
 
   final case class DDLTable(name: String, columns: Set[Column], constraints: Set[ConstraintOp])
   final case class Column(name: String, datatype: AttributeType, notNull: Boolean,
-                          autoInc: Boolean, defaultVal: Option[String], annotations: List[String])
+                          autoInc: Boolean, defaultVal: Option[String])
   sealed trait Constraint
   final case class DDLUniqueKey(table: String, uniqueCols: List[String]) extends Constraint
+  final case class DDLCompressed(table: String, compressedCol: String) extends Constraint
   final case class DDLPrimaryKey(table: String, primaryKeyCols: List[String]) extends Constraint
   final case class DDLForeignKey(table: String, foreignKeyName: String, foreignKeyCols: List[(String, String)],
                                  foreignTable: String) extends Constraint
@@ -91,12 +92,17 @@ object DDLParser extends JavaTokenParsers {
           }
         }
 
-        val columnsData = columns map {
-          case colName ~ colType ~ notNull ~ autoInc ~ isDefault ~ annotations ~ _ =>
-            Column(cleanString(colName), colType, notNull.isDefined,
-              autoInc.isDefined, isDefault.map(_._2), annotations)
+        val colsAndAnnos: Seq[(Column, Seq[ConstraintOp])] = columns map {
+          case colName ~ colType ~ notNull ~ autoInc ~ isDefault ~ annotations ~ _ => {
+            val anno = annotations map {
+              case "COMPRESSED" => ConstraintOp(true, DDLCompressed(cleanString(name), colName))
+            }
+            (Column(cleanString(colName), colType, notNull.isDefined,
+              autoInc.isDefined, isDefault.map(_._2)), anno)
+          }
         }
-        DDLTable(cleanString(name), columnsData.toSet, constraints.toSet)
+        val (columnsData, annos) = colsAndAnnos.unzip
+        DDLTable(cleanString(name), columnsData.toSet, (constraints ++ annos.flatten).toSet)
       }
     }
 

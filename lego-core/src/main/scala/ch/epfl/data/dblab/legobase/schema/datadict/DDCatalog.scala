@@ -25,7 +25,7 @@ case class DDSchema private[schema] (private val dict: DataDictionary, name: Str
     else
       Some(DDAttribute(dict, filteredAttr(0)))
   }
-  override def addTable(tableName: String, attributes: Seq[(String, PardisType[_], Seq[Constraint])], fileName: String, rowCount: Long) =
+  override def addTable(tableName: String, attributes: Seq[(String, PardisType[_])], fileName: String, rowCount: Long) =
     dict.addTable(name, tableName, attributes, fileName)
   override def dropTable(tableName: String): Unit = dict.dropTable(name, tableName)
   override def toString = {

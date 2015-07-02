@@ -82,6 +82,9 @@ object ConstraintsRecord {
       val attributeId = List(dict.getAttribute(tableId, attr.name).attributeId)
       ConstraintsRecord(tableId, 'u', attributeId)
     }
-    case Compressed => ??? //TODO Compressed is currently not a constraint in the data dictionary
+    case Compressed(attr) => {
+      val attributeId = List(dict.getAttribute(tableId, attr.name).attributeId)
+      ConstraintsRecord(tableId, 'c', attributeId)
+    }
   }
 }

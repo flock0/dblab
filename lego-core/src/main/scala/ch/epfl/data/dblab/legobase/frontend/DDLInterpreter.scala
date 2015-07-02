@@ -25,10 +25,6 @@ object DDLInterpreter {
     }
   }
 
-  def annonStringToConstraint(consStr: String) = consStr match {
-    case "COMPRESSED" => Compressed
-  }
-
   def getCurrSchema = {
     currSchema match {
       case None =>
@@ -46,7 +42,7 @@ object DDLInterpreter {
         getCurrSchema.dropTable(tableName)
       }
       case DDLTable(tableName, cols, cons) =>
-        val colDef = cols.map(c => (c.name, ddlTypeToSCType(c.datatype), c.annotations.map(annonStringToConstraint(_)))).toList
+        val colDef = cols.map(c => (c.name, ddlTypeToSCType(c.datatype))).toList
         val tablePath = (Config.datapath + tableName.toLowerCase + ".tbl")
         val tableCardinality = Utilities.getNumLinesInFile(tablePath)
         getCurrSchema.addTable(tableName, colDef, tablePath, tableCardinality)
@@ -73,6 +69,11 @@ object DDLInterpreter {
                 throw new Exception("Couldn't find all the attributes specified in the foreign key constraint.")
 
               table.addConstraint(ForeignKey(fk.foreignKeyName, fk.table, fk.foreignTable, fk.foreignKeyCols))
+            case cmp: DDLCompressed => {
+              val table = getCurrSchema.findTable(cmp.table)
+              val attr = table.findAttribute(cmp.compressedCol).get
+              table.addConstraint(Compressed(attr))
+            }
           }
         case false => /* drop */
           cons match {

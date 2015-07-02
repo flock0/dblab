@@ -31,8 +31,8 @@ case class MapSchema(tables: ArrayBuffer[Table] = ArrayBuffer(), stats: Statisti
     case List() => None //throw new Exception("Attribute " + attrName + " not found in schema!")
     case l      => Some(l.apply(0)) // todo -- OK, but assumes that all attribute names are unique
   }
-  override def addTable(name: String, attributes: Seq[(String, PardisType[_], Seq[Constraint])], fileName: String, rowCount: Long) =
-    tables += MapTable(name, attributes.map { case (name, dataType, cstr) => MapAttribute(name, dataType, cstr) }, ArrayBuffer(), fileName, rowCount)
+  override def addTable(name: String, attributes: Seq[(String, PardisType[_])], fileName: String, rowCount: Long) =
+    tables += MapTable(name, attributes.map { case (name, dataType) => MapAttribute(name, dataType) }, ArrayBuffer(), fileName, rowCount)
   override def dropTable(tableName: String): Unit = tables.find(_.name == tableName) match {
     case Some(t) => tables -= t
     case None    =>
@@ -61,7 +61,7 @@ case class MapTable(name: String, attributes: Seq[Attribute], constraints: Array
   override def uniques: List[Unique] = constraints.collect { case unq: Unique => unq }.toList
   override def autoIncrement: Option[AutoIncrement] = constraints.collectFirst { case ainc: AutoIncrement => ainc }
   override def findAttribute(attrName: String): Option[Attribute] = attributes.find(attr => attr.name == attrName)
-  override def addConstraint(cstr: Constraint) = constraints += cstr
+  override def addConstraint(cstr: Constraint) = constraints += cstr //TODO Add constraint also to corresponding MapAttribute
   override def load: Array[DynamicRecord] = {
     name match {
       // TODO: Generalize -- make this tpch agnostic
