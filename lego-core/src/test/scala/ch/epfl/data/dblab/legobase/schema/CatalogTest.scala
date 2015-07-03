@@ -53,8 +53,8 @@ class CatalogTest extends FlatSpec with BeforeAndAfterEach {
       assert(regionTable.attributes.size == 3)
 
       val regKeyAttr = regionTable.findAttribute("R_REGIONKEY") match {
-        case a: Attribute => a
-        case _            => fail("REGION should contain attribute R_REGIONKEY")
+        case Some(a) => a
+        case None    => fail("REGION should contain attribute R_REGIONKEY")
       }
 
       assert(regKeyAttr.name == "R_REGIONKEY")
@@ -75,8 +75,8 @@ class CatalogTest extends FlatSpec with BeforeAndAfterEach {
 
       assert(constraints.size == 14)
       val partKeyAttr = partTable.findAttribute("P_PARTKEY") match {
-        case a: Attribute => a
-        case _            => fail("PART table should contain attribute P_PARTKEY")
+        case Some(a) => a
+        case None    => fail("PART table should contain attribute P_PARTKEY")
       }
       assert(partKeyAttr.hasConstraint(PrimaryKey(Seq(partKeyAttr))) == true)
       assert(partKeyAttr.hasConstraint(NotNull(partKeyAttr)) == true)
