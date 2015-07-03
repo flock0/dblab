@@ -47,7 +47,7 @@ object DDLParser extends JavaTokenParsers {
   val statementTermination = ";"
   val columnDelimiter = """,*""".r
 
-  final case class DDLTable(name: String, columns: Set[Column], constraints: Set[ConstraintOp])
+  final case class DDLTable(name: String, columns: Seq[Column], constraints: Set[ConstraintOp])
   final case class Column(name: String, datatype: AttributeType, notNull: Boolean,
                           autoInc: Boolean, defaultVal: Option[String])
   sealed trait Constraint
@@ -102,7 +102,7 @@ object DDLParser extends JavaTokenParsers {
           }
         }
         val (columnsData, annos) = colsAndAnnos.unzip
-        DDLTable(cleanString(name), columnsData.toSet, (constraints ++ annos.flatten).toSet)
+        DDLTable(cleanString(name), columnsData, (constraints ++ annos.flatten).toSet)
       }
     }
 
