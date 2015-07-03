@@ -60,16 +60,16 @@ case class ForeignKey(foreignKeyName: String, ownTable: String, referencedTable:
   def matchingAttributes(implicit s: Schema): Seq[(Attribute, Attribute)] = attributes.map { case (localAttr, foreignAttr) => thisTable.findAttribute(localAttr).get -> foreignTable.findAttribute(foreignAttr).get }
 }
 case class NotNull(attribute: Attribute) extends Constraint {
-  override def toString = s"NotNull($attribute)"
+  override def toString = s"NotNull(${attribute.name})"
 }
 case class Unique(attribute: Attribute) extends Constraint {
-  override def toString = s"Unique($attribute)"
+  override def toString = s"Unique(${attribute.name})"
 }
 case class AutoIncrement(attribute: Attribute) extends Constraint {
-  override def toString = s"Unique($attribute)"
+  override def toString = s"Unique(${attribute.name})"
 }
 case class Compressed(attribute: Attribute) extends Constraint {
-  override def toString = s"Compressed($attribute)"
+  override def toString = s"Compressed(${attribute.name})"
 }
 
 object Constraint {
