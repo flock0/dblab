@@ -345,7 +345,7 @@ case class DataDictionary() {
   def getAttributes(tableId: Int) = attributes.filter(a => tableId == a.tableId)
 
   /** Returns a list of attributes with the specified names that belong to the given table */
-  def getAttributes(tableId: Int, attributeNames: List[String]) = {
+  def getAttributes(tableId: Int, attributeNames: Seq[String]) = {
     val atts = attributes.filter(at => at.tableId == tableId && attributeNames.contains(at.name)).toList
 
     if (atts.size != attributeNames.size)

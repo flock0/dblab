@@ -73,7 +73,11 @@ object ConstraintsRecord {
       val attributeIds = dict.getAttributes(tableId, attributes.map(_.name).toList).map(a => a.attributeId)
       ConstraintsRecord(tableId, 'p', attributeIds)
     }
-    case ForeignKey(fkName, own, ref, attrs) => ???
+    case ForeignKey(fkName, own, ref, attrs) => {
+      val (localAttrNames, foreignAttrNames) = attrs.unzip
+      val attributeIds = dict.getAttributes(tableId, localAttrNames).map(_.attributeId).toList
+      ConstraintsRecord(tableId, 'f', attributeIds, Some(ref), Some(foreignAttrNames.toList), Some(fkName))
+    }
     case NotNull(attr) => {
       val attributeId = List(dict.getAttribute(tableId, attr.name).attributeId)
       ConstraintsRecord(tableId, 'n', attributeId)
