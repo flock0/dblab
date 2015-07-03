@@ -20,7 +20,7 @@ class CatalogTest extends FlatSpec with BeforeAndAfterEach {
 
   override def afterEach() {
     val schema = cat.findSchema("TPCH")
-    val tables = schema.tables
+    val tables = schema.tables.toList
     tables.foreach(t => schema.dropTable(t.name))
   }
 
@@ -63,7 +63,7 @@ class CatalogTest extends FlatSpec with BeforeAndAfterEach {
 
     it should "drop tables correctly" in {
       val schema = cat.findSchema("TPCH")
-      val tables = schema.tables
+      val tables = schema.tables.toList
       tables.foreach(t => schema.dropTable(t.name))
       assert(cat.findSchema("TPCH").tables.size == 0)
     }
