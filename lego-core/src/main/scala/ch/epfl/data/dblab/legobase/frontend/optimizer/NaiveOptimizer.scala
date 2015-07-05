@@ -27,7 +27,7 @@ class NaiveOptimizer(schema: Schema) extends Optimizer {
       case Some(t) => t
       case None    => throw new Exception("BUG: Attribute " + fi.name + " referenced but no table found with it!")
     }
-    val scanOperators = operatorList.filter(_.isInstanceOf[ScanOpNode[_]]).map(_.asInstanceOf[ScanOpNode[_]])
+    val scanOperators = operatorList.filter(_.isInstanceOf[ScanOpNode]).map(_.asInstanceOf[ScanOpNode])
     val scanOpName = t.name + fi.qualifier.getOrElse("")
     val scanOp = scanOperators.find(so => so.scanOpName == scanOpName) match {
       case Some(op) => op
@@ -58,6 +58,8 @@ class NaiveOptimizer(schema: Schema) extends Optimizer {
       case GreaterThan(lhs, rhs)               => GreaterThan(dealiasFieldIdent(lhs), dealiasFieldIdent(rhs))
       case GreaterOrEqual(lhs, rhs)            => GreaterOrEqual(dealiasFieldIdent(lhs), dealiasFieldIdent(rhs))
       case Like(lhs, rhs, negate)              => Like(dealiasFieldIdent(lhs), dealiasFieldIdent(rhs), negate)
+      case Add(lhs, rhs)                       => Add(dealiasFieldIdent(lhs), dealiasFieldIdent(rhs))
+      case Subtract(lhs, rhs)                  => Subtract(dealiasFieldIdent(lhs), dealiasFieldIdent(rhs))
       case c: LiteralExpression                => expr
     }
     newExpr.setTp(expr.tp)
@@ -65,12 +67,12 @@ class NaiveOptimizer(schema: Schema) extends Optimizer {
   }
 
   def processPrimitiveExpression(expr: Expression) = expr match {
-    case Equals((fi: FieldIdent), _)                                => fi
-    case LessThan((fi: FieldIdent), _)                              => fi
-    case LessOrEqual((fi: FieldIdent), (lit: LiteralExpression))    => fi
-    case GreaterThan((fi: FieldIdent), _)                           => fi
-    case GreaterOrEqual((fi: FieldIdent), (lit: LiteralExpression)) => fi
-    case Like((fi: FieldIdent), (lit: LiteralExpression), _)        => fi
+    case Equals((fi: FieldIdent), _)         => fi
+    case LessThan((fi: FieldIdent), _)       => fi
+    case LessOrEqual((fi: FieldIdent), _)    => fi
+    case GreaterThan((fi: FieldIdent), _)    => fi
+    case GreaterOrEqual((fi: FieldIdent), _) => fi
+    case Like((fi: FieldIdent), _, _)        => fi
   }
 
   def analysePushingUpCondition(parent: OperatorNode, cond: Expression): Option[Expression] = cond match {
@@ -121,7 +123,7 @@ class NaiveOptimizer(schema: Schema) extends Optimizer {
   def pushUpCondition(tree: OperatorNode): OperatorNode = tree match {
     case JoinOpNode(leftParent, rightParent, joinCond, joinType, leftAlias, rightAlias) =>
       JoinOpNode(pushUpCondition(leftParent), pushUpCondition(rightParent), joinCond, joinType, leftAlias, rightAlias)
-    case ScanOpNode(table, _, _, _) => registeredPushedUpSelections.get(tree) match {
+    case ScanOpNode(table, _, _) => registeredPushedUpSelections.get(tree) match {
       case Some(expr) =>
         SelectOpNode(tree, expr, false)
       case None => tree
@@ -142,7 +144,7 @@ class NaiveOptimizer(schema: Schema) extends Optimizer {
   }
 
   def optimizeNode(tree: OperatorNode): OperatorNode = tree match {
-    case ScanOpNode(_, _, _, _) => tree
+    case ScanOpNode(_, _, _) => tree
     case SelectOpNode(parent, cond, isHaving) if isHaving == false =>
       //System.out.println("SelectOp found with condition " + cond);
       analysePushingUpCondition(parent, cond) match {

@@ -12,6 +12,7 @@ import GenericEngine._
 import sc.pardis.annotations.{ deep, metadeep, dontInline, needs }
 import sc.pardis.shallow.{ Record, DynamicCompositeRecord }
 import scala.reflect.ClassTag
+import sc.pardis.shallow.{ OptimalString, Record, DynamicCompositeRecord }
 
 @metadeep(
   folder = "",
@@ -46,7 +47,7 @@ object MultiMap {
  * @param table an array of records which the scan operator receives
  * as input
  */
-@deep class ScanOp[A](table: Array[A]) extends Operator[A] {
+@deep case class ScanOp[A](table: Array[A]) extends Operator[A] {
   var i = 0
   def open() {}
   def next() {
@@ -71,7 +72,8 @@ object MultiMap {
  * results. It has the same effect as LIMIT clause in SQL. Set it to -1 if you want to print
  * everything
  */
-@deep class PrintOp[A](parent: Operator[A])(printFunc: A => Unit, limit: Int) extends Operator[A] { self =>
+
+@deep case class PrintOp[A](parent: Operator[A])(printFunc: A => Unit, limit: Int) extends Operator[A] { self =>
   var numRows = (0)
   def open() {
     parent.child = self;
@@ -79,20 +81,13 @@ object MultiMap {
   }
   def next() = {
     parent.next;
-    /* Amir (TODO): the following line removes the need for stop */
-    // try {
-    //   parent.next
-    // } catch {
-    //   case ex: PrintOpStop =>
-    // }
     printf("(%d rows)\n", numRows)
   }
   def consume(tuple: Record) {
     if (limit != -1 && numRows >= limit) parent.stop = (true)
-    /** Amir: the following line removes the need for stop */
-    // if (limit() == false) throw new PrintOpStop
     else {
       printFunc(tuple.asInstanceOf[A]);
+      printf("\n")
       numRows += 1
     }
   }
@@ -126,43 +121,39 @@ object MultiMap {
  * HashMap of the aggregate operator
  * @param aggFuncs the aggregate functions used in the aggregate operator
  */
-@needs[(HashMap[Any, Any], AGGRecord[_])]
-@deep class AggOp[A, B](parent: Operator[A], numAggs: Int)(val grp: Function1[A, B])(val aggFuncs: Function2[A, Double, Double]*) extends Operator[AGGRecord[B]] {
-  val hm = HashMap[B, AGGRecord[B]]() //Array[Double]]()
-  // val hm = new pardis.shallow.scalalib.collection.HashMapOptimal[B, AGGRecord[B]]() {
-  //   override def extractKey(value: AGGRecord[B]): B = value.key
-  // }
+@needs[(HashMap[Any, Any], LegobaseRecord)]
+@deep class AggOp[A, B: TypeTag](parent: Operator[A], numAggs: Int)(val grp: Function1[A, B], val keyName: Option[String])(val aggFuncs: Function2[A, Double, Double]*)(aggNames: Seq[String]) extends Operator[LegobaseRecord] {
+
+  val hm = HashMap[B, LegobaseRecord]()
+  val numAggRecordFields = 1 + numAggs // 1 for the key
 
   def open() {
-    parent.child = this; parent.open
+    parent.child = this;
+    parent.open
   }
   def next() {
     parent.next
-    // var keySet = Set(hm.keySet.toSeq: _*)
-    // while (!stop && hm.size != 0) {
-    //   val key = keySet.head
-    //   keySet.remove(key)
-    //   val elem = hm.remove(key)
-    //   child.consume(elem.get)
-    // }
-    // var i = 0
-    // hm.foreach { pair =>
-    //   i += 1
-    // }
-    // println(s"size $i")
     hm.foreach { pair =>
       child.consume(pair._2)
-      // hm.remove(pair._2.key)
     }
   }
   def reset() { parent.reset; /*hm.clear;*/ open }
   def consume(tuple: Record) {
+    // Starting values for aggregation
+    val aggregates = (0 until numAggRecordFields - 1).map(i => 0.0).toSeq
+
     val key = grp(tuple.asInstanceOf[A])
-    val elem = hm.getOrElseUpdate(key, new AGGRecord(key, new Array[Double](numAggs)))
-    val aggs = elem.aggs
+
+    val elem = hm.getOrElseUpdate(key.asInstanceOf[B], {
+      keyName match {
+        case Some(kn) => new LegobaseRecord(Seq(keyName.get) ++ aggNames zip Seq(key) ++ aggregates).asInstanceOf[LegobaseRecord]
+        case None     => new LegobaseRecord(aggNames zip aggregates).asInstanceOf[LegobaseRecord]
+      }
+    })
+
     var i: scala.Int = 0
     aggFuncs.foreach { aggFun =>
-      aggs(i) = aggFun(tuple.asInstanceOf[A], aggs(i))
+      elem.setField(aggNames(i), aggFun(tuple.asInstanceOf[A], elem.getField(aggNames(i)).get.asInstanceOf[Double]))
       i += 1
     }
   }
@@ -274,7 +265,7 @@ class HashJoinOp[A <: Record, B <: Record, C](val leftParent: Operator[A], val r
  */
 // @deep class WindowOp[A, B, C](parent: Operator[A])(val grp: Function1[A, B])(val wndf: MultiMap.Set[A] => C) extends Operator[WindowRecord[B, C]] {
 @needs[(scala.collection.mutable.MultiMap[Any, Any], Set[_])]
-@deep class WindowOp[A, B, C](parent: Operator[A])(val grp: Function1[A, B])(val wndf: Set[A] => C) extends Operator[WindowRecord[B, C]] {
+@deep class WindowOp[A, B: TypeTag, C: TypeTag](parent: Operator[A])(val grp: Function1[A, B])(val wndf: Set[A] => C) extends Operator[LegobaseRecord] {
   val hm = MultiMap[B, A]
 
   def open() {
@@ -288,7 +279,7 @@ class HashJoinOp[A <: Record, B <: Record, C](val leftParent: Operator[A], val r
       val elem = pair._2
       val wnd = wndf(elem)
       val key = grp(elem.head)
-      child.consume(new WindowRecord[B, C](key, wnd))
+      child.consume(new LegobaseRecord(Seq("key", "wnd") zip Seq(key, wnd)))
     }
   }
   def consume(tuple: Record) {
@@ -551,3 +542,4 @@ class LeftOuterJoinOp[A <: Record, B <: Record, C](val leftParent: Operator[A], 
     }
   }
 }
+

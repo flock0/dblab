@@ -162,7 +162,7 @@ class SQLSemanticCheckerAndTypeInference(schema: Schema) {
       case AllColumns()                =>
     }
     sqlTree.groupBy match {
-      case Some(GroupBy(listExpr)) => listExpr.map(_._1).foreach(expr => checkAndInferExpr(expr))
+      case Some(GroupBy(listExpr)) => listExpr.foreach(expr => checkAndInferExpr(expr))
       case None                    =>
     }
     sqlTree.orderBy match {

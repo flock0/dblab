@@ -45,9 +45,6 @@ object SQLParser extends StandardTokenParsers {
         val aliases = (pro match {
           case ep: ExpressionProjections => ep.lst.zipWithIndex.filter(p => p._1._2.isDefined).map(al => (al._1._1, al._1._2.get, al._2))
           case ac: AllColumns            => Seq()
-        }) ++ (grp match {
-          case Some(gb) => gb.keys.zipWithIndex.filter(p => p._1._2.isDefined).map(gb => (gb._1._1, gb._1._2.get, gb._2))
-          case None     => Seq()
         })
         val hasJoin = tab(0).isInstanceOf[Join]
         //System.out.println(tab)
@@ -192,7 +189,7 @@ object SQLParser extends StandardTokenParsers {
     "WHERE" ~> parseExpression)
 
   def parseGroupBy: Parser[GroupBy] = (
-    "GROUP" ~> "BY" ~> rep1sep(parseAliasedExpression, ",") ^^
+    "GROUP" ~> "BY" ~> rep1sep(parseExpression, ",") ^^
     { case exp => GroupBy(exp) })
 
   def parseHaving: Parser[Having] = ("HAVING" ~> parseExpression ^^

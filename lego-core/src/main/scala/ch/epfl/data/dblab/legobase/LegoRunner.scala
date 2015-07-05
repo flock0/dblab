@@ -1,12 +1,13 @@
 package ch.epfl.data
 package dblab.legobase
 
-import tpch._
+//import tpch._
 import schema._
 import frontend._
 import frontend.optimizer._
 import utils.Utilities._
 import java.io.PrintStream
+import ch.epfl.data.dblab.legobase.frontend.OperatorAST._
 
 /**
  * The common trait for all Query Runners (either a Query Interpreter or a Query Compiler)
@@ -17,15 +18,13 @@ trait LegoRunner {
 
   def getOutputName = currQuery + "Output.txt"
 
-  /**
-   * Executes the given TPCH query with the given scaling factor.
-   *
+  /*
    * This method should be implemented by a query interpreter to interpret the given
    * query or by a query compiler to compile the given query.
    *
-   * @param query the input TPCH query (TODO should be generalized)
+   * @param queryPlan -- the query plan to be executed
    */
-  def executeQuery(query: String, schema: Schema): Unit
+  def executeQuery(queryPlan: OperatorNode, schema: Schema): Unit
 
   /**
    * The starting point of a query runner which uses the arguments as its setting.
@@ -78,7 +77,6 @@ trait LegoRunner {
     schema.stats += "DISTINCT_C_CUSTKEY" -> schema.stats.getCardinality("CUSTOMER")
     schema.stats += "DISTINCT_C_NAME" -> schema.stats.getCardinality("CUSTOMER")
     schema.stats += "DISTINCT_C_NATIONKEY" -> 25
-
     schema.stats += "NUM_YEARS_ALL_DATES" -> 7
 
     System.out.println(schema.stats.mkString("\n"))
@@ -99,7 +97,7 @@ trait LegoRunner {
         //System.out.println(optimizezr.registeredPushedUpSelections.map({ case (k, v) => (k.name, v) }).mkString(","))
         System.out.println(optimizerTree + "\n\n")
 
-        val qp = new SQLTreeToQueryPlanConverter(schema).convert(optimizerTree)
+        executeQuery(optimizerTree, schema)
 
         // Check results
         if (Config.checkResults) {

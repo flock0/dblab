@@ -51,11 +51,11 @@ class Settings(val args: List[String]) {
   def nameIsWithFlag: Boolean = hasSetting(OutputNameWithFlagSetting)
   def onlyLoading: Boolean = hasSetting(OnlyLoaderSetting)
 
-  import Main.Q12SynthesizedExtract
-  def isSynthesized: Boolean = args(2) match {
+  //import Main.Q12SynthesizedExtract
+  /*def isSynthesized: Boolean = args(2) match {
     case Q12SynthesizedExtract(_, _) => true
     case _                           => false
-  }
+  }*/
   def queryName: String = args(2)
 }
 

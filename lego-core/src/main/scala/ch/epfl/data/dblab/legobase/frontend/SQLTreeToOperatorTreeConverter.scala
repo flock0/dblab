@@ -3,11 +3,11 @@ package dblab.legobase
 package frontend
 
 import schema._
-import tpch._ // TODO -- Will die
 import scala.reflect._
 import OperatorAST._
 import scala.reflect.runtime.{ universe => ru }
 import ru._
+import ch.epfl.data.dblab.legobase.queryengine.GenericEngine
 
 class SQLTreeToOperatorTreeConverter(schema: Schema) {
 
@@ -16,33 +16,23 @@ class SQLTreeToOperatorTreeConverter(schema: Schema) {
       val table = schema.findTable(r match {
         case t: SQLTable => t.name
       })
-      ScanOpNode(table, table.name + r.asInstanceOf[SQLTable].alias.getOrElse(""), r.asInstanceOf[SQLTable].alias, table.name match {
-        // TODO: Generalize -- make this tpch agnostic
-        case "LINEITEM" => classTag[LINEITEMRecord]
-        case "CUSTOMER" => classTag[CUSTOMERRecord]
-        case "ORDERS"   => classTag[ORDERSRecord]
-        case "REGION"   => classTag[REGIONRecord]
-        case "NATION"   => classTag[NATIONRecord]
-        case "SUPPLIER" => classTag[SUPPLIERRecord]
-        case "PART"     => classTag[PARTRecord]
-        case "PARTSUPP" => classTag[PARTSUPPRecord]
-      })
+      ScanOpNode(table, table.name + r.asInstanceOf[SQLTable].alias.getOrElse(""), r.asInstanceOf[SQLTable].alias)
     })
   }
 
   def parseJoinAliases(leftParent: OperatorNode, rightParent: OperatorNode): (String, String) = {
     val leftAlias = leftParent match {
-      case c if leftParent.isInstanceOf[ScanOpNode[_]] => leftParent.asInstanceOf[ScanOpNode[_]].qualifier
-      case _ => Some("")
+      case c if leftParent.isInstanceOf[ScanOpNode] => leftParent.asInstanceOf[ScanOpNode].qualifier
+      case _                                        => Some("")
     }
     val rightAlias = rightParent match {
-      case c if rightParent.isInstanceOf[ScanOpNode[_]] => rightParent.asInstanceOf[ScanOpNode[_]].qualifier
-      case _ => Some("")
+      case c if rightParent.isInstanceOf[ScanOpNode] => rightParent.asInstanceOf[ScanOpNode].qualifier
+      case _                                         => Some("")
     }
     (leftAlias.getOrElse(""), rightAlias.getOrElse(""))
   }
 
-  def parseJoinTree(e: Option[Relation], scanOps: Seq[ScanOpNode[_]]): OperatorNode = e match {
+  def parseJoinTree(e: Option[Relation], scanOps: Seq[ScanOpNode]): OperatorNode = e match {
     case None =>
       if (scanOps.size != 1)
         throw new Exception("Error in query: There are multiple input relations but no join! Cannot process such query statement!")
@@ -67,49 +57,69 @@ class SQLTreeToOperatorTreeConverter(schema: Schema) {
     case None       => parentOp
   }
 
+  def getExpressionName(expr: Expression) = {
+    expr match {
+      case FieldIdent(qualifier, name, _) => qualifier.getOrElse("") + name
+      case Year(_)                        => throw new Exception("When YEAR is used in group by it must be given an alias")
+      case _                              => throw new Exception("Invalid Group by (Non-single attribute reference) expression " + expr + " found that does not appear in the select statement.")
+    }
+  }
+
+  def parseGroupBy(gb: Option[GroupBy], proj: Seq[(Expression, Option[String])]) = gb match {
+    case Some(GroupBy(exprList)) =>
+      exprList.map(gbExpr => proj.find(p => p._1 == gbExpr) match {
+        case Some(p) if p._2.isDefined  => (gbExpr, p._2.get)
+        case Some(p) if !p._2.isDefined => (gbExpr, getExpressionName(gbExpr))
+        case _ => proj.find(p => p._2 == Some(getExpressionName(gbExpr))) match {
+          case Some(e) => (e._1, e._2.get)
+          case None    => (gbExpr, getExpressionName(gbExpr))
+        }
+      })
+    case None => Seq()
+  }
+
   def parseAggregations(e: Projections, gb: Option[GroupBy], parentOp: OperatorNode): OperatorNode = e match {
     case ExpressionProjections(proj) => {
 
-      val divisionAliases = scala.collection.mutable.HashMap[String, AggregateDivisionAlias]()
+      val divisionIndexes = scala.collection.mutable.ArrayBuffer[(String, String)]()
+      val hasDivide = proj.find(p => p._1.isInstanceOf[Divide]).isDefined
 
-      var idx = 0;
       val projsWithoutDiv = proj.map(p => (p._1 match {
         case Divide(e1, e2) =>
-          val aliasName = p._2.getOrElse("DIVISION")
-          val e1Name = Some(p._2.getOrElse("") + "_1")
-          val e2Name = Some(p._2.getOrElse("") + "_2")
-          divisionAliases += aliasName -> AggregateDivisionAlias(aliasName, idx, idx + 1)
-          idx += 2
-          Seq((e1, e2Name), (e2, e2Name))
-        case _ =>
-          if (!p._1.isInstanceOf[FieldIdent] && !p._1.isInstanceOf[Year]) idx += 1
-          Seq((p._1, p._2))
+          val e1Name = p._2.getOrElse("")
+          val e2Name = p._2.getOrElse("") + "_2"
+          divisionIndexes += ((e1Name, e2Name))
+          Seq((e1, Some(e1Name)), (e2, Some(e2Name)))
+        case _ => Seq((p._1, p._2))
       })).flatten.asInstanceOf[Seq[(Expression, Option[String])]]
 
-      val aggProjs = projsWithoutDiv.filter(p => !p._1.isInstanceOf[FieldIdent] && !p._1.isInstanceOf[Year])
-      var aggs = aggProjs.map(p => p._1)
+      var aggProjs = projsWithoutDiv.filter(p => p._1.isAggregateOpExpr)
 
-      val hasAVG = aggs.exists(ap => ap.isInstanceOf[Avg])
-      if (hasAVG && aggs.indexOf(CountAll()) == -1)
-        aggs = aggs :+ CountAll()
+      val hasAVG = aggProjs.exists(ap => ap._1.isInstanceOf[Avg])
+      if (hasAVG && aggProjs.find(_._1.isInstanceOf[CountAll]) == None)
+        aggProjs = aggProjs :+ (CountAll(), Some("__TOTAL_COUNT"))
 
-      if (aggs == List()) parentOp
+      if (aggProjs == List()) parentOp
       else {
-        val aggAlias = aggProjs.map(p => p._2).zipWithIndex.filter(p => p._1.isDefined).map(p => AggregateValueAlias(p._1.get, p._2)) ++
-          divisionAliases.values.toSeq
+        val aggNames = aggProjs.map(agg => agg._2 match {
+          case Some(al) => al
+          case None     => throw new Exception("LegoBase Limitation: All aggregations must be given an alias (aggregation " + agg._1 + " was not)")
+        })
 
-        //System.out.println(aggAlias)
-
-        if (hasAVG) {
-          val finalAggs = aggs.map(ag => ag match {
+        val aggOp = if (hasAVG) {
+          val finalAggs = aggProjs.map(ag => ag._1 match {
             case Avg(e) => Sum(e)
-            case _      => ag
+            case _      => ag._1
           })
 
-          val countAllIdx = aggs.indexOf(CountAll())
-          val mapIndices = aggs.zipWithIndex.filter(avg => avg._1.isInstanceOf[Avg]).map(avg => { (avg._2, countAllIdx) })
-          MapOpNode(AggOpNode(parentOp, finalAggs, gb, aggAlias), mapIndices)
-        } else AggOpNode(parentOp, aggs, gb, aggAlias)
+          //val countAllIdx = aggsAliases.indexOf(CountAll())
+          val countAllName = aggProjs.find(_._1.isInstanceOf[CountAll]).get._2.get
+          val mapIndices = aggProjs.filter(avg => avg._1.isInstanceOf[Avg]).map(avg => { (avg._2.get, countAllName) })
+          MapOpNode(AggOpNode(parentOp, finalAggs, parseGroupBy(gb, proj), aggNames), mapIndices)
+        } else AggOpNode(parentOp, aggProjs.map(_._1), parseGroupBy(gb, proj), aggNames)
+
+        if (hasDivide) MapOpNode(aggOp, divisionIndexes)
+        else aggOp
       }
     }
     case AllColumns() => parentOp

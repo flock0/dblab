@@ -40,12 +40,13 @@ case class ExpressionProjections(lst: Seq[(Expression, Option[String])]) extends
 case class AllColumns() extends Projections
 
 trait Expression extends Node {
-  var tp: TypeTag[_] = null
-  def getTp = tp match {
-    case t if t == null => throw new Exception("SQL Type Inferrence BUG: type of Expression cannot be null.")
-    case _              => tp
+  private var tpe: TypeTag[_] = null
+  val isAggregateOpExpr = true
+  def tp = tpe match {
+    case t if t == null => tpe //throw new Exception("SQL Type Inferrence BUG: type of Expression cannot be null.")
+    case _              => tpe
   }
-  def setTp[A](tt: TypeTag[A]) { this.tp = tt }
+  def setTp[A](tt: TypeTag[A]) { this.tpe = tt }
 }
 
 trait BinaryOperator extends Expression {
@@ -87,6 +88,7 @@ case class FieldIdent(qualifier: Option[String], name: String, symbol: Symbol = 
     case Some(q) => q + "." + name
     case None    => name
   }
+  override val isAggregateOpExpr = false
 }
 
 trait Aggregation extends Expression
@@ -96,8 +98,12 @@ case class Sum(expr: Expression) extends Aggregation
 case class Avg(expr: Expression) extends Aggregation
 case class Min(expr: Expression) extends Aggregation
 case class Max(expr: Expression) extends Aggregation
-case class Year(expr: Expression) extends Expression
-case class Substring(expr: Expression, idx1: Expression, idx2: Expression) extends Expression
+case class Year(expr: Expression) extends Expression {
+  override val isAggregateOpExpr = false
+}
+case class Substring(expr: Expression, idx1: Expression, idx2: Expression) extends Expression {
+  override val isAggregateOpExpr = false
+}
 
 trait LiteralExpression extends Expression
 case class IntLiteral(v: Int) extends LiteralExpression {
@@ -138,7 +144,7 @@ sealed abstract trait OrderType
 case object ASC extends OrderType
 case object DESC extends OrderType
 
-case class GroupBy(keys: Seq[(Expression, Option[String])]) extends Node
+case class GroupBy(keys: Seq[Expression]) extends Node
 case class Having(having: Expression) extends Node
 case class OrderBy(keys: Seq[(Expression, OrderType)]) extends Node
 case class Limit(rows: Long) extends Node

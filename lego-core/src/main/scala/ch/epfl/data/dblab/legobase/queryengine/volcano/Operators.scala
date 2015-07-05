@@ -79,7 +79,7 @@ import sc.pardis.shallow.{ Record, DynamicCompositeRecord }
   def reset() { parent.reset }
 }
 
-/*@deep*/ class AggOp[A, B](parent: Operator[A], val numAggs: Int)(val grp: A => B)(val aggFuncs: Function2[A, Double, Double]*) extends Operator[AGGRecord[B]] {
+/*@deep*/ class AggOp[A, B: TypeTag](parent: Operator[A], val numAggs: Int)(val grp: A => B)(val aggFuncs: Function2[A, Double, Double]*) extends Operator[LegobaseRecord] {
   val hm = new HashMap[B, Array[Double]]()
   var keySet = Set(hm.keySet.toSeq: _*)
 
@@ -101,7 +101,7 @@ import sc.pardis.shallow.{ Record, DynamicCompositeRecord }
       val key = keySet.head
       keySet.remove(key)
       val elem = hm.remove(key)
-      new AGGRecord(key, elem.get)
+      new LegobaseRecord(Seq("key", "aggs") zip Seq(key, elem.get))
     } else NullDynamicRecord
   }
   def close() {}
@@ -212,7 +212,7 @@ import sc.pardis.shallow.{ Record, DynamicCompositeRecord }
   def reset() { rightParent.reset; leftParent.reset; hm.clear; tmpLine = NullDynamicRecord[B]; tmpCount = 0; tmpBuffer.clear }
 }
 
-/*@deep*/ class WindowOp[A, B, C](parent: Operator[A])(val grp: Function1[A, B])(val wndf: ArrayBuffer[A] => C) extends Operator[WindowRecord[B, C]] {
+/*@deep*/ class WindowOp[A, B: TypeTag, C: TypeTag](parent: Operator[A])(val grp: Function1[A, B])(val wndf: ArrayBuffer[A] => C) extends Operator[LegobaseRecord] {
   val hm = HashMap[B, ArrayBuffer[A]]()
   var keySet = Set(hm.keySet.toSeq: _*)
 
@@ -230,7 +230,7 @@ import sc.pardis.shallow.{ Record, DynamicCompositeRecord }
       val key = keySet.head
       keySet.remove(key)
       val elem = hm.remove(key).get // we're sure that it is Some(x)
-      new WindowRecord(key, wndf(elem))
+      new LegobaseRecord(Seq("key", "wnd") zip Seq(key, wndf(elem)))
     } else NullDynamicRecord
   }
   def close() {}
