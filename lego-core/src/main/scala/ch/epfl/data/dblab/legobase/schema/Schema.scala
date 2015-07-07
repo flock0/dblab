@@ -19,23 +19,23 @@ object Attribute {
 }
 
 sealed trait Constraint {
-  def toDDConstraintsRecord(catalog: Catalog, tableId: Int): DDConstraintsRecord
+  def toConstraintsRecord(catalog: Catalog, tableId: Int): ConstraintsRecord
 }
 case class PrimaryKey(attributes: List[Attribute]) extends Constraint {
-  def toDDConstraintsRecord(catalog: Catalog, tableId: Int) =
-    DDConstraintsRecord(
+  def toConstraintsRecord(catalog: Catalog, tableId: Int) =
+    ConstraintsRecord(
       tableId,
       'p',
-      catalog.getAttributes(tableId, attributes.map(_.name)).map(_.attributeId),
+      catalog.getAttributes(tableId, attributes.map(_.name)).map(_.attributeId).toList,
       None,
       None)
 }
 case class ForeignKey(ownTable: String, referencedTable: String, attributes: List[(String, String)], var selectivity: Double = 1) extends Constraint {
-  def toDDConstraintsRecord(catalog: Catalog, tableId: Int) = {
+  def toConstraintsRecord(catalog: Catalog, tableId: Int) = {
     val fks: List[(Int, String)] = attributes map { case (loc: String, ref: String) => catalog.getAttribute(tableId, loc).attributeId -> ref }
     val (attributesList, refAttributesList) = fks.unzip
 
-    DDConstraintsRecord(
+    ConstraintsRecord(
       tableId,
       'f',
       attributesList,
@@ -47,8 +47,8 @@ case class ForeignKey(ownTable: String, referencedTable: String, attributes: Lis
   def matchingAttributes(implicit s: Schema): List[(Attribute, Attribute)] = attributes.map { case (localAttr, foreignAttr) => thisTable.get.attributes.find(a => a.name == localAttr).get -> foreignTable.get.attributes.find(a => a.name == foreignAttr).get }
 }
 case class NotNull(attribute: Attribute) extends Constraint {
-  def toDDConstraintsRecord(catalog: Catalog, tableId: Int) =
-    DDConstraintsRecord(
+  def toConstraintsRecord(catalog: Catalog, tableId: Int) =
+    ConstraintsRecord(
       tableId,
       'n',
       List(catalog.getAttribute(tableId, attribute.name).attributeId),
@@ -56,8 +56,8 @@ case class NotNull(attribute: Attribute) extends Constraint {
       None)
 }
 case class Unique(attribute: Attribute) extends Constraint {
-  def toDDConstraintsRecord(catalog: Catalog, tableId: Int) =
-    DDConstraintsRecord(
+  def toConstraintsRecord(catalog: Catalog, tableId: Int) =
+    ConstraintsRecord(
       tableId,
       'u',
       List(catalog.getAttribute(tableId, attribute.name).attributeId),
@@ -65,6 +65,6 @@ case class Unique(attribute: Attribute) extends Constraint {
       None)
 }
 case class AutoIncrement(attribute: Attribute) extends Constraint {
-  def toDDConstraintsRecord(catalog: Catalog, tableId: Int) =
+  def toConstraintsRecord(catalog: Catalog, tableId: Int) =
     throw new Exception("AutoIncrement doesn't have a representation as a DDConstraintsRecord. It is handled through DDSequenceRecords")
 }
