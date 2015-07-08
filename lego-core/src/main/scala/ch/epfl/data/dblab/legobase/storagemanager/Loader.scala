@@ -49,16 +49,16 @@ object Loader {
   }
 
   /**
-    * Loads a table from disk
-    *
-    * The order of the tuples' values on disk must be the same
-    * as the constructor parameters for the passed class R and
-    * the attributes in the passed table.
-    *
-    * @tparam R The class of the tuples to load
-    * @param table The table to load data for
-    * @return An array of tuples loaded from disk
-    */
+   * Loads a table from disk
+   *
+   * The order of the tuples' values on disk must be the same
+   * as the constructor parameters for the passed class R and
+   * the attributes in the passed table.
+   *
+   * @tparam R The class of the tuples to load
+   * @param table The table to load data for
+   * @return An array of tuples loaded from disk
+   */
   @dontInline
   def loadTable[R](table: Table)(implicit c: ClassTag[R]): Array[R] = {
     val size = fileLineCount(table.fileName)
@@ -103,28 +103,28 @@ object Loader {
   }
 
   /**
-    * Loads a table into the in-memory DB
-    *
-    * @param catalog The catalog that should store the data
-    * @param schemaName The name of the schema in the catalog
-    * @param tableName The name of the table in the schema
-    */
+   * Loads a table into the in-memory DB
+   *
+   * @param catalog The catalog that should store the data
+   * @param schemaName The name of the schema in the catalog
+   * @param tableName The name of the table in the schema
+   */
   def loadTable(catalog: Catalog, schemaName: String, tableName: String): Unit =
     loadTable(catalog, catalog.getTable(schemaName, tableName))
 
   /**
-    * Loads a table into the in-memory DB
-    *
-    * @param catalog The catalog that should store the data
-    * @param table The table to load into the catalog
-    */
-  def loadTable(catalog: Catalog, table: DDTablesRecord): Unit = {
+   * Loads a table into the in-memory DB
+   *
+   * @param catalog The catalog that should store the data
+   * @param table The table to load into the catalog
+   */
+  def loadTable(catalog: Catalog, table: TablesRecord): Unit = {
     if (!table.isLoaded) {
       val fileName = table.fileName match {
         case Some(fn) => fn
         case None     => throw new Exception("No filename available in ${table.schemaName}.${table.name} to load data from")
       }
-      val attributes = catalog.getAttributes(table.tableId)
+      val attributes = catalog.getAttributes(table.tableId).toList
       val size = fileLineCount(fileName)
       val ldr = new K2DBScanner(fileName)
 
