@@ -16,11 +16,8 @@ case class Record(private val catalog: Catalog, private val tableId: Int, privat
   val schema = tableRecord.schemaName
   val table = tableRecord.name
 
-  def selectDynamic[T](name: String): T = {
-    if (!catalog.rowExists(tableId, rowId))
-      throw new Exception(s"Row $rowId doesn't exist in $schema.$table")
+  def selectDynamic[T](name: String): T =
     catalog.getField[T](tableId, catalog.getAttribute(tableId, name).attributeId, rowId)
-  }
 
   def getField(key: String): Option[Any] = ???
 }

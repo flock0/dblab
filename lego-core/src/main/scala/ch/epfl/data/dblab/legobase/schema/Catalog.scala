@@ -402,11 +402,4 @@ case class Catalog(schemata: Map[String, Schema]) {
 
   /** Indicates whether a table belongs to the data dictionary */
   private def isDataDictionary(table: TablesRecord): Boolean = table.schemaName == DDSchemaName
-
-  /** Returns whether the given row exists in the given table */
-  private[schema] def rowExists(tableId: Int, rowId: Int): Boolean =
-    rowsFromTableId(tableId).find(r => r.rowId == rowId) match {
-      case Some(_) => true
-      case None    => false
-    }
 }
