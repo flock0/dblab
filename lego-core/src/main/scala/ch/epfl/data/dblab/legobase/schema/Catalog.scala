@@ -2,7 +2,7 @@ package ch.epfl.data
 package dblab.legobase
 package schema
 
-import collection.mutable.{ HashMap, MultiMap, Set, HashSet, TreeSet }
+import collection.mutable.{ HashMap, MultiMap, ArrayBuffer }
 import sc.pardis.types._
 import schema._
 import Catalog._
@@ -130,10 +130,10 @@ case class Catalog(schemata: Map[String, Schema]) {
   /* Collections that contain the data in the data dictionary (and thus in the whole catalog) */
   private[schema] val tablesFromNames = new HashMap[(String, String), TablesRecord]
   private[schema] val tablesFromId = new HashMap[Int, TablesRecord]
-  private[schema] val attributesFromTableId = new HashMap[Int, Set[AttributesRecord]] with MultiMap[Int, AttributesRecord]
-  private[schema] val rowsFromTableId = new HashMap[Int, Set[RowsRecord]] with MultiMap[Int, RowsRecord]
+  private[schema] val attributesFromTableId = new HashMap[Int, ArrayBuffer[AttributesRecord]]
+  private[schema] val rowsFromTableId = new HashMap[Int, ArrayBuffer[RowsRecord]]
   private[schema] val fieldsFromTableAttrRowId = new HashMap[(Int, Int, Int), FieldsRecord]
-  private[schema] val constraintsFromTableId = new HashMap[Int, Set[ConstraintsRecord]] with MultiMap[Int, ConstraintsRecord]
+  private[schema] val constraintsFromTableId = new HashMap[Int, ArrayBuffer[ConstraintsRecord]]
   private[schema] val sequencesFromName = new HashMap[String, SequencesRecord]
 
   initializeDD()
@@ -167,7 +167,7 @@ case class Catalog(schemata: Map[String, Schema]) {
 
       /* For each table in the DD, add a row in DD_TABLES */
       val tableRow = RowsRecord(0, this)
-      rowsFromTableId addBinding (tableRow.tableId, tableRow)
+      rowsFromTableId getOrElseUpdate (tableRow.tableId, ArrayBuffer()) += tableRow
 
       /* Insert values for all rows in DD_TABLES */
       fieldsFromTableAttrRowId += (0, 0, tableRow.rowId) -> FieldsRecord(0, 0, tableRow.rowId, tablesFromId(i).schemaName)
@@ -183,10 +183,10 @@ case class Catalog(schemata: Map[String, Schema]) {
       tbl.attributes foreach { attr =>
         /* Insert attributes for all tables */
         val newAttribute = AttributesRecord(i, attr.name, attr.dataType, this)
-        attributesFromTableId addBinding (tblRecord.tableId, newAttribute)
+        attributesFromTableId getOrElseUpdate (tblRecord.tableId, ArrayBuffer()) += newAttribute
         /* Insert rows for DD_ATTRIBUTES */
         val attributesRow = RowsRecord(1, this)
-        rowsFromTableId addBinding (attributesRow.tableId, attributesRow)
+        rowsFromTableId getOrElseUpdate (attributesRow.tableId, ArrayBuffer()) += attributesRow
         /* Insert records for each attribute into DD_FIELDS */
         //TODO Suspected bug
         fieldsFromTableAttrRowId += (1, newAttribute.attributeId, attributesRow.rowId) -> FieldsRecord(1, newAttribute.attributeId, attributesRow.rowId, newAttribute.tableId)
@@ -204,10 +204,10 @@ case class Catalog(schemata: Map[String, Schema]) {
       (0 until constraints.size) foreach { j =>
         /* Insert constraints for all tables */
         val newConstraint = constraints(j).toConstraintsRecord(this, tblRecord.tableId)
-        constraintsFromTableId addBinding (tblRecord.tableId, newConstraint)
+        constraintsFromTableId getOrElseUpdate (tblRecord.tableId, ArrayBuffer()) += newConstraint
         /* Insert rows for DD_CONSTRAINTS */
         val constraintRow = RowsRecord(4, this)
-        rowsFromTableId addBinding (constraintRow.tableId, constraintRow)
+        rowsFromTableId getOrElseUpdate (constraintRow.tableId, ArrayBuffer()) += constraintRow
 
         /* Insert records for each constraint into DD_FIELDS */
         val constraintAttributes = attributesFromTableId(4)
@@ -227,7 +227,7 @@ case class Catalog(schemata: Map[String, Schema]) {
     initialSequences foreach { seq =>
       /* Insert rows for DD_SEQUENCES */
       val sequenceRow = RowsRecord(5, this)
-      rowsFromTableId addBinding (sequenceRow.tableId, sequenceRow)
+      rowsFromTableId getOrElseUpdate (sequenceRow.tableId, ArrayBuffer()) += sequenceRow
 
       /* Insert records for each sequence into DD_FIELDS */
       val sequenceAttributes = attributesFromTableId(5)
@@ -263,21 +263,21 @@ case class Catalog(schemata: Map[String, Schema]) {
 
     /* Add entries to DD_ATTRIBUTES */
     implicit def attrIdOrdering: Ordering[AttributesRecord] = Ordering.fromLessThan(_.attributeId < _.attributeId)
-    val newAttributes = new TreeSet[AttributesRecord]
+    val newAttributes = new ArrayBuffer[AttributesRecord]
     for (attr: Attribute <- tbl.attributes)
       newAttributes += AttributesRecord(newTableId, attr.name, attr.dataType, this)
     attributesFromTableId += newTableId -> newAttributes
     newAttributes.foreach(attr => addTuple(DDSchemaName, "DD_ATTRIBUTES", Seq(newTableId, attr.name, attr.dataType, attr.attributeId)))
 
     /* Add entries to DD_CONSTRAINTS */
-    val newConstraints = new HashSet[ConstraintsRecord]
+    val newConstraints = new ArrayBuffer[ConstraintsRecord]
     for (cstr <- tbl.constraints.filter(filterNotAutoIncrement))
       newConstraints += cstr.toConstraintsRecord(this, newTableId)
     constraintsFromTableId += newTableId -> newConstraints
     newConstraints.foreach(cstr => addTuple(DDSchemaName, "DD_CONSTRAINTS", Seq(newTableId, cstr.constraintType, cstr.attributes, cstr.refTableName, cstr.refAttributes)))
 
     /* Add entries to DD_SEQUENCES */
-    val newSequences = new HashSet[SequencesRecord]
+    val newSequences = new ArrayBuffer[SequencesRecord]
     for (cstr <- tbl.constraints.filter(filterAutoIncrement))
       newSequences += {
         cstr match {
@@ -318,7 +318,7 @@ case class Catalog(schemata: Map[String, Schema]) {
   def addTuple(tableId: Int, values: Seq[(Int, Any)]): Unit = {
 
     val row = RowsRecord(tableId, this)
-    rowsFromTableId addBinding (tableId, row)
+    rowsFromTableId getOrElseUpdate (tableId, ArrayBuffer()) += row
 
     for ((attrId, value) <- values)
       fieldsFromTableAttrRowId += (tableId, attrId, row.rowId) -> FieldsRecord(tableId, attrId, row.rowId, value)

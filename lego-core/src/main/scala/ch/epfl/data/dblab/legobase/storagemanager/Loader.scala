@@ -124,7 +124,7 @@ object Loader {
         case Some(fn) => fn
         case None     => throw new Exception("No filename available in ${table.schemaName}.${table.name} to load data from")
       }
-      val attributes = catalog.getAttributes(table.tableId).toList
+      val attributes = catalog.getAttributes(table.tableId)
       val size = fileLineCount(fileName)
       val ldr = new K2DBScanner(fileName)
 
