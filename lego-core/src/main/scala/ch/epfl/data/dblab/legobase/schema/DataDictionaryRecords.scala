@@ -17,6 +17,20 @@ case class AttributesRecord(tableId: Int, name: String, dataType: Tpe, private v
     case Some(id) => id
     case None     => catalog.getSequenceNext(constructSequenceName(DDSchemaName, "DD_ATTRIBUTES", "ATTRIBUTE_ID"))
   }
+
+  override def equals(x$1: Any): Boolean = AttributesRecord.this.eq(x$1.asInstanceOf[Object]).||(x$1 match {
+    case (_: AttributesRecord) => true
+    case _                     => false
+  }) && ({
+    val that: AttributesRecord = x$1.asInstanceOf[AttributesRecord];
+    this.tableId == that.tableId &&
+      this.name == that.name &&
+      this.dataType == that.dataType &&
+      this.catalog == that.catalog &&
+      this._attributeId == that._attributeId &&
+      this.attributeId == that.attributeId &&
+      that.canEqual(AttributesRecord.this)
+  })
 }
 case class FieldsRecord(tableId: Int, attributeId: Int, rowId: Int, value: Any)
 case class RowsRecord(tableId: Int, private val catalog: Catalog, private val _rowId: Option[Int] = None) {
@@ -24,6 +38,15 @@ case class RowsRecord(tableId: Int, private val catalog: Catalog, private val _r
     case Some(id) => id
     case None     => catalog.getSequenceNext(constructSequenceName(DDSchemaName, "DD_ROWS", "ROW_ID"))
   }
+
+  override def equals(x$1: Any): Boolean = RowsRecord.this.eq(x$1.asInstanceOf[Object]).||((x$1 match {
+    case (_: RowsRecord) => true
+    case _               => false
+  }) && ({
+    val RowsRecord$1: RowsRecord = x$1.asInstanceOf[RowsRecord];
+    RowsRecord.this.tableId.==(RowsRecord$1.tableId).&&(RowsRecord.this.catalog.==(RowsRecord$1.catalog)).&&(RowsRecord.this._rowId.==(RowsRecord$1._rowId)) && (RowsRecord.this.rowId.==(RowsRecord$1.rowId)).&&(RowsRecord$1.canEqual(RowsRecord.this))
+  }))
+
 }
 case class ConstraintsRecord(tableId: Int, constraintType: Char, attributes: List[Int], refTableName: Option[String], refAttributes: Option[List[String]])
 case class SequencesRecord(startValue: Int, endValue: Int, incrementBy: Int, sequenceName: String, private val catalog: Catalog, private val _sequenceId: Option[Int] = None) {
