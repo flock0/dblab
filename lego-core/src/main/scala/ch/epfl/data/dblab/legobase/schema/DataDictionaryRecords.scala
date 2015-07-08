@@ -18,7 +18,6 @@ case class AttributesRecord(tableId: Int, name: String, dataType: Tpe, private v
     case None     => catalog.getSequenceNext(constructSequenceName(DDSchemaName, "DD_ATTRIBUTES", "ATTRIBUTE_ID"))
   }
 }
-case class FieldsRecord(tableId: Int, attributeId: Int, rowId: Int, value: Any)
 case class RowsRecord(tableId: Int, private val catalog: Catalog, private val _rowId: Option[Int] = None) {
   val rowId = _rowId match {
     case Some(id) => id

@@ -132,7 +132,7 @@ case class Catalog(schemata: Map[String, Schema]) {
   private[schema] val tablesFromId = new HashMap[Int, TablesRecord]
   private[schema] val attributesFromTableId = new HashMap[Int, ArrayBuffer[AttributesRecord]]
   private[schema] val rowsFromTableId = new HashMap[Int, ArrayBuffer[RowsRecord]]
-  private[schema] val fieldsFromTableAttrRowId = new HashMap[(Int, Int, Int), FieldsRecord]
+  private[schema] val fieldsFromTableAttrRowId = new HashMap[(Int, Int, Int), Any]
   private[schema] val constraintsFromTableId = new HashMap[Int, ArrayBuffer[ConstraintsRecord]]
   private[schema] val sequencesFromName = new HashMap[String, SequencesRecord]
 
@@ -170,10 +170,10 @@ case class Catalog(schemata: Map[String, Schema]) {
       rowsFromTableId getOrElseUpdate (tableRow.tableId, ArrayBuffer()) += tableRow
 
       /* Insert values for all rows in DD_TABLES */
-      fieldsFromTableAttrRowId += (0, 0, tableRow.rowId) -> FieldsRecord(0, 0, tableRow.rowId, tablesFromId(i).schemaName)
-      fieldsFromTableAttrRowId += (0, 1, tableRow.rowId) -> FieldsRecord(0, 1, tableRow.rowId, tablesFromId(i).name)
-      fieldsFromTableAttrRowId += (0, 2, tableRow.rowId) -> FieldsRecord(0, 2, tableRow.rowId, tablesFromId(i).fileName)
-      fieldsFromTableAttrRowId += (0, 3, tableRow.rowId) -> FieldsRecord(0, 3, tableRow.rowId, tablesFromId(i).tableId)
+      fieldsFromTableAttrRowId += (0, 0, tableRow.rowId) -> tablesFromId(i).schemaName
+      fieldsFromTableAttrRowId += (0, 1, tableRow.rowId) -> tablesFromId(i).name
+      fieldsFromTableAttrRowId += (0, 2, tableRow.rowId) -> tablesFromId(i).fileName
+      fieldsFromTableAttrRowId += (0, 3, tableRow.rowId) -> tablesFromId(i).tableId
     }
 
     (0 until dd.size) foreach { i =>
@@ -189,10 +189,10 @@ case class Catalog(schemata: Map[String, Schema]) {
         rowsFromTableId getOrElseUpdate (attributesRow.tableId, ArrayBuffer()) += attributesRow
         /* Insert records for each attribute into DD_FIELDS */
         //TODO Suspected bug
-        fieldsFromTableAttrRowId += (1, newAttribute.attributeId, attributesRow.rowId) -> FieldsRecord(1, newAttribute.attributeId, attributesRow.rowId, newAttribute.tableId)
-        fieldsFromTableAttrRowId += (1, newAttribute.attributeId, attributesRow.rowId) -> FieldsRecord(1, newAttribute.attributeId, attributesRow.rowId, newAttribute.name)
-        fieldsFromTableAttrRowId += (1, newAttribute.attributeId, attributesRow.rowId) -> FieldsRecord(1, newAttribute.attributeId, attributesRow.rowId, newAttribute.dataType)
-        fieldsFromTableAttrRowId += (1, newAttribute.attributeId, attributesRow.rowId) -> FieldsRecord(1, newAttribute.attributeId, attributesRow.rowId, newAttribute.attributeId)
+        fieldsFromTableAttrRowId += (1, newAttribute.attributeId, attributesRow.rowId) -> newAttribute.tableId
+        fieldsFromTableAttrRowId += (1, newAttribute.attributeId, attributesRow.rowId) -> newAttribute.name
+        fieldsFromTableAttrRowId += (1, newAttribute.attributeId, attributesRow.rowId) -> newAttribute.dataType
+        fieldsFromTableAttrRowId += (1, newAttribute.attributeId, attributesRow.rowId) -> newAttribute.attributeId
       }
     }
 
@@ -212,15 +212,15 @@ case class Catalog(schemata: Map[String, Schema]) {
         /* Insert records for each constraint into DD_FIELDS */
         val constraintAttributes = attributesFromTableId(4)
         val tableIdAttrId = constraintAttributes.find(a => a.name == "TABLE_ID").get.attributeId
-        fieldsFromTableAttrRowId += (4, tableIdAttrId, constraintRow.rowId) -> FieldsRecord(4, tableIdAttrId, constraintRow.rowId, newConstraint.tableId)
+        fieldsFromTableAttrRowId += (4, tableIdAttrId, constraintRow.rowId) -> newConstraint.tableId
         val cstrTypeAttrId = constraintAttributes.find(a => a.name == "CONSTRAINT_TYPE").get.attributeId
-        fieldsFromTableAttrRowId += (4, cstrTypeAttrId, constraintRow.rowId) -> FieldsRecord(4, cstrTypeAttrId, constraintRow.rowId, newConstraint.constraintType)
+        fieldsFromTableAttrRowId += (4, cstrTypeAttrId, constraintRow.rowId) -> newConstraint.constraintType
         val attrAttrId = constraintAttributes.find(a => a.name == "ATTRIBUTES").get.attributeId
-        fieldsFromTableAttrRowId += (4, attrAttrId, constraintRow.rowId) -> FieldsRecord(4, attrAttrId, constraintRow.rowId, newConstraint.attributes)
+        fieldsFromTableAttrRowId += (4, attrAttrId, constraintRow.rowId) -> newConstraint.attributes
         val refTableAttrId = constraintAttributes.find(a => a.name == "REF_TABLE_NAME").get.attributeId
-        fieldsFromTableAttrRowId += (4, refTableAttrId, constraintRow.rowId) -> FieldsRecord(4, refTableAttrId, constraintRow.rowId, newConstraint.refTableName)
+        fieldsFromTableAttrRowId += (4, refTableAttrId, constraintRow.rowId) -> newConstraint.refTableName
         val refAttrAttrId = constraintAttributes.find(a => a.name == "REF_ATTRIBUTES").get.attributeId
-        fieldsFromTableAttrRowId += (4, refAttrAttrId, constraintRow.rowId) -> FieldsRecord(4, refAttrAttrId, constraintRow.rowId, newConstraint.refAttributes)
+        fieldsFromTableAttrRowId += (4, refAttrAttrId, constraintRow.rowId) -> newConstraint.refAttributes
       }
     }
 
@@ -232,15 +232,15 @@ case class Catalog(schemata: Map[String, Schema]) {
       /* Insert records for each sequence into DD_FIELDS */
       val sequenceAttributes = attributesFromTableId(5)
       val startValAttrId = sequenceAttributes.find(a => a.name == "START_VALUE").get.attributeId
-      fieldsFromTableAttrRowId += (5, startValAttrId, sequenceRow.rowId) -> FieldsRecord(5, startValAttrId, sequenceRow.rowId, seq.startValue)
+      fieldsFromTableAttrRowId += (5, startValAttrId, sequenceRow.rowId) -> seq.startValue
       val endValAttrId = sequenceAttributes.find(a => a.name == "END_VALUE").get.attributeId
-      fieldsFromTableAttrRowId += (5, endValAttrId, sequenceRow.rowId) -> FieldsRecord(5, endValAttrId, sequenceRow.rowId, seq.endValue)
+      fieldsFromTableAttrRowId += (5, endValAttrId, sequenceRow.rowId) -> seq.endValue
       val incrByAttrId = sequenceAttributes.find(a => a.name == "INCREMENT_BY").get.attributeId
-      fieldsFromTableAttrRowId += (5, incrByAttrId, sequenceRow.rowId) -> FieldsRecord(5, incrByAttrId, sequenceRow.rowId, seq.incrementBy)
+      fieldsFromTableAttrRowId += (5, incrByAttrId, sequenceRow.rowId) -> seq.incrementBy
       val seqNameAttrId = sequenceAttributes.find(a => a.name == "NAME").get.attributeId
-      fieldsFromTableAttrRowId += (5, seqNameAttrId, sequenceRow.rowId) -> FieldsRecord(5, seqNameAttrId, sequenceRow.rowId, seq.sequenceName)
+      fieldsFromTableAttrRowId += (5, seqNameAttrId, sequenceRow.rowId) -> seq.sequenceName
       val seqIdAttrId = sequenceAttributes.find(a => a.name == "SEQUENCE_ID").get.attributeId
-      fieldsFromTableAttrRowId += (5, seqIdAttrId, sequenceRow.rowId) -> FieldsRecord(5, seqIdAttrId, sequenceRow.rowId, seq.sequenceId)
+      fieldsFromTableAttrRowId += (5, seqIdAttrId, sequenceRow.rowId) -> seq.sequenceId
     }
   }
 
@@ -321,7 +321,7 @@ case class Catalog(schemata: Map[String, Schema]) {
     rowsFromTableId getOrElseUpdate (tableId, ArrayBuffer()) += row
 
     for ((attrId, value) <- values)
-      fieldsFromTableAttrRowId += (tableId, attrId, row.rowId) -> FieldsRecord(tableId, attrId, row.rowId, value)
+      fieldsFromTableAttrRowId += (tableId, attrId, row.rowId) -> value
   }
 
   /** Returns the table with specified name in the given schema */
@@ -380,7 +380,7 @@ case class Catalog(schemata: Map[String, Schema]) {
 
   /** Returns the field identified by the given IDs */
   private[schema] def getField[T](tableId: Int, attributeId: Int, rowId: Int): T =
-    fieldsFromTableAttrRowId((tableId, attributeId, rowId)).value.asInstanceOf[T]
+    fieldsFromTableAttrRowId((tableId, attributeId, rowId)).asInstanceOf[T]
 
   /** Indicates whether a constraint is an AutoIncrement (as they are handled seperately) */
   private def filterAutoIncrement(cstr: Constraint): Boolean = {
