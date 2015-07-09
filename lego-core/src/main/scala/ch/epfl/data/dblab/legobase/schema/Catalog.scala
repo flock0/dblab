@@ -358,7 +358,10 @@ case class Catalog(schemata: Map[String, Schema]) {
   private def getTuples(table: TablesRecord): Array[Record] = {
     if (!isDataDictionary(table)) /* Only load tables from disk that are not part of the data dictionary */
       Loader.loadTable(this, table)
-    rowsFromTableId(table.tableId).map(row => CachingRecord(this, table.tableId, row.rowId)).toArray
+
+    val attributeIds = new HashMap[String, Int]
+    getAttributes(table.tableId).foreach { at => attributeIds += at.name -> at.attributeId }
+    rowsFromTableId(table.tableId).map(row => CachingRecord(this, table.tableId, row.rowId, attributeIds)).toArray
   }
 
   /** Returns the attribute with the specified name in the given table */
@@ -382,13 +385,8 @@ case class Catalog(schemata: Map[String, Schema]) {
   }
 
   /** Returns the field identified by the given IDs */
-  private[schema] def getField(tableId: Int, attributeId: Int, rowId: Int): Option[Any] = {
-    val key = (tableId, attributeId, rowId)
-    if (fieldsFromTableAttrRowId contains key)
-      Some(fieldsFromTableAttrRowId(key))
-    else
-      None
-  }
+  private[schema] def getField(tableId: Int, attributeId: Int, rowId: Int): Any =
+    fieldsFromTableAttrRowId((tableId, attributeId, rowId))
 
   /** Indicates whether a constraint is an AutoIncrement (as they are handled seperately) */
   private def filterAutoIncrement(cstr: Constraint): Boolean = {

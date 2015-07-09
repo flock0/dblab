@@ -12,7 +12,7 @@ import scala.collection.mutable.Map
  * @param tableId The id of the table that describes this records schema
  * @param rowId The id of the row that this record represents
  */
-class CachingRecord(private val catalog: Catalog, private val tableId: Int, private val rowId: Int) extends Record(catalog, tableId, rowId) {
+class CachingRecord(private val catalog: Catalog, private val tableId: Int, private val rowId: Int, private val attributeIds: Map[String, Int]) extends Record(catalog, tableId, rowId, attributeIds) {
   private val cache: Map[String, Option[Any]] = Map()
 
   override def getField(key: String): Option[Any] =
@@ -26,5 +26,5 @@ class CachingRecord(private val catalog: Catalog, private val tableId: Int, priv
 }
 
 object CachingRecord {
-  def apply(catalog: Catalog, tableId: Int, rowId: Int) = new CachingRecord(catalog, tableId, rowId)
+  def apply(catalog: Catalog, tableId: Int, rowId: Int, attributeIds: Map[String, Int]) = new CachingRecord(catalog, tableId, rowId, attributeIds)
 }
