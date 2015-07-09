@@ -358,7 +358,7 @@ case class Catalog(schemata: Map[String, Schema]) {
   private def getTuples(table: TablesRecord): Array[Record] = {
     if (!isDataDictionary(table)) /* Only load tables from disk that are not part of the data dictionary */
       Loader.loadTable(this, table)
-    rowsFromTableId(table.tableId).map(row => Record(this, table.tableId, row.rowId)).toArray
+    rowsFromTableId(table.tableId).map(row => CachingRecord(this, table.tableId, row.rowId)).toArray
   }
 
   /** Returns the attribute with the specified name in the given table */
