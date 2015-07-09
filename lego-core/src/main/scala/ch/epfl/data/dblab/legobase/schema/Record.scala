@@ -3,6 +3,7 @@ package dblab.legobase
 package schema
 
 import scala.language.dynamics
+import collection.mutable.HashMap
 
 /**
  * A single record in the database
@@ -15,9 +16,15 @@ case class Record(private val catalog: Catalog, private val tableId: Int, privat
   private val tableRecord = catalog.getTable(tableId)
   val schema = tableRecord.schemaName
   val table = tableRecord.name
+  val attributeIds = new HashMap[String, Int]
+  catalog.getAttributes(tableId).foreach { at =>
+    attributeIds += at.name -> at.attributeId
+  }
+  def selectDynamic[T](name: String): T = getField(name).get.asInstanceOf[T]
 
-  def selectDynamic[T](name: String): T =
-    catalog.getField[T](tableId, catalog.getAttribute(tableId, name).attributeId, rowId)
-
-  def getField(key: String): Option[Any] = Some(selectDynamic[Any](key))
+  def getField(key: String): Option[Any] =
+    if (attributeIds contains key)
+      catalog.getField(tableId, attributeIds(key), rowId)
+    else
+      None
 }

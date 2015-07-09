@@ -363,7 +363,10 @@ case class Catalog(schemata: Map[String, Schema]) {
 
   /** Returns the attribute with the specified name in the given table */
   def getAttribute(tableId: Int, attributeName: String) =
-    attributesFromTableId(tableId).find(at => at.name == attributeName).get
+    attributesFromTableId(tableId).find(at => at.name == attributeName) match {
+      case Some(x) => x
+      case None    => throw new Exception(s"Couldn't find attribute $attributeName in table ${tablesFromId(tableId).name}")
+    }
 
   /** Returns all attributes of the specified table */
   def getAttributes(tableId: Int) = attributesFromTableId(tableId)
@@ -379,8 +382,13 @@ case class Catalog(schemata: Map[String, Schema]) {
   }
 
   /** Returns the field identified by the given IDs */
-  private[schema] def getField[T](tableId: Int, attributeId: Int, rowId: Int): T =
-    fieldsFromTableAttrRowId((tableId, attributeId, rowId)).asInstanceOf[T]
+  private[schema] def getField(tableId: Int, attributeId: Int, rowId: Int): Option[Any] = {
+    val key = (tableId, attributeId, rowId)
+    if (fieldsFromTableAttrRowId contains key)
+      Some(fieldsFromTableAttrRowId(key))
+    else
+      None
+  }
 
   /** Indicates whether a constraint is an AutoIncrement (as they are handled seperately) */
   private def filterAutoIncrement(cstr: Constraint): Boolean = {
