@@ -19,5 +19,5 @@ case class Record(private val catalog: Catalog, private val tableId: Int, privat
   def selectDynamic[T](name: String): T =
     catalog.getField[T](tableId, catalog.getAttribute(tableId, name).attributeId, rowId)
 
-  def getField(key: String): Option[Any] = ???
+  def getField(key: String): Option[Any] = Some(selectDynamic[Any](key))
 }
