@@ -13,17 +13,16 @@ import scala.collection.mutable.Map
  * @param rowId The id of the row that this record represents
  */
 class CachingRecord(private val catalog: Catalog, private val tableId: Int, private val rowId: Int) extends Record(catalog, tableId, rowId) {
-  private val cache: Map[String, Any] = Map()
-
-  override def selectDynamic[T](name: String): T =
-    if (cache.contains(name)) {
-      cache(name).asInstanceOf[T]
-    } else {
-      val field = super.selectDynamic[T](name)
-      cache += name -> field
-      field
-    }
-
+  private val cache: Map[String, Option[Any] = Map()
+    
+  override def getField(key: String): Option[Any] =
+    if (cache.contains(key)) {
+        cache(key)
+      } else {
+        val field = super.getField(key)
+        cache += key -> field
+        field
+      }
 }
 
 object CachingRecord {
