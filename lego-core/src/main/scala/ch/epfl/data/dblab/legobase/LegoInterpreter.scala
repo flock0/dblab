@@ -19,9 +19,9 @@ import sc.pardis.shallow.{ OptimalString, Record, DynamicCompositeRecord }
 object LegoInterpreter extends LegoRunner {
   def main(args: Array[String]) {
     // Some checks to avoid silly exceptions
-    if (args.length < 3) {
+    if (args.length < 4) {
       System.out.println("ERROR: Invalid number (" + args.length + ") of command line arguments!")
-      System.out.println("USAGE: run <data_folder> <scaling_factor_number> <list of queries to run>")
+      System.out.println("USAGE: run <data_folder> <test suite> <scaling_factor_number> <list of queries to run>")
       System.out.println("     : data_folder_name should contain folders named sf0.1 sf1 sf2 sf4 etc")
       System.exit(0)
     }
