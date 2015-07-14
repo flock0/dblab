@@ -33,6 +33,9 @@
 -- Contributors:
 -- Gradient Systems
 --
+
+USE TPCDS;
+
 CREATE TABLE dbgen_version
 (
     dv_version                VARCHAR(16)                   ,
