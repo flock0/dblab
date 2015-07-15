@@ -13,15 +13,6 @@ object TPCHConfig extends BenchConfig {
 
   override val resultsPath: String = "results/"
 
-  override def interpret: Schema = {
-    val ddlDefStr = scala.io.Source.fromFile("tpch/dss.ddl").mkString
-    val schemaDDL = DDLParser.parse(ddlDefStr)
-    val constraintsDefStr = scala.io.Source.fromFile("tpch/dss.ri").mkString
-    val constraintsDDL = DDLParser.parse(constraintsDefStr)
-    val schemaWithConstraints = schemaDDL ++ constraintsDDL
-    DDLInterpreter.interpret(schemaWithConstraints)
-  }
-
   override def addStats(schema: Schema) = {
     // TODO: These stats will die soon
     schema.stats += "DISTINCT_L_SHIPMODE" -> 7

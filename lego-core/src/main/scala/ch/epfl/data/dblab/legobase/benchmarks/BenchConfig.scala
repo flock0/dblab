@@ -13,8 +13,6 @@ trait BenchConfig {
   def checkResult: Boolean
   /** The path from the project root to the folder with results for validation */
   def resultsPath: String = ""
-  /** Parses and interprets the given DDL and constraints from disk */
-  def interpret: Schema
   /** Optionally adds statistics to the schema */
   def addStats(schema: Schema)
 }
