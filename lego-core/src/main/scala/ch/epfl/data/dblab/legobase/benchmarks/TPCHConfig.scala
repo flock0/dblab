@@ -3,16 +3,17 @@ package dblab.legobase
 package benchmarks
 
 import schema.Schema
+import frontend._
 
 object TPCHConfig extends BenchConfig {
 
-  val ddlPath: String = "tpch/dss.ddl"
-  val constraintsPath: String = "tpch/dss.ri"
-  val checkResult: Boolean = True
+  override val ddlPath: String = "tpch/dss.ddl"
+  override val constraintsPath: String = "tpch/dss.ri"
+  override val checkResult: Boolean = true
 
-  val resultsPath: String = "results/"
+  override val resultsPath: String = "results/"
 
-  def interpret: Schema = {
+  override def interpret: Schema = {
     val ddlDefStr = scala.io.Source.fromFile("tpch/dss.ddl").mkString
     val schemaDDL = DDLParser.parse(ddlDefStr)
     val constraintsDefStr = scala.io.Source.fromFile("tpch/dss.ri").mkString
@@ -21,7 +22,7 @@ object TPCHConfig extends BenchConfig {
     DDLInterpreter.interpret(schemaWithConstraints)
   }
 
-  def addStats(schema: Schema) = {
+  override def addStats(schema: Schema) = {
     // TODO: These stats will die soon
     schema.stats += "DISTINCT_L_SHIPMODE" -> 7
     schema.stats += "DISTINCT_L_RETURNFLAG" -> 3
