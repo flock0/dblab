@@ -42,9 +42,8 @@ trait LegoRunner {
     val queryConf: BenchConfig =
       if (args(1) == "TPCH")
         TPCHConfig
-      // In anticipation of  the TPCDSConfig class  
-      /*else if (args(1) == "TPCDS")
-      TPCDSConfig */
+      else if (args(1) == "TPCDS")
+        TPCDSConfig
       else
         throw new Exception("Invalid test suite!")
 
