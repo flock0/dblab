@@ -5,19 +5,13 @@ package benchmarks
 import schema.Schema
 
 object TPCHConfig extends BenchConfig {
-    
+
   val ddlPath: String = "tpch/dss.ddl"
   val constraintsPath: String = "tpch/dss.ri"
   val checkResult: Boolean = True
-  
+
   val resultsPath: String = "results/"
-  
-  def optimize(schema: Schema, operatorTree: Operator): Operator =
-    if (q != "Q19" && q != "Q16" && q != "Q22") 
-      new NaiveOptimizer(schema).optimize(operatorTree) 
-    else
-      operatorTree // TODO -- FIX OPTIMIZER FOR Q19
-  
+
   def interpret: Schema = {
     val ddlDefStr = scala.io.Source.fromFile("tpch/dss.ddl").mkString
     val schemaDDL = DDLParser.parse(ddlDefStr)
@@ -26,7 +20,7 @@ object TPCHConfig extends BenchConfig {
     val schemaWithConstraints = schemaDDL ++ constraintsDDL
     DDLInterpreter.interpret(schemaWithConstraints)
   }
-  
+
   def addStats(schema: Schema) = {
     // TODO: These stats will die soon
     schema.stats += "DISTINCT_L_SHIPMODE" -> 7
