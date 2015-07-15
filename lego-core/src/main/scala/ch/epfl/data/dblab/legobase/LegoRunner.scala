@@ -95,14 +95,14 @@ trait LegoRunner {
             }
             if (resq != resc) {
               System.out.println("-----------------------------------------")
-              System.out.println("QUERY" + q + " DID NOT RETURN CORRECT RESULT!!!")
+              System.out.println(args(1) + " QUERY" + q + " DID NOT RETURN CORRECT RESULT!!!")
               System.out.println("Correct result:")
               System.out.println(resc)
               System.out.println("Result obtained from execution:")
               System.out.println(resq)
               System.out.println("-----------------------------------------")
               System.exit(0)
-            } else System.out.println("CHECK RESULT FOR QUERY " + q + ": [OK]")
+            } else System.out.println("CHECK RESULT FOR " + args(1) + " QUERY " + q + ": [OK]")
           } else {
             System.out.println("Reference result file not found. Skipping checking of result")
             System.out.println("Execution results:")
