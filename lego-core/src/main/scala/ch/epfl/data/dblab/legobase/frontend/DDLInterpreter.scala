@@ -48,7 +48,7 @@ object DDLInterpreter {
       }
       case DDLTable(tableName, cols, cons) =>
         val colDef = cols.map(c => Attribute(c.name, ddlTypeToSCType(c.datatype), c.annotations.map(annonStringToConstraint(_)))).toList
-        val tablePath = (Config.datapath + tableName + ".tbl").toLowerCase
+        val tablePath = (Config.datapath + tableName.toLowerCase + ".tbl")
         val tableCardinality = Utilities.getNumLinesInFile(tablePath)
         getCurrSchema.tables += new Table(tableName, colDef, ArrayBuffer(),
           tablePath, tableCardinality)
