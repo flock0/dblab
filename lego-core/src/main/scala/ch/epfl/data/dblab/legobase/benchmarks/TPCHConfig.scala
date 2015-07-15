@@ -9,6 +9,7 @@ object TPCHConfig extends BenchConfig {
 
   override val ddlPath: String = "tpch/dss.ddl"
   override val constraintsPath: String = "tpch/dss.ri"
+  override val queryFolder: String = "tpch/"
   override val checkResult: Boolean = true
 
   override val resultsPath: String = "results/"

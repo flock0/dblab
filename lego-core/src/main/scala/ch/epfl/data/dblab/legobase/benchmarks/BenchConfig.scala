@@ -9,6 +9,8 @@ trait BenchConfig {
   def ddlPath: String
   /** The path from the project root to the file containing the constraints */
   def constraintsPath: String
+  /** The path from the project root to the folder containing the SQL queries */
+  def queryFolder: String
   /** Whether to validate the query results */
   def checkResult: Boolean
   /** The path from the project root to the folder with results for validation */
