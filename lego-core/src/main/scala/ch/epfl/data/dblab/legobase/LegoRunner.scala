@@ -33,7 +33,7 @@ trait LegoRunner {
    */
   def run(args: Array[String]) {
 
-    val sf = if (args(1).contains(".")) args(1).toDouble.toString else args(1).toInt.toString
+    val sf = if (args(2).contains(".")) args(2).toDouble.toString else args(2).toInt.toString
     Config.sf = sf.toDouble
     Config.datapath = args(0) + "/sf" + sf + "/"
 
@@ -82,9 +82,9 @@ trait LegoRunner {
     System.out.println(schema.stats.mkString("\n"))
 
     val queries: scala.collection.immutable.List[String] =
-      if (args.length >= 3 && args(2) == "testsuite-scala") (for (i <- 1 to 22 if !excludedQueries.contains(i)) yield "Q" + i).toList
-      else if (args.length >= 3 && args(2) == "testsuite-c") (for (i <- 1 to 22 if !excludedQueries.contains(i)) yield "Q" + i + "_C").toList
-      else args.drop(2).filter(x => !x.startsWith("+") && !x.startsWith("-")).toList
+      if (args.length >= 4 && args(3) == "testsuite-scala") (for (i <- 1 to 22 if !excludedQueries.contains(i)) yield "Q" + i).toList
+      else if (args.length >= 4 && args(3) == "testsuite-c") (for (i <- 1 to 22 if !excludedQueries.contains(i)) yield "Q" + i + "_C").toList
+      else args.drop(3).filter(x => !x.startsWith("+") && !x.startsWith("-")).toList
     for (q <- queries) {
       currQuery = q
       Console.withOut(new PrintStream(getOutputName)) {
