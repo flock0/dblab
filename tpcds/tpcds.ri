@@ -36,7 +36,6 @@
 
 USE TPCDS;
 
-ALTER TABLE dbgen_version DROP PRIMARY KEY;
 ALTER TABLE customer_address DROP PRIMARY KEY;
 ALTER TABLE customer_demographics DROP PRIMARY KEY;
 ALTER TABLE date_dim DROP PRIMARY KEY;

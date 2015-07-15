@@ -36,14 +36,6 @@
 
 USE TPCDS;
 
-CREATE TABLE dbgen_version
-(
-    dv_version                VARCHAR(16)                   ,
-    dv_create_date            DATE                          ,
-    dv_create_time            TIME                          ,
-    dv_cmdline_args           VARCHAR(200)                  
-);
-
 CREATE TABLE customer_address
 (
     ca_address_sk             INTEGER               NOT NULL,
