@@ -14,7 +14,6 @@ import ch.epfl.data.dblab.legobase.frontend.OperatorAST._
  */
 trait LegoRunner {
   var currQuery: java.lang.String = ""
-  Config.checkResults = true
 
   def getOutputName = currQuery + "Output.txt"
 
@@ -39,9 +38,19 @@ trait LegoRunner {
 
     val excludedQueries = Nil
 
-    val ddlDefStr = scala.io.Source.fromFile("tpch/dss.ddl").mkString
+    val queryConf: QueryConfig = if (args(1) == "TPCH")
+                                   TPCHConfig
+                                 // In anticipation of creating the TPCDSConfig class  
+                                 /*else if (args(1) == "TPCDS")
+                                   TPCDSConfig */
+                                 else
+                                   throw new Exception("Invalid test suite!")
+
+    Config.checkResults = queryConf.checkResults
+    
+    val ddlDefStr = scala.io.Source.fromFile(queryConf.ddlPath).mkString
     val schemaDDL = DDLParser.parse(ddlDefStr)
-    val constraintsDefStr = scala.io.Source.fromFile("tpch/dss.ri").mkString
+    val constraintsDefStr = scala.io.Source.fromFile(queryConf.constraintsPath).mkString
     val constraintsDDL = DDLParser.parse(constraintsDefStr)
     val schemaWithConstraints = schemaDDL ++ constraintsDDL
     val schema = DDLInterpreter.interpret(schemaWithConstraints)
@@ -52,32 +61,7 @@ trait LegoRunner {
     //DDLInterpreter.interpret(dropDDL)
     //System.out.println(finalSchema)
 
-    // TODO: These stats will die soon
-    schema.stats += "DISTINCT_L_SHIPMODE" -> 7
-    schema.stats += "DISTINCT_L_RETURNFLAG" -> 3
-    schema.stats += "DISTINCT_L_LINESTATUS" -> 2
-    schema.stats += "DISTINCT_L_ORDERKEY" -> schema.stats.getCardinality("LINEITEM")
-    schema.stats += "DISTINCT_L_PARTKEY" -> schema.stats.getCardinality("PART")
-    schema.stats += "DISTINCT_L_SUPPKEY" -> schema.stats.getCardinality("SUPPLIER")
-    schema.stats += "DISTINCT_N_NAME" -> 25
-    schema.stats += "DISTINCT_O_SHIPPRIORITY" -> 1
-    schema.stats += "DISTINCT_O_ORDERDATE" -> 365 * 7 // 7-whole years
-    schema.stats += "DISTINCT_O_ORDERPRIORITY" -> 5
-    schema.stats += "DISTINCT_O_ORDERKEY" -> schema.stats.getCardinality("LINEITEM")
-    schema.stats += "DISTINCT_O_CUSTKEY" -> schema.stats.getCardinality("CUSTOMER")
-    schema.stats += "DISTINCT_P_PARTKEY" -> schema.stats.getCardinality("PART")
-    schema.stats += "DISTINCT_P_BRAND" -> 25
-    schema.stats += "DISTINCT_P_SIZE" -> 50
-    schema.stats += "DISTINCT_P_TYPE" -> 150
-    schema.stats += "DISTINCT_PS_PARTKEY" -> schema.stats.getCardinality("PART")
-    schema.stats += "DISTINCT_PS_SUPPKEY" -> schema.stats.getCardinality("SUPPLIER")
-    schema.stats += "DISTINCT_PS_AVAILQTY" -> 9999
-    schema.stats += "DISTINCT_S_NAME" -> schema.stats.getCardinality("SUPPLIER")
-    schema.stats += "DISTINCT_S_NATIONKEY" -> 25
-    schema.stats += "DISTINCT_C_CUSTKEY" -> schema.stats.getCardinality("CUSTOMER")
-    schema.stats += "DISTINCT_C_NAME" -> schema.stats.getCardinality("CUSTOMER")
-    schema.stats += "DISTINCT_C_NATIONKEY" -> 25
-    schema.stats += "NUM_YEARS_ALL_DATES" -> 7
+    queryConf.addStats(schema)
 
     System.out.println(schema.stats.mkString("\n"))
 
