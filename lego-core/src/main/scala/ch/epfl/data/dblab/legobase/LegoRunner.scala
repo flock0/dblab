@@ -5,6 +5,7 @@ package dblab.legobase
 import schema._
 import frontend._
 import frontend.optimizer._
+import benchmarks._
 import utils.Utilities._
 import java.io.PrintStream
 import ch.epfl.data.dblab.legobase.frontend.OperatorAST._
@@ -38,16 +39,17 @@ trait LegoRunner {
 
     val excludedQueries = Nil
 
-    val queryConf: QueryConfig = if (args(1) == "TPCH")
-                                   TPCHConfig
-                                 // In anticipation of creating the TPCDSConfig class  
-                                 /*else if (args(1) == "TPCDS")
-                                   TPCDSConfig */
-                                 else
-                                   throw new Exception("Invalid test suite!")
+    val queryConf: BenchConfig =
+      if (args(1) == "TPCH")
+        TPCHConfig
+      // In anticipation of  the TPCDSConfig class  
+      /*else if (args(1) == "TPCDS")
+      TPCDSConfig */
+      else
+        throw new Exception("Invalid test suite!")
 
-    Config.checkResults = queryConf.checkResults
-    
+    Config.checkResults = queryConf.checkResult
+
     val ddlDefStr = scala.io.Source.fromFile(queryConf.ddlPath).mkString
     val schemaDDL = DDLParser.parse(ddlDefStr)
     val constraintsDefStr = scala.io.Source.fromFile(queryConf.constraintsPath).mkString
@@ -73,11 +75,11 @@ trait LegoRunner {
       currQuery = q
       Console.withOut(new PrintStream(getOutputName)) {
         //executeQuery(currQuery, schema)
-        val qStmt = SQLParser.parse(scala.io.Source.fromFile("tpch/" + currQuery + ".sql").mkString)
+        val qStmt = SQLParser.parse(scala.io.Source.fromFile(queryConf.queryFolder + currQuery + ".sql").mkString)
         System.out.println(qStmt + "\n\n")
         new SQLSemanticCheckerAndTypeInference(schema).checkAndInfer(qStmt)
         val operatorTree = new SQLTreeToOperatorTreeConverter(schema).convert(qStmt)
-        val optimizerTree = if (q != "Q19" && q != "Q16" && q != "Q22") new NaiveOptimizer(schema).optimize(operatorTree) else operatorTree // TODO -- FIX OPTIMIZER FOR Q19
+        val optimizerTree = if ((args(1) != "TPCH") || (q != "Q19" && q != "Q16" && q != "Q22")) new NaiveOptimizer(schema).optimize(operatorTree) else operatorTree // TODO -- FIX OPTIMIZER FOR Q19
         //System.out.println(optimizezr.registeredPushedUpSelections.map({ case (k, v) => (k.name, v) }).mkString(","))
         System.out.println(optimizerTree + "\n\n")
 
@@ -85,7 +87,7 @@ trait LegoRunner {
 
         // Check results
         if (Config.checkResults) {
-          val getResultFileName = "results/" + currQuery + ".result_sf" + sf
+          val getResultFileName = queryConf.resultsPath + currQuery + ".result_sf" + sf
           val resq = scala.io.Source.fromFile(getOutputName).mkString
           if (new java.io.File(getResultFileName).exists) {
             val resc = {
