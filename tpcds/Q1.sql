@@ -1,4 +1,4 @@
-SELECT TOP 100 COUNT(*) 
+SELECT  COUNT(*) 
 FROM store_sales
     ,household_demographics 
     ,time_dim, store
@@ -9,4 +9,5 @@ WHERE ss_sold_time_sk = time_dim.t_time_sk
     AND time_dim.t_minute >= 30
     AND household_demographics.hd_dep_count = 5
     AND store.s_store_name = 'ese'
-ORDER BY COUNT(*);
+ORDER BY COUNT(*)
+LIMIT 100;
