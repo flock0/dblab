@@ -26,7 +26,7 @@ SELECT
  AND ss_item_sk             = sr_item_sk
  AND ss_ticket_number       = sr_ticket_number
  AND sr_returned_date_sk    = d2.d_date_sk
- AND d2.d_moy               between 4 AND  4 + 3 
+ AND d2.d_moy               BETWEEN 4 AND  4 + 3 
  AND d2.d_year              = 2000
  AND sr_customer_sk         = cs_bill_customer_sk
  AND sr_item_sk             = cs_item_sk

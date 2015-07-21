@@ -24,7 +24,7 @@ SELECT  substr(r_reason_desc,1,20)
      AND 
      cd1.cd_education_status = cd2.cd_education_status
      AND
-     ws_sales_price between 100.00 AND 150.00
+     ws_sales_price BETWEEN 100.00 AND 150.00
     )
    or
     (
@@ -36,7 +36,7 @@ SELECT  substr(r_reason_desc,1,20)
      AND
      cd1.cd_education_status = cd2.cd_education_status
      AND
-     ws_sales_price between 50.00 AND 100.00
+     ws_sales_price BETWEEN 50.00 AND 100.00
     )
    or
     (
@@ -48,7 +48,7 @@ SELECT  substr(r_reason_desc,1,20)
      AND
      cd1.cd_education_status = cd2.cd_education_status
      AND
-     ws_sales_price between 150.00 AND 200.00
+     ws_sales_price BETWEEN 150.00 AND 200.00
     )
    )
    AND
@@ -57,21 +57,21 @@ SELECT  substr(r_reason_desc,1,20)
      ca_country = 'United States'
      AND
      ca_state in ('WI', 'IL', 'MT')
-     AND ws_net_profit between 100 AND 200  
+     AND ws_net_profit BETWEEN 100 AND 200  
     )
     or
     (
      ca_country = 'United States'
      AND
      ca_state in ('AR', 'WV', 'VA')
-     AND ws_net_profit between 150 AND 300  
+     AND ws_net_profit BETWEEN 150 AND 300  
     )
     or
     (
      ca_country = 'United States'
      AND
      ca_state in ('ID', 'IA', 'KS')
-     AND ws_net_profit between 50 AND 250  
+     AND ws_net_profit BETWEEN 50 AND 250  
     )
    )
 GROUP BY r_reason_desc

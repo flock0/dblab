@@ -13,7 +13,7 @@ SELECT  i_item_id
  WHERE cs_item_sk = i_item_sk 
    AND i_category in ('Jewelry', 'Shoes', 'Books')
    AND cs_sold_date_sk = d_date_sk
- AND d_date between cast('1999-03-03' AS date) 
+ AND d_date BETWEEN cast('1999-03-03' AS date) 
  				AND (cast('1999-03-03' AS date) + 30 days)
  GROUP BY i_item_id
          ,i_item_desc 

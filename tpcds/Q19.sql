@@ -52,12 +52,12 @@ WITH ss_items AS
  FROM ss_items,cs_items,ws_items
  WHERE ss_items.item_id=cs_items.item_id
    AND ss_items.item_id=ws_items.item_id 
-   AND ss_item_rev between 0.9 * cs_item_rev AND 1.1 * cs_item_rev
-   AND ss_item_rev between 0.9 * ws_item_rev AND 1.1 * ws_item_rev
-   AND cs_item_rev between 0.9 * ss_item_rev AND 1.1 * ss_item_rev
-   AND cs_item_rev between 0.9 * ws_item_rev AND 1.1 * ws_item_rev
-   AND ws_item_rev between 0.9 * ss_item_rev AND 1.1 * ss_item_rev
-   AND ws_item_rev between 0.9 * cs_item_rev AND 1.1 * cs_item_rev
+   AND ss_item_rev BETWEEN 0.9 * cs_item_rev AND 1.1 * cs_item_rev
+   AND ss_item_rev BETWEEN 0.9 * ws_item_rev AND 1.1 * ws_item_rev
+   AND cs_item_rev BETWEEN 0.9 * ss_item_rev AND 1.1 * ss_item_rev
+   AND cs_item_rev BETWEEN 0.9 * ws_item_rev AND 1.1 * ws_item_rev
+   AND ws_item_rev BETWEEN 0.9 * ss_item_rev AND 1.1 * ss_item_rev
+   AND ws_item_rev BETWEEN 0.9 * cs_item_rev AND 1.1 * cs_item_rev
  ORDER BY item_id
          ,ss_item_rev
  LIMIT 100;

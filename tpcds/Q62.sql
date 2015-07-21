@@ -1,7 +1,7 @@
 
 SELECT  distinct(i_product_name)
  FROM item i1
- WHERE i_manufact_id between 682 AND 682+40 
+ WHERE i_manufact_id BETWEEN 682 AND 682+40 
    AND (SELECT COUNT(*) AS item_cnt
         FROM item
         WHERE (i_manufact = i1.i_manufact AND

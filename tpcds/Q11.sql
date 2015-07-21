@@ -13,7 +13,7 @@ SELECT
    ,date_dim       d1
    ,item
  WHERE
-    d1.d_month_seq between 1211 AND 1211+11
+    d1.d_month_seq BETWEEN 1211 AND 1211+11
  AND d1.d_date_sk = ws_sold_date_sk
  AND i_item_sk  = ws_item_sk
  GROUP BY rollup(i_category,i_class)

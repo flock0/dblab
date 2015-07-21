@@ -114,7 +114,7 @@ SELECT
         AND ws_sold_time_sk = t_time_sk
  	AND ws_ship_mode_sk = sm_ship_mode_sk
         AND d_year = 2001
- 	AND t_time between 16090 AND 16090+28800 
+ 	AND t_time BETWEEN 16090 AND 16090+28800 
  	AND sm_carrier in ('USPS','AIRBORNE')
      GROUP BY 
         w_warehouse_name
@@ -194,7 +194,7 @@ SELECT
         AND cs_sold_time_sk = t_time_sk
  	AND cs_ship_mode_sk = sm_ship_mode_sk
         AND d_year = 2001
- 	AND t_time between 16090 AND 16090+28800 
+ 	AND t_time BETWEEN 16090 AND 16090+28800 
  	AND sm_carrier in ('USPS','AIRBORNE')
      GROUP BY 
         w_warehouse_name

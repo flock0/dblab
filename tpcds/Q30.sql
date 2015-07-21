@@ -26,7 +26,7 @@ WITH wss AS
   FROM wss,store,date_dim d
   WHERE d.d_week_seq = wss.d_week_seq AND
         ss_store_sk = s_store_sk AND 
-        d_month_seq between 1197 AND 1197 + 11) y,
+        d_month_seq BETWEEN 1197 AND 1197 + 11) y,
  (SELECT s_store_name s_store_name2,wss.d_week_seq d_week_seq2
         ,s_store_id s_store_id2,sun_sales sun_sales2
         ,mon_sales mon_sales2,tue_sales tue_sales2
@@ -35,7 +35,7 @@ WITH wss AS
   FROM wss,store,date_dim d
   WHERE d.d_week_seq = wss.d_week_seq AND
         ss_store_sk = s_store_sk AND 
-        d_month_seq between 1197+ 12 AND 1197 + 23) x
+        d_month_seq BETWEEN 1197+ 12 AND 1197 + 23) x
  WHERE s_store_id1=s_store_id2
    AND d_week_seq1=d_week_seq2-52
  ORDER BY s_store_name1,s_store_id1,d_week_seq1

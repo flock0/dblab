@@ -9,7 +9,7 @@ from
   ,customer_address
   ,call_center
 WHERE
-    d_date between '2000-4-01' AND 
+    d_date BETWEEN '2000-4-01' AND 
            (cast('2000-4-01' AS date) + 60 days)
 AND cs1.cs_ship_date_sk = d_date_sk
 AND cs1.cs_ship_addr_sk = ca_address_sk

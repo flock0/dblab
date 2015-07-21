@@ -25,19 +25,19 @@ SELECT
           WHERE c.c_customer_sk = ss_customer_sk AND
                 ss_sold_date_sk = d_date_sk AND
                 d_year = 2000 AND
-                d_moy between 2 AND 2+3) AND
+                d_moy BETWEEN 2 AND 2+3) AND
    (exists (SELECT *
             FROM web_sales,date_dim
             WHERE c.c_customer_sk = ws_bill_customer_sk AND
                   ws_sold_date_sk = d_date_sk AND
                   d_year = 2000 AND
-                  d_moy between 2 ANd 2+3) or 
+                  d_moy BETWEEN 2 ANd 2+3) or 
     exists (SELECT * 
             FROM catalog_sales,date_dim
             WHERE c.c_customer_sk = cs_ship_customer_sk AND
                   cs_sold_date_sk = d_date_sk AND
                   d_year = 2000 AND
-                  d_moy between 2 AND 2+3))
+                  d_moy BETWEEN 2 AND 2+3))
  GROUP BY cd_gender,
           cd_marital_status,
           cd_education_status,

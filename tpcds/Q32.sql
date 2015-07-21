@@ -15,7 +15,7 @@ WHERE
 	ss_item_sk = i_item_sk 
   	AND i_category in ('Shoes', 'Women', 'Jewelry')
   	AND ss_sold_date_sk = d_date_sk
-	AND d_date between cast('1999-01-23' AS date) 
+	AND d_date BETWEEN cast('1999-01-23' AS date) 
 				AND (cast('1999-01-23' AS date) + 30 days)
 GROUP BY 
 	i_item_id

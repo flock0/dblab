@@ -12,7 +12,7 @@ SELECT c_last_name
     WHERE store_sales.ss_sold_date_sk = date_dim.d_date_sk
     AND store_sales.ss_store_sk = store.s_store_sk  
     AND store_sales.ss_hdemo_sk = household_demographics.hd_demo_sk
-    AND date_dim.d_dom between 1 AND 2 
+    AND date_dim.d_dom BETWEEN 1 AND 2 
     AND (household_demographics.hd_buy_potential = '501-1000' or
          household_demographics.hd_buy_potential = '5001-10000')
     AND household_demographics.hd_vehicle_count > 0
@@ -22,5 +22,5 @@ SELECT c_last_name
     AND store.s_county in ('Williamson County','Williamson County','Williamson County','Williamson County')
     GROUP BY ss_ticket_number,ss_customer_sk) dj,customer
     WHERE ss_customer_sk = c_customer_sk
-      AND cnt between 1 AND 5
+      AND cnt BETWEEN 1 AND 5
     ORDER BY cnt desc, c_last_name ASc;

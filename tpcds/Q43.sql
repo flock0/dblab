@@ -14,7 +14,7 @@ from
   ,customer_address
   ,web_site
 WHERE
-    d_date between '2002-5-01' AND 
+    d_date BETWEEN '2002-5-01' AND 
            (cast('2002-5-01' AS date) + 60 days)
 AND ws1.ws_ship_date_sk = d_date_sk
 AND ws1.ws_ship_addr_sk = ca_address_sk

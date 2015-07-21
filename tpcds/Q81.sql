@@ -37,7 +37,7 @@ WITH my_customers AS (
         AND ca_state = s_state
         AND ss_sold_date_sk = d_date_sk
         AND c_customer_sk = ss_customer_sk
-        AND d_month_seq between (SELECT distinct d_month_seq+1
+        AND d_month_seq BETWEEN (SELECT distinct d_month_seq+1
                                  FROM   date_dim WHERE d_year = 2000 AND d_moy = 6)
                            AND  (SELECT distinct d_month_seq+3
                                  FROM   date_dim WHERE d_year = 2000 AND d_moy = 6)

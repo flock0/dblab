@@ -12,12 +12,12 @@ SELECT
  	    (SELECT  ss_store_sk, ss_item_sk, 
  		     SUM(ss_sales_price) AS revenue
  		FROM store_sales, date_dim
- 		WHERE ss_sold_date_sk = d_date_sk AND d_month_seq between 1178 AND 1178+11
+ 		WHERE ss_sold_date_sk = d_date_sk AND d_month_seq BETWEEN 1178 AND 1178+11
  		GROUP BY ss_store_sk, ss_item_sk) sa
  	GROUP BY ss_store_sk) sb,
      (SELECT  ss_store_sk, ss_item_sk, SUM(ss_sales_price) AS revenue
  	FROM store_sales, date_dim
- 	WHERE ss_sold_date_sk = d_date_sk AND d_month_seq between 1178 AND 1178+11
+ 	WHERE ss_sold_date_sk = d_date_sk AND d_month_seq BETWEEN 1178 AND 1178+11
  	GROUP BY ss_store_sk, ss_item_sk) sc
  WHERE sb.ss_store_sk = sc.ss_store_sk AND 
        sc.revenue <= 0.1 * sb.ave AND

@@ -13,7 +13,7 @@ SELECT
    ,date_dim       d1
    ,store
  WHERE
-    d1.d_month_seq between 1217 AND 1217+11
+    d1.d_month_seq BETWEEN 1217 AND 1217+11
  AND d1.d_date_sk = ss_sold_date_sk
  AND s_store_sk  = ss_store_sk
  AND s_state in
@@ -21,7 +21,7 @@ SELECT
                FROM  (SELECT s_state AS s_state,
  			    rank() over ( partition by s_state ORDER BY SUM(ss_net_profit) desc) AS ranking
                       FROM   store_sales, store, date_dim
-                      WHERE  d_month_seq between 1217 AND 1217+11
+                      WHERE  d_month_seq BETWEEN 1217 AND 1217+11
  			    AND d_date_sk = ss_sold_date_sk
  			    AND s_store_sk  = ss_store_sk
                       GROUP BY s_state

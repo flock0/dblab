@@ -26,7 +26,7 @@ FROM (SELECT i_category
        WHERE  ss_sold_date_sk=d_date_sk
           AND ss_item_sk=i_item_sk
           AND ss_store_sk = s_store_sk
-          AND d_month_seq between 1181 AND 1181+11
+          AND d_month_seq BETWEEN 1181 AND 1181+11
        GROUP BY  rollup(i_category, i_class, i_brand, i_product_name, d_year, d_qoy, d_moy,s_store_id))dw1) dw2
 WHERE rk <= 100
 ORDER BY i_category

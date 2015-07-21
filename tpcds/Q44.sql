@@ -8,7 +8,7 @@ FROM
 WHERE
 i_manufact_id = 73
 AND i_item_sk = ws_item_sk 
-AND d_date between '2002-02-17' AND 
+AND d_date BETWEEN '2002-02-17' AND 
         (cast('2002-02-17' AS date) + 90 days)
 AND d_date_sk = ws_sold_date_sk 
 AND ws_ext_discount_amt  
@@ -20,7 +20,7 @@ AND ws_ext_discount_amt
            ,date_dim
          WHERE 
               ws_item_sk = i_item_sk 
-          AND d_date between '2002-02-17' AND
+          AND d_date BETWEEN '2002-02-17' AND
                              (cast('2002-02-17' AS date) + 90 days)
           AND d_date_sk = ws_sold_date_sk 
       ) 

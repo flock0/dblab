@@ -22,7 +22,7 @@ SELECT  c_last_name
          AND store_sales.ss_store_sk = store.s_store_sk  
         AND store_sales.ss_hdemo_sk = household_demographics.hd_demo_sk
         AND store_sales.ss_addr_sk = customer_address.ca_address_sk
-        AND date_dim.d_dom between 1 AND 2 
+        AND date_dim.d_dom BETWEEN 1 AND 2 
         AND (household_demographics.hd_dep_count = 3 or
              household_demographics.hd_vehicle_count= -1)
         AND date_dim.d_year in (1998,1998+1,1998+2)

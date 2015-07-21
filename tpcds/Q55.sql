@@ -11,7 +11,7 @@ SELECT  i_product_name
        WHERE inv_date_sk=d_date_sk
               AND inv_item_sk=i_item_sk
               AND inv_warehouse_sk = w_warehouse_sk
-              AND d_month_seq between 1191 AND 1191 + 11
+              AND d_month_seq BETWEEN 1191 AND 1191 + 11
        GROUP BY rollup(i_product_name
                        ,i_brand
                        ,i_class

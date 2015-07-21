@@ -10,7 +10,7 @@ WITH  cross_items AS
      ,date_dim d1
  WHERE ss_item_sk = iss.i_item_sk
    AND ss_sold_date_sk = d1.d_date_sk
-   AND d1.d_year between 1999 AND 1999 + 2
+   AND d1.d_year BETWEEN 1999 AND 1999 + 2
  intersect 
  SELECT ics.i_brand_id
      ,ics.i_class_id
@@ -20,7 +20,7 @@ WITH  cross_items AS
      ,date_dim d2
  WHERE cs_item_sk = ics.i_item_sk
    AND cs_sold_date_sk = d2.d_date_sk
-   AND d2.d_year between 1999 AND 1999 + 2
+   AND d2.d_year BETWEEN 1999 AND 1999 + 2
  intersect
  SELECT iws.i_brand_id
      ,iws.i_class_id
@@ -30,7 +30,7 @@ WITH  cross_items AS
      ,date_dim d3
  WHERE ws_item_sk = iws.i_item_sk
    AND ws_sold_date_sk = d3.d_date_sk
-   AND d3.d_year between 1999 AND 1999 + 2)
+   AND d3.d_year BETWEEN 1999 AND 1999 + 2)
  WHERE i_brand_id = brand_id
       AND i_class_id = class_id
       AND i_category_id = category_id
@@ -42,21 +42,21 @@ WITH  cross_items AS
        FROM store_sales
            ,date_dim
        WHERE ss_sold_date_sk = d_date_sk
-         AND d_year between 1999 AND 1999 + 2
+         AND d_year BETWEEN 1999 AND 1999 + 2
        union all 
        SELECT cs_quantity quantity 
              ,cs_list_price list_price
        FROM catalog_sales
            ,date_dim
        WHERE cs_sold_date_sk = d_date_sk
-         AND d_year between 1999 AND 1999 + 2 
+         AND d_year BETWEEN 1999 AND 1999 + 2 
        union all
        SELECT ws_quantity quantity
              ,ws_list_price list_price
        FROM web_sales
            ,date_dim
        WHERE ws_sold_date_sk = d_date_sk
-         AND d_year between 1999 AND 1999 + 2) x)
+         AND d_year BETWEEN 1999 AND 1999 + 2) x)
   SELECT  channel, i_brand_id,i_class_id,i_category_id,SUM(sales), SUM(number_sales)
  FROM(
        SELECT 'store' channel, i_brand_id,i_class_id
@@ -111,7 +111,7 @@ WITH  cross_items AS
      ,date_dim d1
  WHERE ss_item_sk = iss.i_item_sk
    AND ss_sold_date_sk = d1.d_date_sk
-   AND d1.d_year between 1999 AND 1999 + 2
+   AND d1.d_year BETWEEN 1999 AND 1999 + 2
  intersect
  SELECT ics.i_brand_id
      ,ics.i_class_id
@@ -121,7 +121,7 @@ WITH  cross_items AS
      ,date_dim d2
  WHERE cs_item_sk = ics.i_item_sk
    AND cs_sold_date_sk = d2.d_date_sk
-   AND d2.d_year between 1999 AND 1999 + 2
+   AND d2.d_year BETWEEN 1999 AND 1999 + 2
  intersect
  SELECT iws.i_brand_id
      ,iws.i_class_id
@@ -131,7 +131,7 @@ WITH  cross_items AS
      ,date_dim d3
  WHERE ws_item_sk = iws.i_item_sk
    AND ws_sold_date_sk = d3.d_date_sk
-   AND d3.d_year between 1999 AND 1999 + 2) x
+   AND d3.d_year BETWEEN 1999 AND 1999 + 2) x
  WHERE i_brand_id = brand_id
       AND i_class_id = class_id
       AND i_category_id = category_id
@@ -143,21 +143,21 @@ WITH  cross_items AS
        FROM store_sales
            ,date_dim
        WHERE ss_sold_date_sk = d_date_sk
-         AND d_year between 1999 AND 1999 + 2
+         AND d_year BETWEEN 1999 AND 1999 + 2
        union all
        SELECT cs_quantity quantity
              ,cs_list_price list_price
        FROM catalog_sales
            ,date_dim
        WHERE cs_sold_date_sk = d_date_sk
-         AND d_year between 1999 AND 1999 + 2
+         AND d_year BETWEEN 1999 AND 1999 + 2
        union all
        SELECT ws_quantity quantity
              ,ws_list_price list_price
        FROM web_sales
            ,date_dim
        WHERE ws_sold_date_sk = d_date_sk
-         AND d_year between 1999 AND 1999 + 2) x)
+         AND d_year BETWEEN 1999 AND 1999 + 2) x)
   SELECT  * from
  (SELECT 'store' channel, i_brand_id,i_class_id,i_category_id
         ,SUM(ss_quantity*ss_list_price) sales, COUNT(*) number_sales
