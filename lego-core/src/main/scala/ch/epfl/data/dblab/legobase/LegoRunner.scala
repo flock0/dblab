@@ -68,6 +68,7 @@ trait LegoRunner {
 
     val queries: scala.collection.immutable.List[String] =
       if (args.length >= 4 && args(3) == "testsuite-scala") (for (i <- 1 to 22 if !excludedQueries.contains(i)) yield "Q" + i).toList
+      else if (args.length >= 4 && args(3) == "testsuite-scala-ds") (for (i <- 1 to 99 if !excludedQueries.contains(i)) yield "Q" + i).toList
       else if (args.length >= 4 && args(3) == "testsuite-c") (for (i <- 1 to 22 if !excludedQueries.contains(i)) yield "Q" + i + "_C").toList
       else args.drop(3).filter(x => !x.startsWith("+") && !x.startsWith("-")).toList
     for (q <- queries) {
