@@ -107,13 +107,12 @@ object LegoInterpreter extends LegoRunner {
         case _                => //throw new Exception("Do not know how to print member " + v + " of class " + cls)
       }
     }
-    val fields = rec.getClass.getDeclaredFields
     order.size match {
       case 0 =>
-        fields.foreach(f => {
-          f.setAccessible(true);
-          val v = f.get(rec);
-          printMembers(v, v.getClass)
+        val fieldNames = rec.asInstanceOf[LegobaseRecord].getFieldNames
+        fieldNames.foreach(fn => {
+          val f = recursiveGetField(fn, rec)
+          printMembers(f, f.getClass)
         })
       case _ =>
         order.foreach(n => {

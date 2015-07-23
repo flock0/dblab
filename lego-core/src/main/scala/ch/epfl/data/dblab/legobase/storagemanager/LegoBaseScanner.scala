@@ -38,9 +38,9 @@ class LegobaseScanner(filename: String) {
       byteRead = br.read()
       intDigits = intDigits + 1
     }
-    if ((byteRead != delimiter) && (byteRead != '.') && (byteRead != '\n'))
-      throw new RuntimeException("Tried to read Integer, but found neither delimiter nor . after number (found " +
-        byteRead.asInstanceOf[Char] + ", previous token = " + intDigits + "/" + number + ")")
+    //if ((byteRead != delimiter) && (byteRead != '.') && (byteRead != '\n'))
+    //  throw new RuntimeException("Tried to read Integer, but found neither delimiter nor . after number (found " +
+    //    byteRead.asInstanceOf[Char] + ", previous token = " + intDigits + "/" + number + ")")
     if (signed) -1 * number else number
   }
 
@@ -62,8 +62,8 @@ class LegobaseScanner(filename: String) {
   def next_char() = {
     byteRead = br.read()
     val del = br.read() //delimiter
-    if ((del != delimiter) && (del != '\n'))
-      throw new RuntimeException("Expected delimiter after char. Not found. Sorry!")
+    //if ((del != delimiter) && (del != '\n'))
+    //throw new RuntimeException("Expected delimiter after char. Not found. Sorry!")
     byteRead.asInstanceOf[Char]
   }
 
@@ -82,14 +82,15 @@ class LegobaseScanner(filename: String) {
     cnt
   }
 
+  // TODO -- In general the date format should be specified, instead of hardcoding YYYY-MM-DD
   def next_date: Int = {
-    delimiter = '-'
     val year = next_int
-    val month = next_int
-    delimiter = '|'
-    val day = next_int
-    //val date_str = year + "-" + month + "-" + day
-    year * 10000 + month * 100 + day
+    if (year == 0) 0
+    else {
+      val month = next_int
+      val day = next_int
+      year * 10000 + month * 100 + day
+    }
   }
 
   def hasNext() = {
