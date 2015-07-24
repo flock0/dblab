@@ -1,40 +1,32 @@
 
-SELECT  c_last_name
-       ,c_first_name
-       ,ca_city
-       ,bought_city
-       ,ss_ticket_number
-       ,extended_price
-       ,extended_tax
-       ,list_price
- FROM (SELECT ss_ticket_number
-             ,ss_customer_sk
-             ,ca_city bought_city
-             ,SUM(ss_ext_sales_price) extended_price 
-             ,SUM(ss_ext_list_price) list_price
-             ,SUM(ss_ext_tax) extended_tax 
-       FROM store_sales
-           ,date_dim
-           ,store
-           ,household_demographics
-           ,customer_address 
-       WHERE store_sales.ss_sold_date_sk = date_dim.d_date_sk
-         AND store_sales.ss_store_sk = store.s_store_sk  
-        AND store_sales.ss_hdemo_sk = household_demographics.hd_demo_sk
-        AND store_sales.ss_addr_sk = customer_address.ca_address_sk
-        AND date_dim.d_dom BETWEEN 1 AND 2 
-        AND (household_demographics.hd_dep_count = 3 or
-             household_demographics.hd_vehicle_count= -1)
-        AND date_dim.d_year in (1998,1998+1,1998+2)
-        AND store.s_city in ('Midway','Fairview')
-       GROUP BY ss_ticket_number
-               ,ss_customer_sk
-               ,ss_addr_sk,ca_city) dn
-      ,customer
-      ,customer_address current_addr
- WHERE ss_customer_sk = c_customer_sk
-   AND customer.c_current_addr_sk = current_addr.ca_address_sk
-   AND current_addr.ca_city <> bought_city
- ORDER BY c_last_name
-         ,ss_ticket_number
- LIMIT 100;
+WITH ws_wh AS
+(SELECT ws1.ws_order_number,ws1.ws_warehouse_sk wh1,ws2.ws_warehouse_sk wh2
+ FROM web_sales ws1,web_sales ws2
+ WHERE ws1.ws_order_number = ws2.ws_order_number
+   AND ws1.ws_warehouse_sk <> ws2.ws_warehouse_sk)
+ SELECT  
+   COUNT(distinct ws_order_number) AS "order count"
+  ,SUM(ws_ext_ship_cost) AS "total shipping cost"
+  ,SUM(ws_net_profit) AS "total net profit"
+FROM
+   web_sales ws1
+  ,date_dim
+  ,customer_address
+  ,web_site
+WHERE
+    d_date BETWEEN '1999-5-01' AND 
+           (cast('1999-5-01' AS date) + 60 days)
+AND ws1.ws_ship_date_sk = d_date_sk
+AND ws1.ws_ship_addr_sk = ca_address_sk
+AND ca_state = 'TX'
+AND ws1.ws_web_site_sk = web_site_sk
+AND web_company_name = 'pri'
+AND ws1.ws_order_number IN (SELECT ws_order_number
+                            FROM ws_wh)
+AND ws1.ws_order_number IN (SELECT wr_order_number
+                            FROM web_returns,ws_wh
+                            WHERE wr_order_number = ws_wh.ws_order_number)
+ORDER BY COUNT(distinct ws_order_number)
+LIMIT 100;
+
+

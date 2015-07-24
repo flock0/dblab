@@ -1,26 +1,40 @@
 
-SELECT 
-  s_store_name,
-  i_item_desc,
-  sc.revenue,
-  i_current_price,
-  i_wholesale_cost,
-  i_brand
-FROM store
-INNER JOIN 
-  (SELECT  ss_store_sk, ss_item_sk, SUM(ss_sales_price) AS revenue
-   FROM store_sales INNER JOIN date_dim ON ss_sold_date_sk = d_date_sk
-   WHERE d_month_seq BETWEEN 1178 AND 1178+11
-   GROUP BY ss_store_sk, ss_item_sk) sc ON s_store_sk = sc.ss_store_sk
-INNER JOIN
-  (SELECT ss_store_sk, AVG(revenue) AS ave
-   FROM
-      (SELECT  ss_store_sk, ss_item_sk, SUM(ss_sales_price) AS revenue
-       FROM store_sales INNER JOIN date_dim ON ss_sold_date_sk = d_date_sk 
-       WHERE d_month_seq BETWEEN 1178 AND 1178+11
-       GROUP BY ss_store_sk, ss_item_sk) sa
-   GROUP BY ss_store_sk) sb ON sb.ss_store_sk = sc.ss_store_sk
-INNER JOIN item ON i_item_sk = sc.ss_item_sk
-WHERE sc.revenue <= 0.1 * sb.ave
-ORDER BY s_store_name, i_item_desc
-LIMIT 100;
+SELECT i_brand_id brand_id, i_brAND brand,t_hour,t_minute,
+ 	SUM(ext_price) ext_price
+ FROM item, (SELECT ws_ext_sales_price AS ext_price, 
+                        ws_sold_date_sk AS sold_date_sk,
+                        ws_item_sk AS sold_item_sk,
+                        ws_sold_time_sk AS time_sk  
+                 FROM web_sales,date_dim
+                 WHERE d_date_sk = ws_sold_date_sk
+                   AND d_moy=12
+                   AND d_year=2001
+                 UNION ALL
+                 SELECT cs_ext_sales_price AS ext_price,
+                        cs_sold_date_sk AS sold_date_sk,
+                        cs_item_sk AS sold_item_sk,
+                        cs_sold_time_sk AS time_sk
+                 FROM catalog_sales,date_dim
+                 WHERE d_date_sk = cs_sold_date_sk
+                   AND d_moy=12
+                   AND d_year=2001
+                 UNION ALL
+                 SELECT ss_ext_sales_price AS ext_price,
+                        ss_sold_date_sk AS sold_date_sk,
+                        ss_item_sk AS sold_item_sk,
+                        ss_sold_time_sk AS time_sk
+                 FROM store_sales,date_dim
+                 WHERE d_date_sk = ss_sold_date_sk
+                   AND d_moy=12
+                   AND d_year=2001
+                 ) AS tmp,time_dim
+ WHERE
+   sold_item_sk = i_item_sk
+   AND i_manager_id=1
+   AND time_sk = t_time_sk
+   AND (t_meal_time = 'breakfast' OR t_meal_time = 'dinner')
+ GROUP BY i_brand, i_brand_id,t_hour,t_minute
+ ORDER BY ext_price DESC, i_brand_id
+ ;
+
+

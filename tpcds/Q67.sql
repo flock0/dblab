@@ -1,15 +1,44 @@
 
-SELECT  i_item_id
-       ,i_item_desc
-       ,i_current_price
- FROM item, inventory, date_dim, store_sales
- WHERE i_current_price BETWEEN 31 AND 31+30
- AND inv_item_sk = i_item_sk
- AND d_date_sk=inv_date_sk
- AND d_date BETWEEN cast('2001-04-27' AS date) AND (cast('2001-04-27' AS date) +  60 days)
- AND i_manufact_id in (200,1,170,198)
- AND inv_quantity_on_hAND BETWEEN 100 AND 500
- AND ss_item_sk = i_item_sk
- GROUP BY i_item_id,i_item_desc,i_current_price
- ORDER BY i_item_id
- LIMIT 100;
+SELECT  *
+FROM (SELECT i_category
+            ,i_class
+            ,i_brand
+            ,i_product_name
+            ,d_year
+            ,d_qoy
+            ,d_moy
+            ,s_store_id
+            ,sumsales
+            ,rank() over (partition by i_category ORDER BY sumsales DESC) rk
+      FROM (SELECT i_category
+                  ,i_class
+                  ,i_brand
+                  ,i_product_name
+                  ,d_year
+                  ,d_qoy
+                  ,d_moy
+                  ,s_store_id
+                  ,SUM(coalesce(ss_sales_price*ss_quantity,0)) sumsales
+            FROM store_sales
+                ,date_dim
+                ,store
+                ,item
+       WHERE  ss_sold_date_sk=d_date_sk
+          AND ss_item_sk=i_item_sk
+          AND ss_store_sk = s_store_sk
+          AND d_month_seq BETWEEN 1212 AND 1212+11
+       GROUP BY  rollup(i_category, i_class, i_brand, i_product_name, d_year, d_qoy, d_moy,s_store_id))dw1) dw2
+WHERE rk <= 100
+ORDER BY i_category
+        ,i_class
+        ,i_brand
+        ,i_product_name
+        ,d_year
+        ,d_qoy
+        ,d_moy
+        ,s_store_id
+        ,sumsales
+        ,rk
+LIMIT 100;
+
+

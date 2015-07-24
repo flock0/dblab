@@ -1,27 +1,45 @@
 
-SELECT  
-   COUNT(distinct ws_order_number) AS "order count"
-  ,SUM(ws_ext_ship_cost) AS "total shipping cost"
-  ,SUM(ws_net_profit) AS "total net profit"
-from
-   web_sales ws1
-  ,date_dim
-  ,customer_address
-  ,web_site
-WHERE
-    d_date BETWEEN '2001-5-01' AND 
-           (cast('2001-5-01' AS date) + 60 days)
-AND ws1.ws_ship_date_sk = d_date_sk
-AND ws1.ws_ship_addr_sk = ca_address_sk
-AND ca_state = 'AR'
-AND ws1.ws_web_site_sk = web_site_sk
-AND web_company_name = 'pri'
-AND exists (SELECT *
-            FROM web_sales ws2
-            WHERE ws1.ws_order_number = ws2.ws_order_number
-              AND ws1.ws_warehouse_sk <> ws2.ws_warehouse_sk)
-AND not exists(SELECT *
-               FROM web_returns wr1
-               WHERE ws1.ws_order_number = wr1.wr_order_number)
-ORDER BY COUNT(distinct ws_order_number)
+SELECT  i_item_id
+       ,i_item_desc
+       ,s_state
+       ,COUNT(ss_quantity) AS store_sales_quantitycount
+       ,AVG(ss_quantity) AS store_sales_quantityave
+       ,stddev_samp(ss_quantity) AS store_sales_quantitystdev
+       ,stddev_samp(ss_quantity)/AVG(ss_quantity) AS store_sales_quantitycov
+       ,COUNT(sr_return_quantity) AS store_returns_quantitycount
+       ,AVG(sr_return_quantity) AS store_returns_quantityave
+       ,stddev_samp(sr_return_quantity) AS store_returns_quantitystdev
+       ,stddev_samp(sr_return_quantity)/AVG(sr_return_quantity) AS store_returns_quantitycov
+       ,COUNT(cs_quantity) AS catalog_sales_quantitycount ,AVG(cs_quantity) AS catalog_sales_quantityave
+       ,stddev_samp(cs_quantity)/AVG(cs_quantity) AS catalog_sales_quantitystdev
+       ,stddev_samp(cs_quantity)/AVG(cs_quantity) AS catalog_sales_quantitycov
+ FROM store_sales
+     ,store_returns
+     ,catalog_sales
+     ,date_dim d1
+     ,date_dim d2
+     ,date_dim d3
+     ,store
+     ,item
+ WHERE d1.d_quarter_name = '2000Q1'
+   AND d1.d_date_sk = ss_sold_date_sk
+   AND i_item_sk = ss_item_sk
+   AND s_store_sk = ss_store_sk
+   AND ss_customer_sk = sr_customer_sk
+   AND ss_item_sk = sr_item_sk
+   AND ss_ticket_number = sr_ticket_number
+   AND sr_returned_date_sk = d2.d_date_sk
+   AND d2.d_quarter_name IN ('2000Q1','2000Q2','2000Q3')
+   AND sr_customer_sk = cs_bill_customer_sk
+   AND sr_item_sk = cs_item_sk
+   AND cs_sold_date_sk = d3.d_date_sk
+   AND d3.d_quarter_name IN ('2000Q1','2000Q2','2000Q3')
+ GROUP BY i_item_id
+         ,i_item_desc
+         ,s_state
+ ORDER BY i_item_id
+         ,i_item_desc
+         ,s_state
 LIMIT 100;
+
+

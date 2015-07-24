@@ -1,21 +1,31 @@
 
-SELECT  i_item_id,
-        s_state, grouping(s_state) g_state,
-        AVG(ss_quantity) agg1,
-        AVG(ss_list_price) agg2,
-        AVG(ss_coupon_amt) agg3,
-        AVG(ss_sales_price) agg4
- FROM store_sales, customer_demographics, date_dim, store, item
- WHERE ss_sold_date_sk = d_date_sk AND
-       ss_item_sk = i_item_sk AND
-       ss_store_sk = s_store_sk AND
-       ss_cdemo_sk = cd_demo_sk AND
-       cd_gender = 'F' AND
-       cd_marital_status = 'D' AND
-       cd_education_status = 'College' AND
-       d_year = 2002 AND
-       s_state in ('TN','TN', 'TN', 'TN', 'TN', 'TN')
- GROUP BY rollup (i_item_id, s_state)
- ORDER BY i_item_id
-         ,s_state
- LIMIT 100;
+SELECT  
+   COUNT(distinct cs_order_number) AS "order count"
+  ,SUM(cs_ext_ship_cost) AS "total shipping cost"
+  ,SUM(cs_net_profit) AS "total net profit"
+FROM
+   catalog_sales cs1
+  ,date_dim
+  ,customer_address
+  ,call_center
+WHERE
+    d_date BETWEEN '1999-2-01' AND 
+           (cast('1999-2-01' AS date) + 60 days)
+AND cs1.cs_ship_date_sk = d_date_sk
+AND cs1.cs_ship_addr_sk = ca_address_sk
+AND ca_state = 'IL'
+AND cs1.cs_call_center_sk = cc_call_center_sk
+AND cc_county IN ('Williamson County','Williamson County','Williamson County','Williamson County',
+                  'Williamson County'
+)
+AND exists (SELECT *
+            FROM catalog_sales cs2
+            WHERE cs1.cs_order_number = cs2.cs_order_number
+              AND cs1.cs_warehouse_sk <> cs2.cs_warehouse_sk)
+AND not exists(SELECT *
+               FROM catalog_returns cr1
+               WHERE cs1.cs_order_number = cr1.cr_order_number)
+ORDER BY COUNT(distinct cs_order_number)
+LIMIT 100;
+
+

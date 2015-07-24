@@ -1,29 +1,48 @@
 
 SELECT  
-   COUNT(distinct cs_order_number) AS "order count"
-  ,SUM(cs_ext_ship_cost) AS "total shipping cost"
-  ,SUM(cs_net_profit) AS "total net profit"
-from
-   catalog_sales cs1
-  ,date_dim
-  ,customer_address
-  ,call_center
-WHERE
-    d_date BETWEEN '2000-4-01' AND 
-           (cast('2000-4-01' AS date) + 60 days)
-AND cs1.cs_ship_date_sk = d_date_sk
-AND cs1.cs_ship_addr_sk = ca_address_sk
-AND ca_state = 'IL'
-AND cs1.cs_call_center_sk = cc_call_center_sk
-AND cc_county in ('Williamson County','Williamson County','Williamson County','Williamson County',
-                  'Williamson County'
-)
-AND exists (SELECT *
-            FROM catalog_sales cs2
-            WHERE cs1.cs_order_number = cs2.cs_order_number
-              AND cs1.cs_warehouse_sk <> cs2.cs_warehouse_sk)
-AND not exists(SELECT *
-               FROM catalog_returns cr1
-               WHERE cs1.cs_order_number = cr1.cr_order_number)
-ORDER BY COUNT(distinct cs_order_number)
-LIMIT 100;
+ i_item_id
+ ,i_item_desc
+ ,s_store_id
+ ,s_store_name
+ ,SUM(ss_net_profit) AS store_sales_profit
+ ,SUM(sr_net_loss) AS store_returns_loss
+ ,SUM(cs_net_profit) AS catalog_sales_profit
+ FROM
+ store_sales
+ ,store_returns
+ ,catalog_sales
+ ,date_dim d1
+ ,date_dim d2
+ ,date_dim d3
+ ,store
+ ,item
+ WHERE
+ d1.d_moy = 4
+ AND d1.d_year = 2000
+ AND d1.d_date_sk = ss_sold_date_sk
+ AND i_item_sk = ss_item_sk
+ AND s_store_sk = ss_store_sk
+ AND ss_customer_sk = sr_customer_sk
+ AND ss_item_sk = sr_item_sk
+ AND ss_ticket_number = sr_ticket_number
+ AND sr_returned_date_sk = d2.d_date_sk
+ AND d2.d_moy               BETWEEN 4 AND  10
+ AND d2.d_year              = 2000
+ AND sr_customer_sk = cs_bill_customer_sk
+ AND sr_item_sk = cs_item_sk
+ AND cs_sold_date_sk = d3.d_date_sk
+ AND d3.d_moy               BETWEEN 4 AND  10 
+ AND d3.d_year              = 2000
+ GROUP BY
+ i_item_id
+ ,i_item_desc
+ ,s_store_id
+ ,s_store_name
+ ORDER BY
+ i_item_id
+ ,i_item_desc
+ ,s_store_id
+ ,s_store_name
+ LIMIT 100;
+
+

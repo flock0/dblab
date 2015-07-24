@@ -1,28 +1,30 @@
 
-SELECT  
-    SUM(ss_net_profit)/SUM(ss_ext_sales_price) AS gross_margin
-   ,i_category
-   ,i_class
-   ,grouping(i_category)+grouping(i_class) AS lochierarchy
-   ,rank() over (
- 	partition by grouping(i_category)+grouping(i_class),
- 	CASE WHEN grouping(i_class) = 0 THEN i_category END 
- 	ORDER BY SUM(ss_net_profit)/SUM(ss_ext_sales_price) ASc) AS rank_within_parent
- from
-    store_sales
-   ,date_dim       d1
-   ,item
-   ,store
- WHERE
-    d1.d_year = 2001 
- AND d1.d_date_sk = ss_sold_date_sk
- AND i_item_sk  = ss_item_sk 
- AND s_store_sk  = ss_store_sk
- AND s_state in ('TN','TN','TN','TN',
-                 'TN','TN','TN','TN')
- GROUP BY rollup(i_category,i_class)
- ORDER BY
-   lochierarchy desc
-  ,CASE WHEN lochierarchy = 0 THEN i_category END
-  ,rank_within_parent
-  LIMIT 100;
+SELECT  *
+ FROM(SELECT w_warehouse_name
+            ,i_item_id
+            ,SUM(CASE WHEN (cast(d_date AS date) < cast ('1998-04-08' AS date))
+	                THEN inv_quantity_on_hAND 
+                      ELSE 0 END) AS inv_before
+            ,SUM(CASE WHEN (cast(d_date AS date) >= cast ('1998-04-08' AS date))
+                      THEN inv_quantity_on_hAND 
+                      ELSE 0 END) AS inv_after
+   FROM inventory
+       ,warehouse
+       ,item
+       ,date_dim
+   WHERE i_current_price BETWEEN 0.99 AND 1.49
+     AND i_item_sk          = inv_item_sk
+     AND inv_warehouse_sk   = w_warehouse_sk
+     AND inv_date_sk    = d_date_sk
+     AND d_date BETWEEN (cast ('1998-04-08' AS date) - 30 days)
+                    AND (cast ('1998-04-08' AS date) + 30 days)
+   GROUP BY w_warehouse_name, i_item_id) x
+ WHERE (CASE WHEN inv_before > 0 
+             THEN inv_after / inv_before 
+             ELSE null
+             END) BETWEEN 2.0/3.0 AND 3.0/2.0
+ ORDER BY w_warehouse_name
+         ,i_item_id
+ LIMIT 100;
+
+

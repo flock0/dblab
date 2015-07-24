@@ -1,51 +1,30 @@
 
-SELECT  *
-FROM (SELECT AVG(ss_list_price) B1_LP
-            ,COUNT(ss_list_price) B1_CNT
-            ,COUNT(distinct ss_list_price) B1_CNTD
-      FROM store_sales
-      WHERE ss_quantity BETWEEN 0 AND 5
-        AND (ss_list_price BETWEEN 53 AND 53+10 
-             or ss_coupon_amt BETWEEN 7032 AND 7032+1000
-             or ss_wholesale_cost BETWEEN 54 AND 54+20)) B1,
-     (SELECT AVG(ss_list_price) B2_LP
-            ,COUNT(ss_list_price) B2_CNT
-            ,COUNT(distinct ss_list_price) B2_CNTD
-      FROM store_sales
-      WHERE ss_quantity BETWEEN 6 AND 10
-        AND (ss_list_price BETWEEN 137 AND 137+10
-          or ss_coupon_amt BETWEEN 4205 AND 4205+1000
-          or ss_wholesale_cost BETWEEN 48 AND 48+20)) B2,
-     (SELECT AVG(ss_list_price) B3_LP
-            ,COUNT(ss_list_price) B3_CNT
-            ,COUNT(distinct ss_list_price) B3_CNTD
-      FROM store_sales
-      WHERE ss_quantity BETWEEN 11 AND 15
-        AND (ss_list_price BETWEEN 151 AND 151+10
-          or ss_coupon_amt BETWEEN 762 AND 762+1000
-          or ss_wholesale_cost BETWEEN 18 AND 18+20)) B3,
-     (SELECT AVG(ss_list_price) B4_LP
-            ,COUNT(ss_list_price) B4_CNT
-            ,COUNT(distinct ss_list_price) B4_CNTD
-      FROM store_sales
-      WHERE ss_quantity BETWEEN 16 AND 20
-        AND (ss_list_price BETWEEN 10 AND 10+10
-          or ss_coupon_amt BETWEEN 13315 AND 13315+1000
-          or ss_wholesale_cost BETWEEN 40 AND 40+20)) B4,
-     (SELECT AVG(ss_list_price) B5_LP
-            ,COUNT(ss_list_price) B5_CNT
-            ,COUNT(distinct ss_list_price) B5_CNTD
-      FROM store_sales
-      WHERE ss_quantity BETWEEN 21 AND 25
-        AND (ss_list_price BETWEEN 106 AND 106+10
-          or ss_coupon_amt BETWEEN 6051 AND 6051+1000
-          or ss_wholesale_cost BETWEEN 21 AND 21+20)) B5,
-     (SELECT AVG(ss_list_price) B6_LP
-            ,COUNT(ss_list_price) B6_CNT
-            ,COUNT(distinct ss_list_price) B6_CNTD
-      FROM store_sales
-      WHERE ss_quantity BETWEEN 26 AND 30
-        AND (ss_list_price BETWEEN 21 AND 21+10
-          or ss_coupon_amt BETWEEN 441 AND 441+1000
-          or ss_wholesale_cost BETWEEN 52 AND 52+20)) B6
-LIMIT 100;
+SELECT  
+    SUM(ss_net_profit)/SUM(ss_ext_sales_price) AS gross_margin
+   ,i_category
+   ,i_class
+   ,grouping(i_category)+grouping(i_class) AS lochierarchy
+   ,rank() over (
+ 	partition by grouping(i_category)+grouping(i_class),
+ 	CASE WHEN grouping(i_class) = 0 THEN i_category END 
+ 	ORDER BY SUM(ss_net_profit)/SUM(ss_ext_sales_price) ASc) AS rank_WITHin_parent
+ FROM
+    store_sales
+   ,date_dim       d1
+   ,item
+   ,store
+ WHERE
+    d1.d_year = 2000 
+ AND d1.d_date_sk = ss_sold_date_sk
+ AND i_item_sk  = ss_item_sk 
+ AND s_store_sk  = ss_store_sk
+ AND s_state IN ('TN','TN','TN','TN',
+                 'TN','TN','TN','TN')
+ GROUP BY rollup(i_category,i_class)
+ ORDER BY
+   lochierarchy DESC
+  ,CASE WHEN lochierarchy = 0 THEN i_category END
+  ,rank_WITHin_parent
+  LIMIT 100;
+
+

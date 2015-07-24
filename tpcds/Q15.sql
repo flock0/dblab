@@ -1,17 +1,20 @@
 
-SELECT  s_store_name, s_store_id,
-        SUM(CASE WHEN (d_day_name='Sunday') THEN ss_sales_price ELSE NULL END) sun_sales,
-        SUM(CASE WHEN (d_day_name='Monday') THEN ss_sales_price ELSE NULL END) mon_sales,
-        SUM(CASE WHEN (d_day_name='Tuesday') THEN ss_sales_price ELSE  NULL END) tue_sales,
-        SUM(CASE WHEN (d_day_name='Wednesday') THEN ss_sales_price ELSE NULL END) wed_sales,
-        SUM(CASE WHEN (d_day_name='Thursday') THEN ss_sales_price ELSE NULL END) thu_sales,
-        SUM(CASE WHEN (d_day_name='Friday') THEN ss_sales_price ELSE NULL END) fri_sales,
-        SUM(CASE WHEN (d_day_name='Saturday') THEN ss_sales_price ELSE NULL END) sat_sales
- FROM date_dim, store_sales, store
- WHERE d_date_sk = ss_sold_date_sk AND
-       s_store_sk = ss_store_sk AND
-       s_gmt_offset = -5 AND
-       d_year = 1998 
- GROUP BY s_store_name, s_store_id
- ORDER BY s_store_name, s_store_id,sun_sales,mon_sales,tue_sales,wed_sales,thu_sales,fri_sales,sat_sales
+SELECT  ca_zip
+       ,SUM(cs_sales_price)
+ FROM catalog_sales
+     ,customer
+     ,customer_address
+     ,date_dim
+ WHERE cs_bill_customer_sk = c_customer_sk
+ 	AND c_current_addr_sk = ca_address_sk 
+ 	AND ( SUBSTR(ca_zip,1,5) IN ('85669', '86197','88274','83405','86475',
+                                   '85392', '85460', '80348', '81792')
+ 	      OR ca_state IN ('CA','WA','GA')
+ 	      OR cs_sales_price > 500)
+ 	AND cs_sold_date_sk = d_date_sk
+ 	AND d_qoy = 2 AND d_year = 2000
+ GROUP BY ca_zip
+ ORDER BY ca_zip
  LIMIT 100;
+
+

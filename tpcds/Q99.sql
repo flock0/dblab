@@ -1,22 +1,35 @@
 
-SELECT  channel, col_name, d_year, d_qoy, i_category, COUNT(*) sales_cnt, SUM(ext_sales_price) sales_amt FROM (
-        SELECT 'store' AS channel, 'ss_cdemo_sk' col_name, d_year, d_qoy, i_category, ss_ext_sales_price ext_sales_price
-         FROM store_sales, item, date_dim
-         W ENDERE ss_cdemo_sk IS NULL
-           AND ss_sold_date_sk=d_date_sk
-           AND ss_item_sk=i_item_sk
-        UNION ALL
-        SELECT 'web' AS channel, 'ws_web_site_sk' col_name, d_year, d_qoy, i_category, ws_ext_sales_price ext_sales_price
-         FROM web_sales, item, date_dim
-         WHERE ws_web_site_sk IS NULL
-           AND ws_sold_date_sk=d_date_sk
-           AND ws_item_sk=i_item_sk
-        UNION ALL
-        SELECT 'catalog' AS channel, 'cs_ship_customer_sk' col_name, d_year, d_qoy, i_category, cs_ext_sales_price ext_sales_price
-         FROM catalog_sales, item, date_dim
-         WHERE cs_ship_customer_sk IS NULL
-           AND cs_sold_date_sk=d_date_sk
-           AND cs_item_sk=i_item_sk) foo
-GROUP BY channel, col_name, d_year, d_qoy, i_category
-ORDER BY channel, col_name, d_year, d_qoy, i_category
+SELECT  
+   SUBSTR(w_warehouse_name,1,20)
+  ,sm_type
+  ,cc_name
+  ,SUM(CASE WHEN (cs_ship_date_sk - cs_sold_date_sk <= 30 ) THEN 1 ELSE 0 END)  AS "30 days" 
+  ,SUM(CASE WHEN (cs_ship_date_sk - cs_sold_date_sk > 30) AND 
+                 (cs_ship_date_sk - cs_sold_date_sk <= 60) THEN 1 ELSE 0 END )  AS "31-60 days" 
+  ,SUM(CASE WHEN (cs_ship_date_sk - cs_sold_date_sk > 60) AND 
+                 (cs_ship_date_sk - cs_sold_date_sk <= 90) THEN 1 ELSE 0 END)  AS "61-90 days" 
+  ,SUM(CASE WHEN (cs_ship_date_sk - cs_sold_date_sk > 90) AND
+                 (cs_ship_date_sk - cs_sold_date_sk <= 120) THEN 1 ELSE 0 END)  AS "91-120 days" 
+  ,SUM(CASE WHEN (cs_ship_date_sk - cs_sold_date_sk  > 120) THEN 1 ELSE 0 END)  AS ">120 days" 
+FROM
+   catalog_sales
+  ,warehouse
+  ,ship_mode
+  ,call_center
+  ,date_dim
+WHERE
+    d_month_seq BETWEEN 1212 AND 1212 + 11
+AND cs_ship_date_sk   = d_date_sk
+AND cs_warehouse_sk   = w_warehouse_sk
+AND cs_ship_mode_sk   = sm_ship_mode_sk
+AND cs_call_center_sk = cc_call_center_sk
+GROUP BY
+   SUBSTR(w_warehouse_name,1,20)
+  ,sm_type
+  ,cc_name
+ORDER BY SUBSTR(w_warehouse_name,1,20)
+        ,sm_type
+        ,cc_name
 LIMIT 100;
+
+

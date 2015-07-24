@@ -1,18 +1,48 @@
 
-SELECT  ca_zip
-       ,SUM(cs_sales_price)
- FROM catalog_sales
-     ,customer
-     ,customer_address
-     ,date_dim
- WHERE cs_bill_customer_sk = c_customer_sk
- 	AND c_current_addr_sk = ca_address_sk 
- 	AND ( substr(ca_zip,1,5) in ('85669', '86197','88274','83405','86475',
-                                   '85392', '85460', '80348', '81792')
- 	      or ca_state in ('CA','WA','GA')
- 	      or cs_sales_price > 500)
- 	AND cs_sold_date_sk = d_date_sk
- 	AND d_qoy = 2 AND d_year = 2002
- GROUP BY ca_zip
- ORDER BY ca_zip
+WITH v1 AS(
+ SELECT i_category, i_brand,
+        cc_name,
+        d_year, d_moy,
+        SUM(cs_sales_price) sum_sales,
+        AVG(SUM(cs_sales_price)) over
+          (partition by i_category, i_brand,
+                     cc_name, d_year)
+          avg_monthly_sales,
+        rank() over
+          (partition by i_category, i_brand,
+                     cc_name
+           ORDER BY d_year, d_moy) rn
+ FROM item, catalog_sales, date_dim, call_center
+ WHERE cs_item_sk = i_item_sk AND
+       cs_sold_date_sk = d_date_sk AND
+       cc_call_center_sk= cs_call_center_sk AND
+       (
+         d_year = 2000 OR
+         ( d_year = 2000-1 AND d_moy =12) OR
+         ( d_year = 2000+1 AND d_moy =1)
+       )
+ GROUP BY i_category, i_brand,
+          cc_name , d_year, d_moy),
+ v2 AS(
+ SELECT v1.i_category, v1.i_brand
+        ,v1.d_year, v1.d_moy
+        ,v1.avg_monthly_sales
+        ,v1.sum_sales, v1_lag.sum_sales psum, v1_lead.sum_sales nsum
+ FROM v1, v1 v1_lag, v1 v1_lead
+ WHERE v1.i_category = v1_lag.i_category AND
+       v1.i_category = v1_lead.i_category AND
+       v1.i_brAND = v1_lag.i_brAND AND
+       v1.i_brAND = v1_lead.i_brAND AND
+       v1. cc_name = v1_lag. cc_name AND
+       v1. cc_name = v1_lead. cc_name AND
+       v1.rn = v1_lag.rn + 1 AND
+       v1.rn = v1_lead.rn - 1)
+  SELECT  *
+ FROM v2
+ WHERE  d_year = 2000 AND
+        avg_monthly_sales > 0 AND
+        CASE WHEN avg_monthly_sales > 0 THEN abs(sum_sales - avg_monthly_sales) / avg_monthly_sales ELSE null END > 0.1
+ ORDER BY sum_sales - avg_monthly_sales, 3
  LIMIT 100;
+
+

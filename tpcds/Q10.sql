@@ -1,56 +1,59 @@
 
-WITH ws AS
-  (SELECT d_year AS ws_sold_year, ws_item_sk,
-    ws_bill_customer_sk ws_customer_sk,
-    SUM(ws_quantity) ws_qty,
-    SUM(ws_wholesale_cost) ws_wc,
-    SUM(ws_sales_price) ws_sp
-   FROM web_sales
-   left join web_returns on wr_order_number=ws_order_number AND ws_item_sk=wr_item_sk
-   join date_dim on ws_sold_date_sk = d_date_sk
-   WHERE wr_order_number IS NULL
-   GROUP BY d_year, ws_item_sk, ws_bill_customer_sk
-   ),
-cs AS
-  (SELECT d_year AS cs_sold_year, cs_item_sk,
-    cs_bill_customer_sk cs_customer_sk,
-    SUM(cs_quantity) cs_qty,
-    SUM(cs_wholesale_cost) cs_wc,
-    SUM(cs_sales_price) cs_sp
-   FROM catalog_sales
-   left join catalog_returns on cr_order_number=cs_order_number AND cs_item_sk=cr_item_sk
-   join date_dim on cs_sold_date_sk = d_date_sk
-   WHERE cr_order_number IS NULL
-   GROUP BY d_year, cs_item_sk, cs_bill_customer_sk
-   ),
-ss AS
-  (SELECT d_year AS ss_sold_year, ss_item_sk,
-    ss_customer_sk,
-    SUM(ss_quantity) ss_qty,
-    SUM(ss_wholesale_cost) ss_wc,
-    SUM(ss_sales_price) ss_sp
-   FROM store_sales
-   left join store_returns on sr_ticket_number=ss_ticket_number AND ss_item_sk=sr_item_sk
-   join date_dim on ss_sold_date_sk = d_date_sk
-   WHERE sr_ticket_number IS NULL
-   GROUP BY d_year, ss_item_sk, ss_customer_sk
-   )
- SELECT 
-ss_customer_sk,
-round(ss_qty/(coalesce(ws_qty+cs_qty,1)),2) ratio,
-ss_qty store_qty, ss_wc store_wholesale_cost, ss_sp store_sales_price,
-coalesce(ws_qty,0)+coalesce(cs_qty,0) other_chan_qty,
-coalesce(ws_wc,0)+coalesce(cs_wc,0) other_chan_wholesale_cost,
-coalesce(ws_sp,0)+coalesce(cs_sp,0) other_chan_sales_price
-FROM ss
-left join ws on (ws_sold_year=ss_sold_year AND ws_item_sk=ss_item_sk AND ws_customer_sk=ss_customer_sk)
-left join cs on (cs_sold_year=ss_sold_year AND cs_item_sk=cs_item_sk AND cs_customer_sk=ss_customer_sk)
-WHERE coalesce(ws_qty,0)>0 AND coalesce(cs_qty, 0)>0 AND ss_sold_year=2001
-ORDER BY 
-  ss_customer_sk,
-  ss_qty desc, ss_wc desc, ss_sp desc,
-  other_chan_qty,
-  other_chan_wholesale_cost,
-  other_chan_sales_price,
-  round(ss_qty/(coalesce(ws_qty+cs_qty,1)),2)
+SELECT  
+  cd_gender,
+  cd_marital_status,
+  cd_education_status,
+  COUNT(*) cnt1,
+  cd_purchase_estimate,
+  COUNT(*) cnt2,
+  cd_credit_rating,
+  COUNT(*) cnt3,
+  cd_dep_count,
+  COUNT(*) cnt4,
+  cd_dep_employed_count,
+  COUNT(*) cnt5,
+  cd_dep_college_count,
+  COUNT(*) cnt6
+ FROM
+  customer c,customer_address ca,customer_demographics
+ WHERE
+  c.c_current_addr_sk = ca.ca_address_sk AND
+  ca_county IN ('Walker County','RichlAND County','Gaines County','Douglas County','Dona Ana County') AND
+  cd_demo_sk = c.c_current_cdemo_sk AND 
+  exists (SELECT *
+          FROM store_sales,date_dim
+          WHERE c.c_customer_sk = ss_customer_sk AND
+                ss_sold_date_sk = d_date_sk AND
+                d_year = 2002 AND
+                d_moy BETWEEN 4 AND 4+3) AND
+   (exists (SELECT *
+            FROM web_sales,date_dim
+            WHERE c.c_customer_sk = ws_bill_customer_sk AND
+                  ws_sold_date_sk = d_date_sk AND
+                  d_year = 2002 AND
+                  d_moy BETWEEN 4 ANd 4+3) OR 
+    exists (SELECT * 
+            FROM catalog_sales,date_dim
+            WHERE c.c_customer_sk = cs_ship_customer_sk AND
+                  cs_sold_date_sk = d_date_sk AND
+                  d_year = 2002 AND
+                  d_moy BETWEEN 4 AND 4+3))
+ GROUP BY cd_gender,
+          cd_marital_status,
+          cd_education_status,
+          cd_purchase_estimate,
+          cd_credit_rating,
+          cd_dep_count,
+          cd_dep_employed_count,
+          cd_dep_college_count
+ ORDER BY cd_gender,
+          cd_marital_status,
+          cd_education_status,
+          cd_purchase_estimate,
+          cd_credit_rating,
+          cd_dep_count,
+          cd_dep_employed_count,
+          cd_dep_college_count
 LIMIT 100;
+
+

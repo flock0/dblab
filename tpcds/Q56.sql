@@ -1,26 +1,68 @@
 
-SELECT  *
-FROM(
-SELECT i_category, i_class, i_brand,
-       s_store_name, s_company_name,
-       d_moy,
-       SUM(ss_sales_price) sum_sales,
-       AVG(SUM(ss_sales_price)) over
-         (partition by i_category, i_brand, s_store_name, s_company_name)
-         avg_monthly_sales
-FROM item, store_sales, date_dim, store
-WHERE ss_item_sk = i_item_sk AND
-      ss_sold_date_sk = d_date_sk AND
-      ss_store_sk = s_store_sk AND
-      d_year in (2002) AND
-        ((i_category in ('Music','Home','Men') AND
-          i_class in ('country','lighting','accessories')
-         )
-      or (i_category in ('Women','Sports','Books') AND
-          i_class in ('maternity','camping','history') 
-        ))
-GROUP BY i_category, i_class, i_brand,
-         s_store_name, s_company_name, d_moy) tmp1
-WHERE CASE WHEN (avg_monthly_sales <> 0) THEN (abs(sum_sales - avg_monthly_sales) / avg_monthly_sales) ELSE NULL END > 0.1
-ORDER BY sum_sales - avg_monthly_sales, s_store_name
-LIMIT 100;
+WITH ss AS (
+ SELECT i_item_id,SUM(ss_ext_sales_price) total_sales
+ FROM
+ 	store_sales,
+ 	date_dim,
+         customer_address,
+         item
+ WHERE i_item_id IN (SELECT
+     i_item_id
+FROM item
+WHERE i_colOR IN ('orchid','chiffon','lace'))
+ AND     ss_item_sk              = i_item_sk
+ AND     ss_sold_date_sk         = d_date_sk
+ AND     d_year                  = 2000
+ AND     d_moy                   = 1
+ AND     ss_addr_sk              = ca_address_sk
+ AND     ca_gmt_offset           = -8 
+ GROUP BY i_item_id),
+ cs AS (
+ SELECT i_item_id,SUM(cs_ext_sales_price) total_sales
+ FROM
+ 	catalog_sales,
+ 	date_dim,
+         customer_address,
+         item
+ WHERE
+         i_item_id               IN (SELECT
+  i_item_id
+FROM item
+WHERE i_colOR IN ('orchid','chiffon','lace'))
+ AND     cs_item_sk              = i_item_sk
+ AND     cs_sold_date_sk         = d_date_sk
+ AND     d_year                  = 2000
+ AND     d_moy                   = 1
+ AND     cs_bill_addr_sk         = ca_address_sk
+ AND     ca_gmt_offset           = -8 
+ GROUP BY i_item_id),
+ ws AS (
+ SELECT i_item_id,SUM(ws_ext_sales_price) total_sales
+ FROM
+ 	web_sales,
+ 	date_dim,
+         customer_address,
+         item
+ WHERE
+         i_item_id               IN (SELECT
+  i_item_id
+FROM item
+WHERE i_colOR IN ('orchid','chiffon','lace'))
+ AND     ws_item_sk              = i_item_sk
+ AND     ws_sold_date_sk         = d_date_sk
+ AND     d_year                  = 2000
+ AND     d_moy                   = 1
+ AND     ws_bill_addr_sk         = ca_address_sk
+ AND     ca_gmt_offset           = -8
+ GROUP BY i_item_id)
+  SELECT  i_item_id ,SUM(total_sales) total_sales
+ FROM  (SELECT * FROM ss 
+        UNION ALL
+        SELECT * FROM cs 
+        UNION ALL
+        SELECT * FROM ws) tmp1
+ GROUP BY i_item_id
+ ORDER BY total_sales
+ LIMIT 100;
+
+

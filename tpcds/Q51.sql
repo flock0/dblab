@@ -1,79 +1,45 @@
 
-WITH year_total AS (
- SELECT c_customer_id customer_id
-       ,c_first_name customer_first_name
-       ,c_last_name customer_last_name
-       ,c_preferred_cust_flag customer_preferred_cust_flag
-       ,c_birth_country customer_birth_country
-       ,c_login customer_login
-       ,c_email_address customer_email_address
-       ,d_year dyear
-       ,SUM(ss_ext_list_price-ss_ext_discount_amt) year_total
-       ,'s' sale_type
- FROM customer
-     ,store_sales
-     ,date_dim
- WHERE c_customer_sk = ss_customer_sk
-   AND ss_sold_date_sk = d_date_sk
- GROUP BY c_customer_id
-         ,c_first_name
-         ,c_last_name
-         ,c_preferred_cust_flag 
-         ,c_birth_country
-         ,c_login
-         ,c_email_address
-         ,d_year 
- union all
- SELECT c_customer_id customer_id
-       ,c_first_name customer_first_name
-       ,c_last_name customer_last_name
-       ,c_preferred_cust_flag customer_preferred_cust_flag
-       ,c_birth_country customer_birth_country
-       ,c_login customer_login
-       ,c_email_address customer_email_address
-       ,d_year dyear
-       ,SUM(ws_ext_list_price-ws_ext_discount_amt) year_total
-       ,'w' sale_type
- FROM customer
+WITH web_v1 AS (
+SELECT
+  ws_item_sk item_sk, d_date,
+  SUM(SUM(ws_sales_price))
+      over (partition by ws_item_sk ORDER BY d_date rows BETWEEN unbounded preceding AND current row) cume_sales
+FROM web_sales
+    ,date_dim
+WHERE ws_sold_date_sk=d_date_sk
+  AND d_month_seq BETWEEN 1212 AND 1212+11
+  AND ws_item_sk is not NULL
+GROUP BY ws_item_sk, d_date),
+store_v1 AS (
+SELECT
+  ss_item_sk item_sk, d_date,
+  SUM(SUM(ss_sales_price))
+      over (partition by ss_item_sk ORDER BY d_date rows BETWEEN unbounded preceding AND current row) cume_sales
+FROM store_sales
+    ,date_dim
+WHERE ss_sold_date_sk=d_date_sk
+  AND d_month_seq BETWEEN 1212 AND 1212+11
+  AND ss_item_sk is not NULL
+GROUP BY ss_item_sk, d_date)
+ SELECT  *
+FROM (SELECT item_sk
+     ,d_date
      ,web_sales
-     ,date_dim
- WHERE c_customer_sk = ws_bill_customer_sk
-   AND ws_sold_date_sk = d_date_sk
- GROUP BY c_customer_id
-         ,c_first_name
-         ,c_last_name
-         ,c_preferred_cust_flag 
-         ,c_birth_country
-         ,c_login
-         ,c_email_address
-         ,d_year
-         )
-  SELECT  
-                  t_s_secyear.customer_id
-                 ,t_s_secyear.customer_first_name
-                 ,t_s_secyear.customer_last_name
-                 ,t_s_secyear.customer_preferred_cust_flag
- FROM year_total t_s_firstyear
-     ,year_total t_s_secyear
-     ,year_total t_w_firstyear
-     ,year_total t_w_secyear
- WHERE t_s_secyear.customer_id = t_s_firstyear.customer_id
-         AND t_s_firstyear.customer_id = t_w_secyear.customer_id
-         AND t_s_firstyear.customer_id = t_w_firstyear.customer_id
-         AND t_s_firstyear.sale_type = 's'
-         AND t_w_firstyear.sale_type = 'w'
-         AND t_s_secyear.sale_type = 's'
-         AND t_w_secyear.sale_type = 'w'
-         AND t_s_firstyear.dyear = 1999
-         AND t_s_secyear.dyear = 1999+1
-         AND t_w_firstyear.dyear = 1999
-         AND t_w_secyear.dyear = 1999+1
-         AND t_s_firstyear.year_total > 0
-         AND t_w_firstyear.year_total > 0
-         AND CASE WHEN t_w_firstyear.year_total > 0 THEN t_w_secyear.year_total / t_w_firstyear.year_total ELSE 0.0 END
-             > CASE WHEN t_s_firstyear.year_total > 0 THEN t_s_secyear.year_total / t_s_firstyear.year_total ELSE 0.0 END
- ORDER BY t_s_secyear.customer_id
-         ,t_s_secyear.customer_first_name
-         ,t_s_secyear.customer_last_name
-         ,t_s_secyear.customer_preferred_cust_flag
+     ,store_sales
+     ,max(web_sales)
+         over (partition by item_sk ORDER BY d_date rows BETWEEN unbounded preceding AND current row) web_cumulative
+     ,max(store_sales)
+         over (partition by item_sk ORDER BY d_date rows BETWEEN unbounded preceding AND current row) store_cumulative
+     FROM (SELECT CASE WHEN web.item_sk is not null THEN web.item_sk ELSE store.item_sk END item_sk
+                 ,CASE WHEN web.d_date is not null THEN web.d_date ELSE store.d_date END d_date
+                 ,web.cume_sales web_sales
+                 ,store.cume_sales store_sales
+           FROM web_v1 web full outer join store_v1 store on (web.item_sk = store.item_sk
+                                                          AND web.d_date = store.d_date)
+          )x )y
+WHERE web_cumulative > store_cumulative
+ORDER BY item_sk
+        ,d_date
 LIMIT 100;
+
+

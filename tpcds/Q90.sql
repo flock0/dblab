@@ -1,32 +1,22 @@
 
-SELECT  i_item_id,
-        ca_country,
-        ca_state, 
-        ca_county,
-        AVG( cast(cs_quantity AS numeric(12,2))) agg1,
-        AVG( cast(cs_list_price AS numeric(12,2))) agg2,
-        AVG( cast(cs_coupon_amt AS numeric(12,2))) agg3,
-        AVG( cast(cs_sales_price AS numeric(12,2))) agg4,
-        AVG( cast(cs_net_profit AS numeric(12,2))) agg5,
-        AVG( cast(c_birth_year AS numeric(12,2))) agg6,
-        AVG( cast(cd1.cd_dep_count AS numeric(12,2))) agg7
- FROM catalog_sales, customer_demographics cd1, 
-      customer_demographics cd2, customer, customer_address, date_dim, item
- WHERE cs_sold_date_sk = d_date_sk AND
-       cs_item_sk = i_item_sk AND
-       cs_bill_cdemo_sk = cd1.cd_demo_sk AND
-       cs_bill_customer_sk = c_customer_sk AND
-       cd1.cd_gender = 'M' AND 
-       cd1.cd_education_status = 'College' AND
-       c_current_cdemo_sk = cd2.cd_demo_sk AND
-       c_current_addr_sk = ca_address_sk AND
-       c_birth_month in (3,11,12,7,6,9) AND
-       d_year = 2001 AND
-       ca_state in ('VT','MN','PA'
-                   ,'VA','IL','GA','WI')
- GROUP BY rollup (i_item_id, ca_country, ca_state, ca_county)
- ORDER BY ca_country,
-        ca_state, 
-        ca_county,
-	i_item_id
+SELECT  cast(amc AS decimal(15,4))/cast(pmc AS decimal(15,4)) am_pm_ratio
+ FROM ( SELECT COUNT(*) amc
+       FROM web_sales, household_demographics , time_dim, web_page
+       WHERE ws_sold_time_sk = time_dim.t_time_sk
+         AND ws_ship_hdemo_sk = household_demographics.hd_demo_sk
+         AND ws_web_page_sk = web_page.wp_web_page_sk
+         AND time_dim.t_hour BETWEEN 6 AND 6+1
+         AND household_demographics.hd_dep_count = 8
+         AND web_page.wp_char_count BETWEEN 5000 AND 5200) at,
+      ( SELECT COUNT(*) pmc
+       FROM web_sales, household_demographics , time_dim, web_page
+       WHERE ws_sold_time_sk = time_dim.t_time_sk
+         AND ws_ship_hdemo_sk = household_demographics.hd_demo_sk
+         AND ws_web_page_sk = web_page.wp_web_page_sk
+         AND time_dim.t_hour BETWEEN 14 AND 14+1
+         AND household_demographics.hd_dep_count = 8
+         AND web_page.wp_char_count BETWEEN 5000 AND 5200) pt
+ ORDER BY am_pm_ratio
  LIMIT 100;
+
+

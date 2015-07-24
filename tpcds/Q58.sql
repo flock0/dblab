@@ -1,24 +1,65 @@
 
-SELECT  a.ca_state state, COUNT(*) cnt
- FROM customer_address a
-     ,customer c
-     ,store_sales s
-     ,date_dim d
-     ,item i
- WHERE       a.ca_address_sk = c.c_current_addr_sk
- 	AND c.c_customer_sk = s.ss_customer_sk
- 	AND s.ss_sold_date_sk = d.d_date_sk
- 	AND s.ss_item_sk = i.i_item_sk
- 	AND d.d_month_seq = 
- 	     (SELECT distinct (d_month_seq)
- 	      FROM date_dim
-               WHERE d_year = 1998
- 	        AND d_moy = 3 )
- 	AND i.i_current_price > 1.2 * 
-             (SELECT AVG(j.i_current_price) 
- 	     FROM item j 
- 	     WHERE j.i_category = i.i_category)
- GROUP BY a.ca_state
- having COUNT(*) >= 10
- ORDER BY cnt 
+WITH ss_items AS
+ (SELECT i_item_id item_id
+        ,SUM(ss_ext_sales_price) ss_item_rev 
+ FROM store_sales
+     ,item
+     ,date_dim
+ WHERE ss_item_sk = i_item_sk
+   AND d_date IN (SELECT d_date
+                  FROM date_dim
+                  WHERE d_week_seq = (SELECT d_week_seq 
+                                      FROM date_dim
+                                      WHERE d_date = '1998-02-19'))
+   AND ss_sold_date_sk   = d_date_sk
+ GROUP BY i_item_id),
+ cs_items AS
+ (SELECT i_item_id item_id
+        ,SUM(cs_ext_sales_price) cs_item_rev
+  FROM catalog_sales
+      ,item
+      ,date_dim
+ WHERE cs_item_sk = i_item_sk
+  AND  d_date IN (SELECT d_date
+                  FROM date_dim
+                  WHERE d_week_seq = (SELECT d_week_seq 
+                                      FROM date_dim
+                                      WHERE d_date = '1998-02-19'))
+  AND  cs_sold_date_sk = d_date_sk
+ GROUP BY i_item_id),
+ ws_items AS
+ (SELECT i_item_id item_id
+        ,SUM(ws_ext_sales_price) ws_item_rev
+  FROM web_sales
+      ,item
+      ,date_dim
+ WHERE ws_item_sk = i_item_sk
+  AND  d_date IN (SELECT d_date
+                  FROM date_dim
+                  WHERE d_week_seq =(SELECT d_week_seq 
+                                     FROM date_dim
+                                     WHERE d_date = '1998-02-19'))
+  AND ws_sold_date_sk   = d_date_sk
+ GROUP BY i_item_id)
+  SELECT  ss_items.item_id
+       ,ss_item_rev
+       ,ss_item_rev/(ss_item_rev+cs_item_rev+ws_item_rev)/3 * 100 ss_dev
+       ,cs_item_rev
+       ,cs_item_rev/(ss_item_rev+cs_item_rev+ws_item_rev)/3 * 100 cs_dev
+       ,ws_item_rev
+       ,ws_item_rev/(ss_item_rev+cs_item_rev+ws_item_rev)/3 * 100 ws_dev
+       ,(ss_item_rev+cs_item_rev+ws_item_rev)/3 average
+ FROM ss_items,cs_items,ws_items
+ WHERE ss_items.item_id=cs_items.item_id
+   AND ss_items.item_id=ws_items.item_id 
+   AND ss_item_rev BETWEEN 0.9 * cs_item_rev AND 1.1 * cs_item_rev
+   AND ss_item_rev BETWEEN 0.9 * ws_item_rev AND 1.1 * ws_item_rev
+   AND cs_item_rev BETWEEN 0.9 * ss_item_rev AND 1.1 * ss_item_rev
+   AND cs_item_rev BETWEEN 0.9 * ws_item_rev AND 1.1 * ws_item_rev
+   AND ws_item_rev BETWEEN 0.9 * ss_item_rev AND 1.1 * ss_item_rev
+   AND ws_item_rev BETWEEN 0.9 * cs_item_rev AND 1.1 * cs_item_rev
+ ORDER BY item_id
+         ,ss_item_rev
  LIMIT 100;
+
+

@@ -1,19 +1,20 @@
 
-SELECT  dt.d_year 
-       ,item.i_brand_id brand_id 
-       ,item.i_brAND brand
-       ,SUM(ss_ext_discount_amt) sum_agg
- FROM  date_dim dt 
-      ,store_sales
-      ,item
- WHERE dt.d_date_sk = store_sales.ss_sold_date_sk
-   AND store_sales.ss_item_sk = item.i_item_sk
-   AND item.i_manufact_id = 922
-   AND dt.d_moy=12
- GROUP BY dt.d_year
-      ,item.i_brand
-      ,item.i_brand_id
- ORDER BY dt.d_year
-         ,sum_agg desc
-         ,brand_id
+SELECT  ca_zip, ca_county, SUM(ws_sales_price)
+ FROM web_sales, customer, customer_address, date_dim, item
+ WHERE ws_bill_customer_sk = c_customer_sk
+ 	AND c_current_addr_sk = ca_address_sk 
+ 	AND ws_item_sk = i_item_sk 
+ 	AND ( SUBSTR(ca_zip,1,5) IN ('85669', '86197','88274','83405','86475', '85392', '85460', '80348', '81792')
+ 	      OR 
+ 	      i_item_id IN (SELECT i_item_id
+                             FROM item
+                             WHERE i_item_sk IN (2, 3, 5, 7, 11, 13, 17, 19, 23, 29)
+                             )
+ 	    )
+ 	AND ws_sold_date_sk = d_date_sk
+ 	AND d_qoy = 2 AND d_year = 2000
+ GROUP BY ca_zip, ca_county
+ ORDER BY ca_zip, ca_county
  LIMIT 100;
+
+

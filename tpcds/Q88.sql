@@ -1,26 +1,94 @@
 
-SELECT  * FROM 
-(SELECT i_manufact_id,
-SUM(ss_sales_price) sum_sales,
-AVG(SUM(ss_sales_price)) over (partition by i_manufact_id) avg_quarterly_sales
-FROM item, store_sales, date_dim, store
-WHERE ss_item_sk = i_item_sk AND
-ss_sold_date_sk = d_date_sk AND
-ss_store_sk = s_store_sk AND
-d_month_seq in (1205,1205+1,1205+2,1205+3,1205+4,1205+5,1205+6,1205+7,1205+8,1205+9,1205+10,1205+11) AND
-((i_category in ('Books','Children','Electronics') AND
-i_class in ('personal','portable','reference','self-help') AND
-i_brAND in ('scholaramalgamalg #14','scholaramalgamalg #7',
-		'exportiunivamalg #9','scholaramalgamalg #9'))
-or(i_category in ('Women','Music','Men') AND
-i_class in ('accessories','classical','fragrances','pants') AND
-i_brAND in ('amalgimporto #1','edu packscholar #1','exportiimporto #1',
-		'importoamalg #1')))
-GROUP BY i_manufact_id, d_qoy ) tmp1
-WHERE CASE WHEN avg_quarterly_sales > 0 
-	then abs (sum_sales - avg_quarterly_sales)/ avg_quarterly_sales 
-	else NULL END > 0.1
-ORDER BY avg_quarterly_sales,
-	 sum_sales,
-	 i_manufact_id
-LIMIT 100;
+SELECT  *
+FROM
+ (SELECT COUNT(*) h8_30_to_9
+ FROM store_sales, household_demographics , time_dim, store
+ WHERE ss_sold_time_sk = time_dim.t_time_sk   
+     AND ss_hdemo_sk = household_demographics.hd_demo_sk 
+     AND ss_store_sk = s_store_sk
+     AND time_dim.t_hour = 8
+     AND time_dim.t_minute >= 30
+     AND ((household_demographics.hd_dep_count = 3 AND household_demographics.hd_vehicle_count<=3+2) OR
+          (household_demographics.hd_dep_count = 0 AND household_demographics.hd_vehicle_count<=0+2) OR
+          (household_demographics.hd_dep_count = 1 AND household_demographics.hd_vehicle_count<=1+2)) 
+     AND store.s_store_name = 'ese') s1,
+ (SELECT COUNT(*) h9_to_9_30 
+ FROM store_sales, household_demographics , time_dim, store
+ WHERE ss_sold_time_sk = time_dim.t_time_sk
+     AND ss_hdemo_sk = household_demographics.hd_demo_sk
+     AND ss_store_sk = s_store_sk 
+     AND time_dim.t_hour = 9 
+     AND time_dim.t_minute < 30
+     AND ((household_demographics.hd_dep_count = 3 AND household_demographics.hd_vehicle_count<=3+2) OR
+          (household_demographics.hd_dep_count = 0 AND household_demographics.hd_vehicle_count<=0+2) OR
+          (household_demographics.hd_dep_count = 1 AND household_demographics.hd_vehicle_count<=1+2))
+     AND store.s_store_name = 'ese') s2,
+ (SELECT COUNT(*) h9_30_to_10 
+ FROM store_sales, household_demographics , time_dim, store
+ WHERE ss_sold_time_sk = time_dim.t_time_sk
+     AND ss_hdemo_sk = household_demographics.hd_demo_sk
+     AND ss_store_sk = s_store_sk
+     AND time_dim.t_hour = 9
+     AND time_dim.t_minute >= 30
+     AND ((household_demographics.hd_dep_count = 3 AND household_demographics.hd_vehicle_count<=3+2) OR
+          (household_demographics.hd_dep_count = 0 AND household_demographics.hd_vehicle_count<=0+2) OR
+          (household_demographics.hd_dep_count = 1 AND household_demographics.hd_vehicle_count<=1+2))
+     AND store.s_store_name = 'ese') s3,
+ (SELECT COUNT(*) h10_to_10_30
+ FROM store_sales, household_demographics , time_dim, store
+ WHERE ss_sold_time_sk = time_dim.t_time_sk
+     AND ss_hdemo_sk = household_demographics.hd_demo_sk
+     AND ss_store_sk = s_store_sk
+     AND time_dim.t_hour = 10 
+     AND time_dim.t_minute < 30
+     AND ((household_demographics.hd_dep_count = 3 AND household_demographics.hd_vehicle_count<=3+2) OR
+          (household_demographics.hd_dep_count = 0 AND household_demographics.hd_vehicle_count<=0+2) OR
+          (household_demographics.hd_dep_count = 1 AND household_demographics.hd_vehicle_count<=1+2))
+     AND store.s_store_name = 'ese') s4,
+ (SELECT COUNT(*) h10_30_to_11
+ FROM store_sales, household_demographics , time_dim, store
+ WHERE ss_sold_time_sk = time_dim.t_time_sk
+     AND ss_hdemo_sk = household_demographics.hd_demo_sk
+     AND ss_store_sk = s_store_sk
+     AND time_dim.t_hour = 10 
+     AND time_dim.t_minute >= 30
+     AND ((household_demographics.hd_dep_count = 3 AND household_demographics.hd_vehicle_count<=3+2) OR
+          (household_demographics.hd_dep_count = 0 AND household_demographics.hd_vehicle_count<=0+2) OR
+          (household_demographics.hd_dep_count = 1 AND household_demographics.hd_vehicle_count<=1+2))
+     AND store.s_store_name = 'ese') s5,
+ (SELECT COUNT(*) h11_to_11_30
+ FROM store_sales, household_demographics , time_dim, store
+ WHERE ss_sold_time_sk = time_dim.t_time_sk
+     AND ss_hdemo_sk = household_demographics.hd_demo_sk
+     AND ss_store_sk = s_store_sk 
+     AND time_dim.t_hour = 11
+     AND time_dim.t_minute < 30
+     AND ((household_demographics.hd_dep_count = 3 AND household_demographics.hd_vehicle_count<=3+2) OR
+          (household_demographics.hd_dep_count = 0 AND household_demographics.hd_vehicle_count<=0+2) OR
+          (household_demographics.hd_dep_count = 1 AND household_demographics.hd_vehicle_count<=1+2))
+     AND store.s_store_name = 'ese') s6,
+ (SELECT COUNT(*) h11_30_to_12
+ FROM store_sales, household_demographics , time_dim, store
+ WHERE ss_sold_time_sk = time_dim.t_time_sk
+     AND ss_hdemo_sk = household_demographics.hd_demo_sk
+     AND ss_store_sk = s_store_sk
+     AND time_dim.t_hour = 11
+     AND time_dim.t_minute >= 30
+     AND ((household_demographics.hd_dep_count = 3 AND household_demographics.hd_vehicle_count<=3+2) OR
+          (household_demographics.hd_dep_count = 0 AND household_demographics.hd_vehicle_count<=0+2) OR
+          (household_demographics.hd_dep_count = 1 AND household_demographics.hd_vehicle_count<=1+2))
+     AND store.s_store_name = 'ese') s7,
+ (SELECT COUNT(*) h12_to_12_30
+ FROM store_sales, household_demographics , time_dim, store
+ WHERE ss_sold_time_sk = time_dim.t_time_sk
+     AND ss_hdemo_sk = household_demographics.hd_demo_sk
+     AND ss_store_sk = s_store_sk
+     AND time_dim.t_hour = 12
+     AND time_dim.t_minute < 30
+     AND ((household_demographics.hd_dep_count = 3 AND household_demographics.hd_vehicle_count<=3+2) OR
+          (household_demographics.hd_dep_count = 0 AND household_demographics.hd_vehicle_count<=0+2) OR
+          (household_demographics.hd_dep_count = 1 AND household_demographics.hd_vehicle_count<=1+2))
+     AND store.s_store_name = 'ese') s8
+;
+
+

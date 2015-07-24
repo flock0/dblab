@@ -1,29 +1,15 @@
 
-WITH customer_total_return AS
- (SELECT cr_returning_customer_sk AS ctr_customer_sk
-        ,ca_state AS ctr_state, 
- 	SUM(cr_return_amt_inc_tax) AS ctr_total_return
- FROM catalog_returns
-     ,date_dim
-     ,customer_address
- WHERE cr_returned_date_sk = d_date_sk 
-   AND d_year =2002
-   AND cr_returning_addr_sk = ca_address_sk 
- GROUP BY cr_returning_customer_sk
-         ,ca_state )
-  SELECT  c_customer_id,c_salutation,c_first_name,c_last_name,ca_street_number,ca_street_name
-                   ,ca_street_type,ca_suite_number,ca_city,ca_county,ca_state,ca_zip,ca_country,ca_gmt_offset
-                  ,ca_location_type,ctr_total_return
- FROM customer_total_return ctr1
-     ,customer_address
-     ,customer
- WHERE ctr1.ctr_total_return > (SELECT AVG(ctr_total_return)*1.2
- 			  FROM customer_total_return ctr2 
-                  	  WHERE ctr1.ctr_state = ctr2.ctr_state)
-       AND ca_address_sk = c_current_addr_sk
-       AND ca_state = 'IL'
-       AND ctr1.ctr_customer_sk = c_customer_sk
- ORDER BY c_customer_id,c_salutation,c_first_name,c_last_name,ca_street_number,ca_street_name
-                   ,ca_street_type,ca_suite_number,ca_city,ca_county,ca_state,ca_zip,ca_country,ca_gmt_offset
-                  ,ca_location_type,ctr_total_return
+SELECT  i_item_id
+       ,i_item_desc
+       ,i_current_price
+ FROM item 
+ INNER JOIN inventory ON inv_item_sk = i_item_sk
+ INNER JOIN date_dim ON d_date_sk=inv_date_sk
+ INNER JOIN catalog_sales ON cs_item_sk = i_item_sk
+ WHERE i_current_price BETWEEN 36 AND 36 + 30
+ AND d_date BETWEEN DATE '1998-04-06' AND DATE '1998-04-06' + 60
+ AND i_manufact_id IN (746,802,854,823)
+ AND inv_quantity_on_hand BETWEEN 100 AND 500
+ GROUP BY i_item_id,i_item_desc,i_current_price
+ ORDER BY i_item_id
  LIMIT 100;

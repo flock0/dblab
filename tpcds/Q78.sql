@@ -1,106 +1,58 @@
 
-WITH ss AS
- (SELECT s_store_sk,
-         SUM(ss_ext_sales_price) AS sales,
-         SUM(ss_net_profit) AS profit
- FROM store_sales,
-      date_dim,
-      store
- WHERE ss_sold_date_sk = d_date_sk
-       AND d_date BETWEEN cast('1998-08-27' AS date) 
-                  AND (cast('1998-08-27' AS date) +  30 days) 
-       AND ss_store_sk = s_store_sk
- GROUP BY s_store_sk)
- ,
- sr AS
- (SELECT s_store_sk,
-         SUM(sr_return_amt) AS returns,
-         SUM(sr_net_loss) AS profit_loss
- FROM store_returns,
-      date_dim,
-      store
- WHERE sr_returned_date_sk = d_date_sk
-       AND d_date BETWEEN cast('1998-08-27' AS date)
-                  AND (cast('1998-08-27' AS date) +  30 days)
-       AND sr_store_sk = s_store_sk
- GROUP BY s_store_sk), 
- cs AS
- (SELECT cs_call_center_sk,
-        SUM(cs_ext_sales_price) AS sales,
-        SUM(cs_net_profit) AS profit
- FROM catalog_sales,
-      date_dim
- WHERE cs_sold_date_sk = d_date_sk
-       AND d_date BETWEEN cast('1998-08-27' AS date)
-                  AND (cast('1998-08-27' AS date) +  30 days)
- GROUP BY cs_call_center_sk 
- ), 
- cr AS
- (SELECT cr_call_center_sk,
-         SUM(cr_return_amount) AS returns,
-         SUM(cr_net_loss) AS profit_loss
- FROM catalog_returns,
-      date_dim
- WHERE cr_returned_date_sk = d_date_sk
-       AND d_date BETWEEN cast('1998-08-27' AS date)
-                  AND (cast('1998-08-27' AS date) +  30 days)
- GROUP BY cr_call_center_sk
- ), 
- ws AS
- ( SELECT wp_web_page_sk,
-        SUM(ws_ext_sales_price) AS sales,
-        SUM(ws_net_profit) AS profit
- FROM web_sales,
-      date_dim,
-      web_page
- WHERE ws_sold_date_sk = d_date_sk
-       AND d_date BETWEEN cast('1998-08-27' AS date)
-                  AND (cast('1998-08-27' AS date) +  30 days)
-       AND ws_web_page_sk = wp_web_page_sk
- GROUP BY wp_web_page_sk), 
- wr AS
- (SELECT wp_web_page_sk,
-        SUM(wr_return_amt) AS returns,
-        SUM(wr_net_loss) AS profit_loss
- FROM web_returns,
-      date_dim,
-      web_page
- WHERE wr_returned_date_sk = d_date_sk
-       AND d_date BETWEEN cast('1998-08-27' AS date)
-                  AND (cast('1998-08-27' AS date) +  30 days)
-       AND wr_web_page_sk = wp_web_page_sk
- GROUP BY wp_web_page_sk)
-  SELECT  channel
-        , id
-        , SUM(sales) AS sales
-        , SUM(returns) AS returns
-        , SUM(profit) AS profit
- FROM 
- (SELECT 'store channel' AS channel
-        , ss.s_store_sk AS id
-        , sales
-        , coalesce(returns, 0) AS returns
-        , (profit - coalesce(profit_loss,0)) AS profit
- FROM   ss left join sr
-        on  ss.s_store_sk = sr.s_store_sk
- union all
- SELECT 'catalog channel' AS channel
-        , cs_call_center_sk AS id
-        , sales
-        , returns
-        , (profit - profit_loss) AS profit
- FROM  cs
-       , cr
- union all
- SELECT 'web channel' AS channel
-        , ws.wp_web_page_sk AS id
-        , sales
-        , coalesce(returns, 0) returns
-        , (profit - coalesce(profit_loss,0)) AS profit
- FROM   ws left join wr
-        on  ws.wp_web_page_sk = wr.wp_web_page_sk
- ) x
- GROUP BY rollup (channel, id)
- ORDER BY channel
-         ,id
- LIMIT 100;
+WITH ws AS
+  (SELECT d_year AS ws_sold_year, ws_item_sk,
+    ws_bill_customer_sk ws_customer_sk,
+    SUM(ws_quantity) ws_qty,
+    SUM(ws_wholesale_cost) ws_wc,
+    SUM(ws_sales_price) ws_sp
+   FROM web_sales
+   left join web_returns on wr_order_number=ws_order_number AND ws_item_sk=wr_item_sk
+   join date_dim on ws_sold_date_sk = d_date_sk
+   WHERE wr_order_number is null
+   GROUP BY d_year, ws_item_sk, ws_bill_customer_sk
+   ),
+cs AS
+  (SELECT d_year AS cs_sold_year, cs_item_sk,
+    cs_bill_customer_sk cs_customer_sk,
+    SUM(cs_quantity) cs_qty,
+    SUM(cs_wholesale_cost) cs_wc,
+    SUM(cs_sales_price) cs_sp
+   FROM catalog_sales
+   left join catalog_returns on cr_order_number=cs_order_number AND cs_item_sk=cr_item_sk
+   join date_dim on cs_sold_date_sk = d_date_sk
+   WHERE cr_order_number is null
+   GROUP BY d_year, cs_item_sk, cs_bill_customer_sk
+   ),
+ss AS
+  (SELECT d_year AS ss_sold_year, ss_item_sk,
+    ss_customer_sk,
+    SUM(ss_quantity) ss_qty,
+    SUM(ss_wholesale_cost) ss_wc,
+    SUM(ss_sales_price) ss_sp
+   FROM store_sales
+   left join store_returns on sr_ticket_number=ss_ticket_number AND ss_item_sk=sr_item_sk
+   join date_dim on ss_sold_date_sk = d_date_sk
+   WHERE sr_ticket_number is null
+   GROUP BY d_year, ss_item_sk, ss_customer_sk
+   )
+ SELECT 
+ss_sold_year, ss_item_sk, ss_customer_sk,
+round(ss_qty/(coalesce(ws_qty+cs_qty,1)),2) ratio,
+ss_qty store_qty, ss_wc store_wholesale_cost, ss_sp store_sales_price,
+coalesce(ws_qty,0)+coalesce(cs_qty,0) other_chan_qty,
+coalesce(ws_wc,0)+coalesce(cs_wc,0) other_chan_wholesale_cost,
+coalesce(ws_sp,0)+coalesce(cs_sp,0) other_chan_sales_price
+FROM ss
+left join ws on (ws_sold_year=ss_sold_year AND ws_item_sk=ss_item_sk AND ws_customer_sk=ss_customer_sk)
+left join cs on (cs_sold_year=ss_sold_year AND cs_item_sk=cs_item_sk AND cs_customer_sk=ss_customer_sk)
+WHERE coalesce(ws_qty,0)>0 AND coalesce(cs_qty, 0)>0 AND ss_sold_year=2000
+ORDER BY 
+  ss_sold_year, ss_item_sk, ss_customer_sk,
+  ss_qty DESC, ss_wc DESC, ss_sp DESC,
+  other_chan_qty,
+  other_chan_wholesale_cost,
+  other_chan_sales_price,
+  round(ss_qty/(coalesce(ws_qty+cs_qty,1)),2)
+LIMIT 100;
+
+

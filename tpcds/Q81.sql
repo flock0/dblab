@@ -1,54 +1,31 @@
 
-WITH my_customers AS (
- SELECT distinct c_customer_sk
-        , c_current_addr_sk
- FROM   
-        ( SELECT cs_sold_date_sk sold_date_sk,
-                 cs_bill_customer_sk customer_sk,
-                 cs_item_sk item_sk
-          FROM   catalog_sales
-          union all
-          SELECT ws_sold_date_sk sold_date_sk,
-                 ws_bill_customer_sk customer_sk,
-                 ws_item_sk item_sk
-          FROM   web_sales
-         ) cs_or_ws_sales,
-         item,
-         date_dim,
-         customer
- WHERE   sold_date_sk = d_date_sk
-         AND item_sk = i_item_sk
-         AND i_category = 'Children'
-         AND i_class = 'toddlers'
-         AND c_customer_sk = cs_or_ws_sales.customer_sk
-         AND d_moy = 6
-         AND d_year = 2000
- )
- , my_revenue AS (
- SELECT c_customer_sk,
-        SUM(ss_ext_sales_price) AS revenue
- FROM   my_customers,
-        store_sales,
-        customer_address,
-        store,
-        date_dim
- WHERE  c_current_addr_sk = ca_address_sk
-        AND ca_county = s_county
-        AND ca_state = s_state
-        AND ss_sold_date_sk = d_date_sk
-        AND c_customer_sk = ss_customer_sk
-        AND d_month_seq BETWEEN (SELECT distinct d_month_seq+1
-                                 FROM   date_dim WHERE d_year = 2000 AND d_moy = 6)
-                           AND  (SELECT distinct d_month_seq+3
-                                 FROM   date_dim WHERE d_year = 2000 AND d_moy = 6)
- GROUP BY c_customer_sk
- )
- , segments AS
- (SELECT cast((revenue/50) AS int) AS segment
-  FROM   my_revenue
- )
-  SELECT  segment, COUNT(*) AS num_customers, segment*50 AS segment_base
- FROM segments
- GROUP BY segment
- ORDER BY segment, num_customers
+WITH customer_total_return AS
+ (SELECT cr_returning_customer_sk AS ctr_customer_sk
+        ,ca_state AS ctr_state, 
+ 	SUM(cr_return_amt_inc_tax) AS ctr_total_return
+ FROM catalog_returns
+     ,date_dim
+     ,customer_address
+ WHERE cr_returned_date_sk = d_date_sk 
+   AND d_year =1998
+   AND cr_returning_addr_sk = ca_address_sk 
+ GROUP BY cr_returning_customer_sk
+         ,ca_state )
+  SELECT  c_customer_id,c_salutation,c_first_name,c_last_name,ca_street_number,ca_street_name
+                   ,ca_street_type,ca_suite_number,ca_city,ca_county,ca_state,ca_zip,ca_country,ca_gmt_offset
+                  ,ca_location_type,ctr_total_return
+ FROM customer_total_return ctr1
+     ,customer_address
+     ,customer
+ WHERE ctr1.ctr_total_return > (SELECT AVG(ctr_total_return)*1.2
+ 			  FROM customer_total_return ctr2 
+                  	  WHERE ctr1.ctr_state = ctr2.ctr_state)
+       AND ca_address_sk = c_current_addr_sk
+       AND ca_state = 'IL'
+       AND ctr1.ctr_customer_sk = c_customer_sk
+ ORDER BY c_customer_id,c_salutation,c_first_name,c_last_name,ca_street_number,ca_street_name
+                   ,ca_street_type,ca_suite_number,ca_city,ca_county,ca_state,ca_zip,ca_country,ca_gmt_offset
+                  ,ca_location_type,ctr_total_return
  LIMIT 100;
+
+

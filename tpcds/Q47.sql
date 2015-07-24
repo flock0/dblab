@@ -1,56 +1,51 @@
 
-SELECT   
-  ca_state,
-  cd_gender,
-  cd_marital_status,
-  c_dep_count,
-  COUNT(*) cnt1,
-  min(cd_dep_count),
-  min(cd_dep_count),
-  min(cd_dep_count),
-  cd_dep_employed_count,
-  COUNT(*) cnt2,
-  min(cd_dep_employed_count),
-  min(cd_dep_employed_count),
-  min(cd_dep_employed_count),
-  cd_dep_college_count,
-  COUNT(*) cnt3,
-  min(cd_dep_college_count),
-  min(cd_dep_college_count),
-  min(cd_dep_college_count)
- from
-  customer c,customer_address ca,customer_demographics
- WHERE
-  c.c_current_addr_sk = ca.ca_address_sk AND
-  cd_demo_sk = c.c_current_cdemo_sk AND 
-  exists (SELECT *
-          FROM store_sales,date_dim
-          WHERE c.c_customer_sk = ss_customer_sk AND
-                ss_sold_date_sk = d_date_sk AND
-                d_year = 1999 AND
-                d_qoy < 4) AND
-   (exists (SELECT *
-            FROM web_sales,date_dim
-            WHERE c.c_customer_sk = ws_bill_customer_sk AND
-                  ws_sold_date_sk = d_date_sk AND
-                  d_year = 1999 AND
-                  d_qoy < 4) or 
-    exists (SELECT * 
-            FROM catalog_sales,date_dim
-            WHERE c.c_customer_sk = cs_ship_customer_sk AND
-                  cs_sold_date_sk = d_date_sk AND
-                  d_year = 1999 AND
-                  d_qoy < 4))
- GROUP BY ca_state,
-          cd_gender,
-          cd_marital_status,
-          cd_dep_count,
-          cd_dep_employed_count,
-          cd_dep_college_count
- ORDER BY ca_state,
-          cd_gender,
-          cd_marital_status,
-          cd_dep_count,
-          cd_dep_employed_count,
-          cd_dep_college_count
+WITH v1 AS(
+ SELECT i_category, i_brand,
+        s_store_name, s_company_name,
+        d_year, d_moy,
+        SUM(ss_sales_price) sum_sales,
+        AVG(SUM(ss_sales_price)) over
+          (partition by i_category, i_brand,
+                     s_store_name, s_company_name, d_year)
+          avg_monthly_sales,
+        rank() over
+          (partition by i_category, i_brand,
+                     s_store_name, s_company_name
+           ORDER BY d_year, d_moy) rn
+ FROM item, store_sales, date_dim, store
+ WHERE ss_item_sk = i_item_sk AND
+       ss_sold_date_sk = d_date_sk AND
+       ss_store_sk = s_store_sk AND
+       (
+         d_year = 2000 OR
+         ( d_year = 2000-1 AND d_moy =12) OR
+         ( d_year = 2000+1 AND d_moy =1)
+       )
+ GROUP BY i_category, i_brand,
+          s_store_name, s_company_name,
+          d_year, d_moy),
+ v2 AS(
+ SELECT v1.i_category
+        ,v1.d_year, v1.d_moy
+        ,v1.avg_monthly_sales
+        ,v1.sum_sales, v1_lag.sum_sales psum, v1_lead.sum_sales nsum
+ FROM v1, v1 v1_lag, v1 v1_lead
+ WHERE v1.i_category = v1_lag.i_category AND
+       v1.i_category = v1_lead.i_category AND
+       v1.i_brAND = v1_lag.i_brAND AND
+       v1.i_brAND = v1_lead.i_brAND AND
+       v1.s_store_name = v1_lag.s_store_name AND
+       v1.s_store_name = v1_lead.s_store_name AND
+       v1.s_company_name = v1_lag.s_company_name AND
+       v1.s_company_name = v1_lead.s_company_name AND
+       v1.rn = v1_lag.rn + 1 AND
+       v1.rn = v1_lead.rn - 1)
+  SELECT  *
+ FROM v2
+ WHERE  d_year = 2000 AND    
+        avg_monthly_sales > 0 AND
+        CASE WHEN avg_monthly_sales > 0 THEN abs(sum_sales - avg_monthly_sales) / avg_monthly_sales ELSE null END > 0.1
+ ORDER BY sum_sales - avg_monthly_sales, 3
  LIMIT 100;
+
+

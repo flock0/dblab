@@ -1,38 +1,29 @@
 
-SELECT i_brand_id brand_id, i_brAND brand,t_hour,t_minute,
- 	SUM(ext_price) ext_price
- FROM item, (SELECT ws_ext_sales_price AS ext_price, 
-                        ws_sold_date_sk AS sold_date_sk,
-                        ws_item_sk AS sold_item_sk,
-                        ws_sold_time_sk AS time_sk  
-                 FROM web_sales,date_dim
-                 WHERE d_date_sk = ws_sold_date_sk
-                   AND d_moy=12
-                   AND d_year=2001
-                 union all
-                 SELECT cs_ext_sales_price AS ext_price,
-                        cs_sold_date_sk AS sold_date_sk,
-                        cs_item_sk AS sold_item_sk,
-                        cs_sold_time_sk AS time_sk
-                 FROM catalog_sales,date_dim
-                 WHERE d_date_sk = cs_sold_date_sk
-                   AND d_moy=12
-                   AND d_year=2001
-                 union all
-                 SELECT ss_ext_sales_price AS ext_price,
-                        ss_sold_date_sk AS sold_date_sk,
-                        ss_item_sk AS sold_item_sk,
-                        ss_sold_time_sk AS time_sk
-                 FROM store_sales,date_dim
-                 WHERE d_date_sk = ss_sold_date_sk
-                   AND d_moy=12
-                   AND d_year=2001
-                 ) AS tmp,time_dim
- WHERE
-   sold_item_sk = i_item_sk
-   AND i_manager_id=1
-   AND time_sk = t_time_sk
-   AND (t_meal_time = 'breakfast' or t_meal_time = 'dinner')
- GROUP BY i_brand, i_brand_id,t_hour,t_minute
- ORDER BY ext_price desc, i_brand_id
- ;
+SELECT  i_item_desc
+      ,w_warehouse_name
+      ,d1.d_week_seq
+      ,SUM(CASE WHEN p_promo_sk is null THEN 1 ELSE 0 END) no_promo
+      ,SUM(CASE WHEN p_promo_sk is not null THEN 1 ELSE 0 END) promo
+      ,COUNT(*) total_cnt
+FROM catalog_sales
+join inventory on (cs_item_sk = inv_item_sk)
+join warehouse on (w_warehouse_sk=inv_warehouse_sk)
+join item on (i_item_sk = cs_item_sk)
+join customer_demographics on (cs_bill_cdemo_sk = cd_demo_sk)
+join household_demographics on (cs_bill_hdemo_sk = hd_demo_sk)
+join date_dim d1 on (cs_sold_date_sk = d1.d_date_sk)
+join date_dim d2 on (inv_date_sk = d2.d_date_sk)
+join date_dim d3 on (cs_ship_date_sk = d3.d_date_sk)
+left outer join promotion on (cs_promo_sk=p_promo_sk)
+left outer join catalog_returns on (cr_item_sk = cs_item_sk AND cr_order_number = cs_order_number)
+WHERE d1.d_week_seq = d2.d_week_seq
+  AND inv_quantity_on_hAND < cs_quantity 
+  AND d3.d_date > d1.d_date + 5
+  AND hd_buy_potential = '1001-5000'
+  AND d1.d_year = 2001
+  AND cd_marital_status = 'M'
+GROUP BY i_item_desc,w_warehouse_name,d1.d_week_seq
+ORDER BY total_cnt DESC, i_item_desc, w_warehouse_name, d_week_seq
+LIMIT 100;
+
+

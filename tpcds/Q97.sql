@@ -1,42 +1,25 @@
 
-SELECT  promotions,total,cast(promotions AS decimal(15,4))/cast(total AS decimal(15,4))*100
-from
-  (SELECT SUM(ss_ext_sales_price) promotions
-   FROM  store_sales
-        ,store
-        ,promotion
-        ,date_dim
-        ,customer
-        ,customer_address 
-        ,item
-   WHERE ss_sold_date_sk = d_date_sk
-   AND   ss_store_sk = s_store_sk
-   AND   ss_promo_sk = p_promo_sk
-   AND   ss_customer_sk= c_customer_sk
-   AND   ca_address_sk = c_current_addr_sk
-   AND   ss_item_sk = i_item_sk 
-   AND   ca_gmt_offset = -7
-   AND   i_category = 'Home'
-   AND   (p_channel_dmail = 'Y' or p_channel_email = 'Y' or p_channel_tv = 'Y')
-   AND   s_gmt_offset = -7
-   AND   d_year = 1999
-   AND   d_moy  = 12) promotional_sales,
-  (SELECT SUM(ss_ext_sales_price) total
-   FROM  store_sales
-        ,store
-        ,date_dim
-        ,customer
-        ,customer_address
-        ,item
-   WHERE ss_sold_date_sk = d_date_sk
-   AND   ss_store_sk = s_store_sk
-   AND   ss_customer_sk= c_customer_sk
-   AND   ca_address_sk = c_current_addr_sk
-   AND   ss_item_sk = i_item_sk
-   AND   ca_gmt_offset = -7
-   AND   i_category = 'Home'
-   AND   s_gmt_offset = -7
-   AND   d_year = 1999
-   AND   d_moy  = 12) all_sales
-ORDER BY promotions, total
+WITH ssci AS (
+SELECT ss_customer_sk customer_sk
+      ,ss_item_sk item_sk
+FROM store_sales,date_dim
+WHERE ss_sold_date_sk = d_date_sk
+  AND d_month_seq BETWEEN 1212 AND 1212 + 11
+GROUP BY ss_customer_sk
+        ,ss_item_sk),
+csci AS(
+ SELECT cs_bill_customer_sk customer_sk
+      ,cs_item_sk item_sk
+FROM catalog_sales,date_dim
+WHERE cs_sold_date_sk = d_date_sk
+  AND d_month_seq BETWEEN 1212 AND 1212 + 11
+GROUP BY cs_bill_customer_sk
+        ,cs_item_sk)
+ SELECT  SUM(CASE WHEN ssci.customer_sk is not null AND csci.customer_sk is null THEN 1 ELSE 0 END) store_only
+      ,SUM(CASE WHEN ssci.customer_sk is null AND csci.customer_sk is not null THEN 1 ELSE 0 END) catalog_only
+      ,SUM(CASE WHEN ssci.customer_sk is not null AND csci.customer_sk is not null THEN 1 ELSE 0 END) store_and_catalog
+FROM ssci full outer join csci on (ssci.customer_sk=csci.customer_sk
+                               AND ssci.item_sk = csci.item_sk)
 LIMIT 100;
+
+

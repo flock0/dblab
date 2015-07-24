@@ -1,20 +1,28 @@
 
-SELECT  cast(amc AS decimal(15,4))/cast(pmc AS decimal(15,4)) am_pm_ratio
- FROM ( SELECT COUNT(*) amc
-       FROM web_sales, household_demographics , time_dim, web_page
-       WHERE ws_sold_time_sk = time_dim.t_time_sk
-         AND ws_ship_hdemo_sk = household_demographics.hd_demo_sk
-         AND ws_web_page_sk = web_page.wp_web_page_sk
-         AND time_dim.t_hour BETWEEN 11 AND 11+1
-         AND household_demographics.hd_dep_count = 7
-         AND web_page.wp_char_count BETWEEN 5000 AND 5200) at,
-      ( SELECT COUNT(*) pmc
-       FROM web_sales, household_demographics , time_dim, web_page
-       WHERE ws_sold_time_sk = time_dim.t_time_sk
-         AND ws_ship_hdemo_sk = household_demographics.hd_demo_sk
-         AND ws_web_page_sk = web_page.wp_web_page_sk
-         AND time_dim.t_hour BETWEEN 18 AND 18+1
-         AND household_demographics.hd_dep_count = 7
-         AND web_page.wp_char_count BETWEEN 5000 AND 5200) pt
- ORDER BY am_pm_ratio
- LIMIT 100;
+SELECT  
+   w_state
+  ,i_item_id
+  ,SUM(CASE WHEN (cast(d_date AS date) < cast ('1998-04-08' AS date)) 
+ 		then cs_sales_price - coalesce(cr_refunded_cash,0) ELSE 0 END) AS sales_before
+  ,SUM(CASE WHEN (cast(d_date AS date) >= cast ('1998-04-08' AS date)) 
+ 		then cs_sales_price - coalesce(cr_refunded_cash,0) ELSE 0 END) AS sales_after
+ FROM
+   catalog_sales left outer join catalog_returns on
+       (cs_order_number = cr_order_number 
+        AND cs_item_sk = cr_item_sk)
+  ,warehouse 
+  ,item
+  ,date_dim
+ WHERE
+     i_current_price BETWEEN 0.99 AND 1.49
+ AND i_item_sk          = cs_item_sk
+ AND cs_warehouse_sk    = w_warehouse_sk 
+ AND cs_sold_date_sk    = d_date_sk
+ AND d_date BETWEEN (cast ('1998-04-08' AS date) - 30 days)
+                AND (cast ('1998-04-08' AS date) + 30 days) 
+ GROUP BY
+    w_state,i_item_id
+ ORDER BY w_state,i_item_id
+LIMIT 100;
+
+

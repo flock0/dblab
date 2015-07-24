@@ -1,46 +1,38 @@
 
-WITH v1 AS(
- SELECT i_category, i_brand,
-        cc_name,
-        d_year, d_moy,
-        SUM(cs_sales_price) sum_sales,
-        AVG(SUM(cs_sales_price)) over
-          (partition by i_category, i_brand,
-                     cc_name, d_year)
-          avg_monthly_sales,
-        rank() over
-          (partition by i_category, i_brand,
-                     cc_name
-           ORDER BY d_year, d_moy) rn
- FROM item, catalog_sales, date_dim, call_center
- WHERE cs_item_sk = i_item_sk AND
-       cs_sold_date_sk = d_date_sk AND
-       cc_call_center_sk= cs_call_center_sk AND
-       (
-         d_year = 2000 or
-         ( d_year = 2000-1 AND d_moy =12) or
-         ( d_year = 2000+1 AND d_moy =1)
-       )
- GROUP BY i_category, i_brand,
-          cc_name , d_year, d_moy),
- v2 AS(
- SELECT v1.cc_name
-        ,v1.d_year, v1.d_moy
-        ,v1.avg_monthly_sales
-        ,v1.sum_sales, v1_lag.sum_sales psum, v1_lead.sum_sales nsum
- FROM v1, v1 v1_lag, v1 v1_lead
- WHERE v1.i_category = v1_lag.i_category AND
-       v1.i_category = v1_lead.i_category AND
-       v1.i_brAND = v1_lag.i_brAND AND
-       v1.i_brAND = v1_lead.i_brAND AND
-       v1. cc_name = v1_lag. cc_name AND
-       v1. cc_name = v1_lead. cc_name AND
-       v1.rn = v1_lag.rn + 1 AND
-       v1.rn = v1_lead.rn - 1)
-  SELECT  *
- FROM v2
- WHERE  d_year = 2000 AND
-        avg_monthly_sales > 0 AND
-        CASE WHEN avg_monthly_sales > 0 THEN abs(sum_sales - avg_monthly_sales) / avg_monthly_sales ELSE NULL END > 0.1
- ORDER BY sum_sales - avg_monthly_sales, 3
+SELECT  
+    SUM(ss_net_profit) AS total_sum
+   ,s_state
+   ,s_county
+   ,grouping(s_state)+grouping(s_county) AS lochierarchy
+   ,rank() over (
+ 	partition by grouping(s_state)+grouping(s_county),
+ 	CASE WHEN grouping(s_county) = 0 THEN s_state END 
+ 	ORDER BY SUM(ss_net_profit) DESC) AS rank_WITHin_parent
+ FROM
+    store_sales
+   ,date_dim       d1
+   ,store
+ WHERE
+    d1.d_month_seq BETWEEN 1212 AND 1212+11
+ AND d1.d_date_sk = ss_sold_date_sk
+ AND s_store_sk  = ss_store_sk
+ AND s_state in
+             ( SELECT s_state
+               FROM  (SELECT s_state AS s_state,
+ 			    rank() over ( partition by s_state ORDER BY SUM(ss_net_profit) DESC) AS ranking
+                      FROM   store_sales, store, date_dim
+                      WHERE  d_month_seq BETWEEN 1212 AND 1212+11
+ 			    AND d_date_sk = ss_sold_date_sk
+ 			    AND s_store_sk  = ss_store_sk
+                      GROUP BY s_state
+                     ) tmp1 
+               WHERE ranking <= 5
+             )
+ GROUP BY rollup(s_state,s_county)
+ ORDER BY
+   lochierarchy DESC
+  ,CASE WHEN lochierarchy = 0 THEN s_state END
+  ,rank_WITHin_parent
  LIMIT 100;
+
+

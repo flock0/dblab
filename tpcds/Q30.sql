@@ -1,42 +1,31 @@
 
-WITH wss AS 
- (SELECT d_week_seq,
-        ss_store_sk,
-        SUM(CASE WHEN (d_day_name='Sunday') THEN ss_sales_price ELSE NULL END) sun_sales,
-        SUM(CASE WHEN (d_day_name='Monday') THEN ss_sales_price ELSE NULL END) mon_sales,
-        SUM(CASE WHEN (d_day_name='Tuesday') THEN ss_sales_price ELSE  NULL END) tue_sales,
-        SUM(CASE WHEN (d_day_name='Wednesday') THEN ss_sales_price ELSE NULL END) wed_sales,
-        SUM(CASE WHEN (d_day_name='Thursday') THEN ss_sales_price ELSE NULL END) thu_sales,
-        SUM(CASE WHEN (d_day_name='Friday') THEN ss_sales_price ELSE NULL END) fri_sales,
-        SUM(CASE WHEN (d_day_name='Saturday') THEN ss_sales_price ELSE NULL END) sat_sales
- FROM store_sales,date_dim
- WHERE d_date_sk = ss_sold_date_sk
- GROUP BY d_week_seq,ss_store_sk
- )
-  SELECT  s_store_name1,s_store_id1,d_week_seq1
-       ,sun_sales1/sun_sales2,mon_sales1/mon_sales2
-       ,tue_sales1/tue_sales2,wed_sales1/wed_sales2,thu_sales1/thu_sales2
-       ,fri_sales1/fri_sales2,sat_sales1/sat_sales2
- from
- (SELECT s_store_name s_store_name1,wss.d_week_seq d_week_seq1
-        ,s_store_id s_store_id1,sun_sales sun_sales1
-        ,mon_sales mon_sales1,tue_sales tue_sales1
-        ,wed_sales wed_sales1,thu_sales thu_sales1
-        ,fri_sales fri_sales1,sat_sales sat_sales1
-  FROM wss,store,date_dim d
-  WHERE d.d_week_seq = wss.d_week_seq AND
-        ss_store_sk = s_store_sk AND 
-        d_month_seq BETWEEN 1197 AND 1197 + 11) y,
- (SELECT s_store_name s_store_name2,wss.d_week_seq d_week_seq2
-        ,s_store_id s_store_id2,sun_sales sun_sales2
-        ,mon_sales mon_sales2,tue_sales tue_sales2
-        ,wed_sales wed_sales2,thu_sales thu_sales2
-        ,fri_sales fri_sales2,sat_sales sat_sales2
-  FROM wss,store,date_dim d
-  WHERE d.d_week_seq = wss.d_week_seq AND
-        ss_store_sk = s_store_sk AND 
-        d_month_seq BETWEEN 1197+ 12 AND 1197 + 23) x
- WHERE s_store_id1=s_store_id2
-   AND d_week_seq1=d_week_seq2-52
- ORDER BY s_store_name1,s_store_id1,d_week_seq1
+WITH customer_total_return AS
+ (SELECT wr_returning_customer_sk AS ctr_customer_sk
+        ,ca_state AS ctr_state, 
+ 	SUM(wr_return_amt) AS ctr_total_return
+ FROM web_returns
+     ,date_dim
+     ,customer_address
+ WHERE wr_returned_date_sk = d_date_sk 
+   AND d_year =2002
+   AND wr_returning_addr_sk = ca_address_sk 
+ GROUP BY wr_returning_customer_sk
+         ,ca_state)
+  SELECT  c_customer_id,c_salutation,c_first_name,c_last_name,c_preferred_cust_flag
+       ,c_birth_day,c_birth_month,c_birth_year,c_birth_country,c_login,c_email_address
+       ,c_last_review_date,ctr_total_return
+ FROM customer_total_return ctr1
+     ,customer_address
+     ,customer
+ WHERE ctr1.ctr_total_return > (SELECT AVG(ctr_total_return)*1.2
+ 			  FROM customer_total_return ctr2 
+                  	  WHERE ctr1.ctr_state = ctr2.ctr_state)
+       AND ca_address_sk = c_current_addr_sk
+       AND ca_state = 'IL'
+       AND ctr1.ctr_customer_sk = c_customer_sk
+ ORDER BY c_customer_id,c_salutation,c_first_name,c_last_name,c_preferred_cust_flag
+                  ,c_birth_day,c_birth_month,c_birth_year,c_birth_country,c_login,c_email_address
+                  ,c_last_review_date,ctr_total_return
 LIMIT 100;
+
+

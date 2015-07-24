@@ -1,43 +1,52 @@
 
-SELECT  i_item_id
-       ,i_item_desc
-       ,s_state
-       ,COUNT(ss_quantity) AS store_sales_quantitycount
-       ,AVG(ss_quantity) AS store_sales_quantityave
-       ,stddev_samp(ss_quantity) AS store_sales_quantitystdev
-       ,stddev_samp(ss_quantity)/AVG(ss_quantity) AS store_sales_quantitycov
-       ,COUNT(sr_return_quantity) AS store_returns_quantitycount
-       ,AVG(sr_return_quantity) AS store_returns_quantityave
-       ,stddev_samp(sr_return_quantity) AS store_returns_quantitystdev
-       ,stddev_samp(sr_return_quantity)/AVG(sr_return_quantity) AS store_returns_quantitycov
-       ,COUNT(cs_quantity) AS catalog_sales_quantitycount ,AVG(cs_quantity) AS catalog_sales_quantityave
-       ,stddev_samp(cs_quantity)/AVG(cs_quantity) AS catalog_sales_quantitystdev
-       ,stddev_samp(cs_quantity)/AVG(cs_quantity) AS catalog_sales_quantitycov
- FROM store_sales
-     ,store_returns
-     ,catalog_sales
-     ,date_dim d1
-     ,date_dim d2
-     ,date_dim d3
-     ,store
-     ,item
- WHERE d1.d_quarter_name = '2001Q1'
-   AND d1.d_date_sk = ss_sold_date_sk
-   AND i_item_sk = ss_item_sk
-   AND s_store_sk = ss_store_sk
-   AND ss_customer_sk = sr_customer_sk
-   AND ss_item_sk = sr_item_sk
-   AND ss_ticket_number = sr_ticket_number
-   AND sr_returned_date_sk = d2.d_date_sk
-   AND d2.d_quarter_name in ('2001Q1','2001Q2','2001Q3')
-   AND sr_customer_sk = cs_bill_customer_sk
-   AND sr_item_sk = cs_item_sk
-   AND cs_sold_date_sk = d3.d_date_sk
-   AND d3.d_quarter_name in ('2001Q1','2001Q2','2001Q3')
- GROUP BY i_item_id
-         ,i_item_desc
-         ,s_state
- ORDER BY i_item_id
-         ,i_item_desc
-         ,s_state
-LIMIT 100;
+SELECT  DISTINCT(i_product_name)
+ FROM item i1
+ WHERE i_manufact_id BETWEEN 742 AND 742+40 
+   AND (SELECT COUNT(*) AS item_cnt
+        FROM item
+        WHERE (i_manufact = i1.i_manufact AND
+        ((i_category = 'Women' AND 
+        (i_colOR = 'orchid' OR i_colOR = 'papaya') AND 
+        (i_units = 'Pound' OR i_units = 'Lb') AND
+        (i_size = 'petite' OR i_size = 'medium')
+        ) OR
+        (i_category = 'Women' AND
+        (i_colOR = 'burlywood' OR i_colOR = 'navy') AND
+        (i_units = 'Bundle' OR i_units = 'Each') AND
+        (i_size = 'N/A' OR i_size = 'extra large')
+        ) OR
+        (i_category = 'Men' AND
+        (i_colOR = 'bisque' OR i_colOR = 'azure') AND
+        (i_units = 'N/A' OR i_units = 'Tsp') AND
+        (i_size = 'small' OR i_size = 'large')
+        ) OR
+        (i_category = 'Men' AND
+        (i_colOR = 'chocolate' OR i_colOR = 'cornflower') AND
+        (i_units = 'Bunch' OR i_units = 'Gross') AND
+        (i_size = 'petite' OR i_size = 'medium')
+        ))) OR
+       (i_manufact = i1.i_manufact AND
+        ((i_category = 'Women' AND 
+        (i_colOR = 'salmon' OR i_colOR = 'midnight') AND 
+        (i_units = 'Oz' OR i_units = 'Box') AND
+        (i_size = 'petite' OR i_size = 'medium')
+        ) OR
+        (i_category = 'Women' AND
+        (i_colOR = 'snow' OR i_colOR = 'steel') AND
+        (i_units = 'Carton' OR i_units = 'Tbl') AND
+        (i_size = 'N/A' OR i_size = 'extra large')
+        ) OR
+        (i_category = 'Men' AND
+        (i_colOR = 'purple' OR i_colOR = 'gainsboro') AND
+        (i_units = 'Dram' OR i_units = 'Unknown') AND
+        (i_size = 'small' OR i_size = 'large')
+        ) OR
+        (i_category = 'Men' AND
+        (i_colOR = 'metallic' OR i_colOR = 'forest') AND
+        (i_units = 'Gram' OR i_units = 'Ounce') AND
+        (i_size = 'petite' OR i_size = 'medium')
+        )))) > 0
+ ORDER BY i_product_name
+ LIMIT 100;
+
+

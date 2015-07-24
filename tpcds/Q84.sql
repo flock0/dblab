@@ -1,58 +1,21 @@
 
-WITH wscs AS
- (SELECT sold_date_sk
-        ,sales_price
-  FROM  SELECT ws_sold_date_sk sold_date_sk
-              ,ws_ext_sales_price sales_price
-        FROM web_sales 
-        union all
-        SELECT cs_sold_date_sk sold_date_sk
-              ,cs_ext_sales_price sales_price
-        FROM catalog_sales),
- wswscs AS 
- (SELECT d_week_seq,
-        SUM(CASE WHEN (d_day_name='Sunday') THEN sales_price ELSE NULL END) sun_sales,
-        SUM(CASE WHEN (d_day_name='Monday') THEN sales_price ELSE NULL END) mon_sales,
-        SUM(CASE WHEN (d_day_name='Tuesday') THEN sales_price ELSE  NULL END) tue_sales,
-        SUM(CASE WHEN (d_day_name='Wednesday') THEN sales_price ELSE NULL END) wed_sales,
-        SUM(CASE WHEN (d_day_name='Thursday') THEN sales_price ELSE NULL END) thu_sales,
-        SUM(CASE WHEN (d_day_name='Friday') THEN sales_price ELSE NULL END) fri_sales,
-        SUM(CASE WHEN (d_day_name='Saturday') THEN sales_price ELSE NULL END) sat_sales
- FROM wscs
-     ,date_dim
- WHERE d_date_sk = sold_date_sk
- GROUP BY d_week_seq)
- SELECT d_week_seq1
-       ,round(sun_sales1/sun_sales2,2)
-       ,round(mon_sales1/mon_sales2,2)
-       ,round(tue_sales1/tue_sales2,2)
-       ,round(wed_sales1/wed_sales2,2)
-       ,round(thu_sales1/thu_sales2,2)
-       ,round(fri_sales1/fri_sales2,2)
-       ,round(sat_sales1/sat_sales2,2)
- from
- (SELECT wswscs.d_week_seq d_week_seq1
-        ,sun_sales sun_sales1
-        ,mon_sales mon_sales1
-        ,tue_sales tue_sales1
-        ,wed_sales wed_sales1
-        ,thu_sales thu_sales1
-        ,fri_sales fri_sales1
-        ,sat_sales sat_sales1
-  FROM wswscs,date_dim 
-  WHERE date_dim.d_week_seq = wswscs.d_week_seq AND
-        d_year = 1999) y,
- (SELECT wswscs.d_week_seq d_week_seq2
-        ,sun_sales sun_sales2
-        ,mon_sales mon_sales2
-        ,tue_sales tue_sales2
-        ,wed_sales wed_sales2
-        ,thu_sales thu_sales2
-        ,fri_sales fri_sales2
-        ,sat_sales sat_sales2
-  FROM wswscs
-      ,date_dim 
-  WHERE date_dim.d_week_seq = wswscs.d_week_seq AND
-        d_year = 1999+1) z
- WHERE d_week_seq1=d_week_seq2-53
- ORDER BY d_week_seq1;
+SELECT  c_customer_id AS customer_id
+       ,c_last_name || ', ' || c_first_name AS customername
+ FROM customer
+     ,customer_address
+     ,customer_demographics
+     ,household_demographics
+     ,income_band
+     ,store_returns
+ WHERE ca_city	        =  'Hopewell'
+   AND c_current_addr_sk = ca_address_sk
+   AND ib_lower_bound   >=  32287
+   AND ib_upper_bound   <=  32287 + 50000
+   AND ib_income_band_sk = hd_income_band_sk
+   AND cd_demo_sk = c_current_cdemo_sk
+   AND hd_demo_sk = c_current_hdemo_sk
+   AND sr_cdemo_sk = cd_demo_sk
+ ORDER BY c_customer_id
+ LIMIT 100;
+
+

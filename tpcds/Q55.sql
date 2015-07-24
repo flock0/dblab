@@ -1,20 +1,14 @@
 
-SELECT  i_product_name
-             ,i_brand
-             ,i_class
-             ,i_category
-             ,AVG(inv_quantity_on_hand) qoh
-       FROM inventory
-           ,date_dim
-           ,item
-           ,warehouse
-       WHERE inv_date_sk=d_date_sk
-              AND inv_item_sk=i_item_sk
-              AND inv_warehouse_sk = w_warehouse_sk
-              AND d_month_seq BETWEEN 1191 AND 1191 + 11
-       GROUP BY rollup(i_product_name
-                       ,i_brand
-                       ,i_class
-                       ,i_category)
-ORDER BY qoh, i_product_name, i_brand, i_class, i_category
-LIMIT 100;
+SELECT  i_brand_id brand_id, i_brAND brand,
+ 	SUM(ss_ext_sales_price) ext_price
+ FROM date_dim, store_sales, item
+ WHERE d_date_sk = ss_sold_date_sk
+ 	AND ss_item_sk = i_item_sk
+ 	AND i_manager_id=36
+ 	AND d_moy=12
+ 	AND d_year=2001
+ GROUP BY i_brand, i_brand_id
+ ORDER BY ext_price DESC, i_brand_id
+LIMIT 100 ;
+
+

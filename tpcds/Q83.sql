@@ -1,66 +1,67 @@
 
-WITH ss AS (
- SELECT i_item_id,SUM(ss_ext_sales_price) total_sales
- from
- 	store_sales,
- 	date_dim,
-         customer_address,
-         item
- WHERE i_item_id in (select
-     i_item_id
-FROM item
-WHERE i_color in ('navajo','khaki','firebrick'))
- AND     ss_item_sk              = i_item_sk
- AND     ss_sold_date_sk         = d_date_sk
- AND     d_year                  = 2000
- AND     d_moy                   = 4
- AND     ss_addr_sk              = ca_address_sk
- AND     ca_gmt_offset           = -5 
+WITH sr_items AS
+ (SELECT i_item_id item_id,
+        SUM(sr_return_quantity) sr_item_qty
+ FROM store_returns,
+      item,
+      date_dim
+ WHERE sr_item_sk = i_item_sk
+ AND   d_date    IN 
+	(SELECT d_date
+	FROM date_dim
+	WHERE d_week_seq IN 
+		(SELECT d_week_seq
+		FROM date_dim
+	  WHERE d_date IN ('1998-01-02','1998-10-15','1998-11-10')))
+ AND   sr_returned_date_sk   = d_date_sk
  GROUP BY i_item_id),
- cs AS (
- SELECT i_item_id,SUM(cs_ext_sales_price) total_sales
- from
- 	catalog_sales,
- 	date_dim,
-         customer_address,
-         item
- WHERE
-         i_item_id               in (select
-  i_item_id
-FROM item
-WHERE i_color in ('navajo','khaki','firebrick'))
- AND     cs_item_sk              = i_item_sk
- AND     cs_sold_date_sk         = d_date_sk
- AND     d_year                  = 2000
- AND     d_moy                   = 4
- AND     cs_bill_addr_sk         = ca_address_sk
- AND     ca_gmt_offset           = -5 
+ cr_items AS
+ (SELECT i_item_id item_id,
+        SUM(cr_return_quantity) cr_item_qty
+ FROM catalog_returns,
+      item,
+      date_dim
+ WHERE cr_item_sk = i_item_sk
+ AND   d_date    IN 
+	(SELECT d_date
+	FROM date_dim
+	WHERE d_week_seq IN 
+		(SELECT d_week_seq
+		FROM date_dim
+	  WHERE d_date IN ('1998-01-02','1998-10-15','1998-11-10')))
+ AND   cr_returned_date_sk   = d_date_sk
  GROUP BY i_item_id),
- ws AS (
- SELECT i_item_id,SUM(ws_ext_sales_price) total_sales
- from
- 	web_sales,
- 	date_dim,
-         customer_address,
-         item
- WHERE
-         i_item_id               in (select
-  i_item_id
-FROM item
-WHERE i_color in ('navajo','khaki','firebrick'))
- AND     ws_item_sk              = i_item_sk
- AND     ws_sold_date_sk         = d_date_sk
- AND     d_year                  = 2000
- AND     d_moy                   = 4
- AND     ws_bill_addr_sk         = ca_address_sk
- AND     ca_gmt_offset           = -5
+ wr_items AS
+ (SELECT i_item_id item_id,
+        SUM(wr_return_quantity) wr_item_qty
+ FROM web_returns,
+      item,
+      date_dim
+ WHERE wr_item_sk = i_item_sk
+ AND   d_date    IN 
+	(SELECT d_date
+	FROM date_dim
+	WHERE d_week_seq IN 
+		(SELECT d_week_seq
+		FROM date_dim
+		WHERE d_date IN ('1998-01-02','1998-10-15','1998-11-10')))
+ AND   wr_returned_date_sk   = d_date_sk
  GROUP BY i_item_id)
-  SELECT  i_item_id ,SUM(total_sales) total_sales
- FROM  (SELECT * FROM ss 
-        union all
-        SELECT * FROM cs 
-        union all
-        SELECT * FROM ws) tmp1
- GROUP BY i_item_id
- ORDER BY total_sales
+  SELECT  sr_items.item_id
+       ,sr_item_qty
+       ,sr_item_qty/(sr_item_qty+cr_item_qty+wr_item_qty)/3.0 * 100 sr_dev
+       ,cr_item_qty
+       ,cr_item_qty/(sr_item_qty+cr_item_qty+wr_item_qty)/3.0 * 100 cr_dev
+       ,wr_item_qty
+       ,wr_item_qty/(sr_item_qty+cr_item_qty+wr_item_qty)/3.0 * 100 wr_dev
+       ,(sr_item_qty+cr_item_qty+wr_item_qty)/3.0 average
+ FROM sr_items
+     ,cr_items
+     ,wr_items
+ WHERE sr_items.item_id=cr_items.item_id
+   AND sr_items.item_id=wr_items.item_id 
+ ORDER BY sr_items.item_id
+         ,sr_item_qty
  LIMIT 100;
+
+

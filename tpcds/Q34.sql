@@ -1,36 +1,31 @@
 
-SELECT  
-    SUM(ss_net_profit) AS total_sum
-   ,s_state
-   ,s_county
-   ,grouping(s_state)+grouping(s_county) AS lochierarchy
-   ,rank() over (
- 	partition by grouping(s_state)+grouping(s_county),
- 	CASE WHEN grouping(s_county) = 0 THEN s_state END 
- 	ORDER BY SUM(ss_net_profit) desc) AS rank_within_parent
- from
-    store_sales
-   ,date_dim       d1
-   ,store
- WHERE
-    d1.d_month_seq BETWEEN 1217 AND 1217+11
- AND d1.d_date_sk = ss_sold_date_sk
- AND s_store_sk  = ss_store_sk
- AND s_state in
-             ( SELECT s_state
-               FROM  (SELECT s_state AS s_state,
- 			    rank() over ( partition by s_state ORDER BY SUM(ss_net_profit) desc) AS ranking
-                      FROM   store_sales, store, date_dim
-                      WHERE  d_month_seq BETWEEN 1217 AND 1217+11
- 			    AND d_date_sk = ss_sold_date_sk
- 			    AND s_store_sk  = ss_store_sk
-                      GROUP BY s_state
-                     ) tmp1 
-               WHERE ranking <= 5
-             )
- GROUP BY rollup(s_state,s_county)
- ORDER BY
-   lochierarchy desc
-  ,CASE WHEN lochierarchy = 0 THEN s_state END
-  ,rank_within_parent
- LIMIT 100;
+SELECT c_last_name
+       ,c_first_name
+       ,c_salutation
+       ,c_preferred_cust_flag
+       ,ss_ticket_number
+       ,cnt FROM
+   (SELECT ss_ticket_number
+          ,ss_customer_sk
+          ,COUNT(*) cnt
+    FROM store_sales,date_dim,store,household_demographics
+    WHERE store_sales.ss_sold_date_sk = date_dim.d_date_sk
+    AND store_sales.ss_store_sk = store.s_store_sk  
+    AND store_sales.ss_hdemo_sk = household_demographics.hd_demo_sk
+    AND (date_dim.d_dom BETWEEN 1 AND 3 OR date_dim.d_dom BETWEEN 25 AND 28)
+    AND (household_demographics.hd_buy_potential = '>10000' OR
+         household_demographics.hd_buy_potential = 'unknown')
+    AND household_demographics.hd_vehicle_count > 0
+    AND (CASE WHEN household_demographics.hd_vehicle_count > 0 
+	then household_demographics.hd_dep_count/ household_demographics.hd_vehicle_count 
+	else null 
+	end)  > 1.2
+    AND date_dim.d_year IN (1998,1998+1,1998+2)
+    AND store.s_county IN ('Williamson County','Williamson County','Williamson County','Williamson County',
+                           'Williamson County','Williamson County','Williamson County','Williamson County')
+    GROUP BY ss_ticket_number,ss_customer_sk) dn,customer
+    WHERE ss_customer_sk = c_customer_sk
+      AND cnt BETWEEN 15 AND 20
+    ORDER BY c_last_name,c_first_name,c_salutation,c_preferred_cust_flag DESC;
+
+

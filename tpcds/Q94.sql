@@ -1,33 +1,29 @@
 
 SELECT  
-   substr(w_warehouse_name,1,20)
-  ,sm_type
-  ,cc_name
-  ,SUM(CASE WHEN (cs_ship_date_sk - cs_sold_date_sk <= 30 ) THEN 1 ELSE 0 END)  AS "30 days" 
-  ,SUM(CASE WHEN (cs_ship_date_sk - cs_sold_date_sk > 30) AND 
-                 (cs_ship_date_sk - cs_sold_date_sk <= 60) THEN 1 ELSE 0 END )  AS "31-60 days" 
-  ,SUM(CASE WHEN (cs_ship_date_sk - cs_sold_date_sk > 60) AND 
-                 (cs_ship_date_sk - cs_sold_date_sk <= 90) THEN 1 ELSE 0 END)  AS "61-90 days" 
-  ,SUM(CASE WHEN (cs_ship_date_sk - cs_sold_date_sk > 90) AND
-                 (cs_ship_date_sk - cs_sold_date_sk <= 120) THEN 1 ELSE 0 END)  AS "91-120 days" 
-  ,SUM(CASE WHEN (cs_ship_date_sk - cs_sold_date_sk  > 120) THEN 1 ELSE 0 END)  AS ">120 days" 
-from
-   catalog_sales
-  ,warehouse
-  ,ship_mode
-  ,call_center
+   COUNT(distinct ws_order_number) AS "order count"
+  ,SUM(ws_ext_ship_cost) AS "total shipping cost"
+  ,SUM(ws_net_profit) AS "total net profit"
+FROM
+   web_sales ws1
   ,date_dim
+  ,customer_address
+  ,web_site
 WHERE
-    d_month_seq BETWEEN 1193 AND 1193 + 11
-AND cs_ship_date_sk   = d_date_sk
-AND cs_warehouse_sk   = w_warehouse_sk
-AND cs_ship_mode_sk   = sm_ship_mode_sk
-AND cs_call_center_sk = cc_call_center_sk
-GROUP BY
-   substr(w_warehouse_name,1,20)
-  ,sm_type
-  ,cc_name
-ORDER BY substr(w_warehouse_name,1,20)
-        ,sm_type
-        ,cc_name
+    d_date BETWEEN '1999-5-01' AND 
+           (cast('1999-5-01' AS date) + 60 days)
+AND ws1.ws_ship_date_sk = d_date_sk
+AND ws1.ws_ship_addr_sk = ca_address_sk
+AND ca_state = 'TX'
+AND ws1.ws_web_site_sk = web_site_sk
+AND web_company_name = 'pri'
+AND exists (SELECT *
+            FROM web_sales ws2
+            WHERE ws1.ws_order_number = ws2.ws_order_number
+              AND ws1.ws_warehouse_sk <> ws2.ws_warehouse_sk)
+AND not exists(SELECT *
+               FROM web_returns wr1
+               WHERE ws1.ws_order_number = wr1.wr_order_number)
+ORDER BY COUNT(distinct ws_order_number)
 LIMIT 100;
+
+

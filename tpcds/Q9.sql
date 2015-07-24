@@ -1,46 +1,51 @@
 
-SELECT  
- i_item_id
- ,i_item_desc
- ,s_store_id
- ,s_store_name
- ,max(ss_net_profit) AS store_sales_profit
- ,max(sr_net_loss) AS store_returns_loss
- ,max(cs_net_profit) AS catalog_sales_profit
- from
- store_sales
- ,store_returns
- ,catalog_sales
- ,date_dim d1
- ,date_dim d2
- ,date_dim d3
- ,store
- ,item
- WHERE
- d1.d_moy = 4
- AND d1.d_year = 2001
- AND d1.d_date_sk = ss_sold_date_sk
- AND i_item_sk = ss_item_sk
- AND s_store_sk = ss_store_sk
- AND ss_customer_sk = sr_customer_sk
- AND ss_item_sk = sr_item_sk
- AND ss_ticket_number = sr_ticket_number
- AND sr_returned_date_sk = d2.d_date_sk
- AND d2.d_moy               BETWEEN 4 AND  10
- AND d2.d_year              = 2001
- AND sr_customer_sk = cs_bill_customer_sk
- AND sr_item_sk = cs_item_sk
- AND cs_sold_date_sk = d3.d_date_sk
- AND d3.d_moy               BETWEEN 4 AND  10 
- AND d3.d_year              = 2001
- GROUP BY
- i_item_id
- ,i_item_desc
- ,s_store_id
- ,s_store_name
- ORDER BY
- i_item_id
- ,i_item_desc
- ,s_store_id
- ,s_store_name
- LIMIT 100;
+SELECT CASE WHEN (SELECT COUNT(*) 
+                  FROM store_sales 
+                  WHERE ss_quantity BETWEEN 1 AND 20) > 25437
+            THEN (SELECT AVG(ss_ext_discount_amt) 
+                  FROM store_sales 
+                  WHERE ss_quantity BETWEEN 1 AND 20) 
+            ELSE (SELECT AVG(ss_net_profit)
+                  FROM store_sales
+                  WHERE ss_quantity BETWEEN 1 AND 20) END bucket1 ,
+       CASE WHEN (SELECT COUNT(*)
+                  FROM store_sales
+                  WHERE ss_quantity BETWEEN 21 AND 40) > 22746
+            THEN (SELECT AVG(ss_ext_discount_amt)
+                  FROM store_sales
+                  WHERE ss_quantity BETWEEN 21 AND 40) 
+            ELSE (SELECT AVG(ss_net_profit)
+                  FROM store_sales
+                  WHERE ss_quantity BETWEEN 21 AND 40) END bucket2,
+       CASE WHEN (SELECT COUNT(*)
+                  FROM store_sales
+                  WHERE ss_quantity BETWEEN 41 AND 60) > 9387
+            THEN (SELECT AVG(ss_ext_discount_amt)
+                  FROM store_sales
+                  WHERE ss_quantity BETWEEN 41 AND 60)
+            ELSE (SELECT AVG(ss_net_profit)
+                  FROM store_sales
+                  WHERE ss_quantity BETWEEN 41 AND 60) END bucket3,
+       CASE WHEN (SELECT COUNT(*)
+                  FROM store_sales
+                  WHERE ss_quantity BETWEEN 61 AND 80) > 10098
+            THEN (SELECT AVG(ss_ext_discount_amt)
+                  FROM store_sales
+                  WHERE ss_quantity BETWEEN 61 AND 80)
+            ELSE (SELECT AVG(ss_net_profit)
+                  FROM store_sales
+                  WHERE ss_quantity BETWEEN 61 AND 80) END bucket4,
+       CASE WHEN (SELECT COUNT(*)
+                  FROM store_sales
+                  WHERE ss_quantity BETWEEN 81 AND 100) > 18213
+            THEN (SELECT AVG(ss_ext_discount_amt)
+                  FROM store_sales
+                  WHERE ss_quantity BETWEEN 81 AND 100)
+            ELSE (SELECT AVG(ss_net_profit)
+                  FROM store_sales
+                  WHERE ss_quantity BETWEEN 81 AND 100) END bucket5
+FROM reason
+WHERE r_reason_sk = 1
+;
+
+

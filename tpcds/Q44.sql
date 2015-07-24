@@ -1,28 +1,35 @@
 
-SELECT  
-   SUM(ws_ext_discount_amt)  AS "Excess Discount Amount" 
-FROM 
-    web_sales 
-   ,item 
-   ,date_dim
-WHERE
-i_manufact_id = 73
-AND i_item_sk = ws_item_sk 
-AND d_date BETWEEN '2002-02-17' AND 
-        (cast('2002-02-17' AS date) + 90 days)
-AND d_date_sk = ws_sold_date_sk 
-AND ws_ext_discount_amt  
-     > ( 
-         SELECT 
-            1.3 * AVG(ws_ext_discount_amt) 
-         FROM 
-            web_sales 
-           ,date_dim
-         WHERE 
-              ws_item_sk = i_item_sk 
-          AND d_date BETWEEN '2002-02-17' AND
-                             (cast('2002-02-17' AS date) + 90 days)
-          AND d_date_sk = ws_sold_date_sk 
-      ) 
-ORDER BY SUM(ws_ext_discount_amt)
+SELECT  ASceding.rnk, i1.i_product_name best_performing, i2.i_product_name worst_performing
+FROM(SELECT *
+     FROM (SELECT item_sk,rank() over (ORDER BY rank_col ASc) rnk
+           FROM (SELECT ss_item_sk item_sk,AVG(ss_net_profit) rank_col 
+                 FROM store_sales ss1
+                 WHERE ss_store_sk = 2
+                 GROUP BY ss_item_sk
+                 HAVING AVG(ss_net_profit) > 0.9*(SELECT AVG(ss_net_profit) rank_col
+                                                  FROM store_sales
+                                                  WHERE ss_store_sk = 2
+                                                    AND ss_hdemo_sk is null
+                                                  GROUP BY ss_store_sk))V1)V11
+     WHERE rnk  < 11) ASceding,
+    (SELECT *
+     FROM (SELECT item_sk,rank() over (ORDER BY rank_col DESC) rnk
+           FROM (SELECT ss_item_sk item_sk,AVG(ss_net_profit) rank_col
+                 FROM store_sales ss1
+                 WHERE ss_store_sk = 2
+                 GROUP BY ss_item_sk
+                 HAVING AVG(ss_net_profit) > 0.9*(SELECT AVG(ss_net_profit) rank_col
+                                                  FROM store_sales
+                                                  WHERE ss_store_sk = 2
+                                                    AND ss_hdemo_sk is null
+                                                  GROUP BY ss_store_sk))V2)V21
+     WHERE rnk  < 11) DESCending,
+item i1,
+item i2
+WHERE ASceding.rnk = DESCending.rnk 
+  AND i1.i_item_sk=asceding.item_sk
+  AND i2.i_item_sk=descending.item_sk
+ORDER BY ASceding.rnk
 LIMIT 100;
+
+

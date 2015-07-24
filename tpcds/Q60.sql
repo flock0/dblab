@@ -1,57 +1,78 @@
 
-SELECT  
-   s_store_name
-  ,s_company_id
-  ,s_street_number
-  ,s_street_name
-  ,s_street_type
-  ,s_suite_number
-  ,s_city
-  ,s_county
-  ,s_state
-  ,s_zip
-  ,SUM(CASE WHEN (sr_returned_date_sk - ss_sold_date_sk <= 30 ) THEN 1 ELSE 0 END)  AS "30 days" 
-  ,SUM(CASE WHEN (sr_returned_date_sk - ss_sold_date_sk > 30) AND 
-                 (sr_returned_date_sk - ss_sold_date_sk <= 60) THEN 1 ELSE 0 END )  AS "31-60 days" 
-  ,SUM(CASE WHEN (sr_returned_date_sk - ss_sold_date_sk > 60) AND 
-                 (sr_returned_date_sk - ss_sold_date_sk <= 90) THEN 1 ELSE 0 END)  AS "61-90 days" 
-  ,SUM(CASE WHEN (sr_returned_date_sk - ss_sold_date_sk > 90) AND
-                 (sr_returned_date_sk - ss_sold_date_sk <= 120) THEN 1 ELSE 0 END)  AS "91-120 days" 
-  ,SUM(CASE WHEN (sr_returned_date_sk - ss_sold_date_sk  > 120) THEN 1 ELSE 0 END)  AS ">120 days" 
-from
-   store_sales
-  ,store_returns
-  ,store
-  ,date_dim d1
-  ,date_dim d2
-WHERE
-    d2.d_year = 2000
-AND d2.d_moy  = 8
-AND ss_ticket_number = sr_ticket_number
-AND ss_item_sk = sr_item_sk
-AND ss_sold_date_sk   = d1.d_date_sk
-AND sr_returned_date_sk   = d2.d_date_sk
-AND ss_customer_sk = sr_customer_sk
-AND ss_store_sk = s_store_sk
-GROUP BY
-   s_store_name
-  ,s_company_id
-  ,s_street_number
-  ,s_street_name
-  ,s_street_type
-  ,s_suite_number
-  ,s_city
-  ,s_county
-  ,s_state
-  ,s_zip
-ORDER BY s_store_name
-        ,s_company_id
-        ,s_street_number
-        ,s_street_name
-        ,s_street_type
-        ,s_suite_number
-        ,s_city
-        ,s_county
-        ,s_state
-        ,s_zip
-LIMIT 100;
+WITH ss AS (
+ SELECT
+          i_item_id,SUM(ss_ext_sales_price) total_sales
+ FROM
+ 	store_sales,
+ 	date_dim,
+         customer_address,
+         item
+ WHERE
+         i_item_id IN (SELECT
+  i_item_id
+FROM
+ item
+WHERE i_category IN ('Children'))
+ AND     ss_item_sk              = i_item_sk
+ AND     ss_sold_date_sk         = d_date_sk
+ AND     d_year                  = 1999
+ AND     d_moy                   = 9
+ AND     ss_addr_sk              = ca_address_sk
+ AND     ca_gmt_offset           = -6 
+ GROUP BY i_item_id),
+ cs AS (
+ SELECT
+          i_item_id,SUM(cs_ext_sales_price) total_sales
+ FROM
+ 	catalog_sales,
+ 	date_dim,
+         customer_address,
+         item
+ WHERE
+         i_item_id               IN (SELECT
+  i_item_id
+FROM
+ item
+WHERE i_category IN ('Children'))
+ AND     cs_item_sk              = i_item_sk
+ AND     cs_sold_date_sk         = d_date_sk
+ AND     d_year                  = 1999
+ AND     d_moy                   = 9
+ AND     cs_bill_addr_sk         = ca_address_sk
+ AND     ca_gmt_offset           = -6 
+ GROUP BY i_item_id),
+ ws AS (
+ SELECT
+          i_item_id,SUM(ws_ext_sales_price) total_sales
+ FROM
+ 	web_sales,
+ 	date_dim,
+         customer_address,
+         item
+ WHERE
+         i_item_id               IN (SELECT
+  i_item_id
+FROM
+ item
+WHERE i_category IN ('Children'))
+ AND     ws_item_sk              = i_item_sk
+ AND     ws_sold_date_sk         = d_date_sk
+ AND     d_year                  = 1999
+ AND     d_moy                   = 9
+ AND     ws_bill_addr_sk         = ca_address_sk
+ AND     ca_gmt_offset           = -6
+ GROUP BY i_item_id)
+  SELECT   
+  i_item_id
+,SUM(total_sales) total_sales
+ FROM  (SELECT * FROM ss 
+        UNION ALL
+        SELECT * FROM cs 
+        UNION ALL
+        SELECT * FROM ws) tmp1
+ GROUP BY i_item_id
+ ORDER BY i_item_id
+      ,total_sales
+ LIMIT 100;
+
+

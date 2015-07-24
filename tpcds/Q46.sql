@@ -1,43 +1,35 @@
 
-WITH web_v1 AS (
-select
-  ws_item_sk item_sk, d_date,
-  SUM(SUM(ws_sales_price))
-      over (partition by ws_item_sk ORDER BY d_date rows BETWEEN unbounded preceding AND current row) cume_sales
-FROM web_sales
-    ,date_dim
-WHERE ws_sold_date_sk=d_date_sk
-  AND d_month_seq BETWEEN 1181 AND 1181+11
-  AND ws_item_sk is not NULL
-GROUP BY ws_item_sk, d_date),
-store_v1 AS (
-select
-  ss_item_sk item_sk, d_date,
-  SUM(SUM(ss_sales_price))
-      over (partition by ss_item_sk ORDER BY d_date rows BETWEEN unbounded preceding AND current row) cume_sales
-FROM store_sales
-    ,date_dim
-WHERE ss_sold_date_sk=d_date_sk
-  AND d_month_seq BETWEEN 1181 AND 1181+11
-  AND ss_item_sk is not NULL
-GROUP BY ss_item_sk, d_date)
- SELECT  *
-FROM (SELECT item_sk
-     ,d_date
-     ,web_sales
-     ,store_sales
-     ,max(web_sales)
-         over (partition by item_sk ORDER BY d_date rows BETWEEN unbounded preceding AND current row) web_cumulative
-     ,max(store_sales)
-         over (partition by item_sk ORDER BY d_date rows BETWEEN unbounded preceding AND current row) store_cumulative
-     FROM (SELECT CASE WHEN web.item_sk IS NOT NULL THEN web.item_sk ELSE store.item_sk END item_sk
-                 ,CASE WHEN web.d_date IS NOT NULL THEN web.d_date ELSE store.d_date END d_date
-                 ,web.cume_sales web_sales
-                 ,store.cume_sales store_sales
-           FROM web_v1 web FULL OUTER JOIN store_v1 store on (web.item_sk = store.item_sk
-                                                          AND web.d_date = store.d_date)
-          )x )y
-WHERE web_cumulative > store_cumulative
-ORDER BY item_sk
-        ,d_date
-LIMIT 100;
+SELECT  c_last_name
+       ,c_first_name
+       ,ca_city
+       ,bought_city
+       ,ss_ticket_number
+       ,amt,profit 
+ FROM
+   (SELECT ss_ticket_number
+          ,ss_customer_sk
+          ,ca_city bought_city
+          ,SUM(ss_coupon_amt) amt
+          ,SUM(ss_net_profit) profit
+    FROM store_sales,date_dim,store,household_demographics,customer_address 
+    WHERE store_sales.ss_sold_date_sk = date_dim.d_date_sk
+    AND store_sales.ss_store_sk = store.s_store_sk  
+    AND store_sales.ss_hdemo_sk = household_demographics.hd_demo_sk
+    AND store_sales.ss_addr_sk = customer_address.ca_address_sk
+    AND (household_demographics.hd_dep_count = 5 OR
+         household_demographics.hd_vehicle_count= 3)
+    AND date_dim.d_dow IN (6,0)
+    AND date_dim.d_year IN (1999,1999+1,1999+2) 
+    AND store.s_city IN ('Midway','Fairview','Fairview','Fairview','Fairview') 
+    GROUP BY ss_ticket_number,ss_customer_sk,ss_addr_sk,ca_city) dn,customer,customer_address current_addr
+    WHERE ss_customer_sk = c_customer_sk
+      AND customer.c_current_addr_sk = current_addr.ca_address_sk
+      AND current_addr.ca_city <> bought_city
+  ORDER BY c_last_name
+          ,c_first_name
+          ,ca_city
+          ,bought_city
+          ,ss_ticket_number
+  LIMIT 100;
+
+

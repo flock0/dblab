@@ -1,33 +1,99 @@
 
-SELECT  
-   substr(w_warehouse_name,1,20)
-  ,sm_type
-  ,web_name
-  ,SUM(CASE WHEN (ws_ship_date_sk - ws_sold_date_sk <= 30 ) THEN 1 ELSE 0 END)  AS "30 days" 
-  ,SUM(CASE WHEN (ws_ship_date_sk - ws_sold_date_sk > 30) AND 
-                 (ws_ship_date_sk - ws_sold_date_sk <= 60) THEN 1 ELSE 0 END )  AS "31-60 days" 
-  ,SUM(CASE WHEN (ws_ship_date_sk - ws_sold_date_sk > 60) AND 
-                 (ws_ship_date_sk - ws_sold_date_sk <= 90) THEN 1 ELSE 0 END)  AS "61-90 days" 
-  ,SUM(CASE WHEN (ws_ship_date_sk - ws_sold_date_sk > 90) AND
-                 (ws_ship_date_sk - ws_sold_date_sk <= 120) THEN 1 ELSE 0 END)  AS "91-120 days" 
-  ,SUM(CASE WHEN (ws_ship_date_sk - ws_sold_date_sk  > 120) THEN 1 ELSE 0 END)  AS ">120 days" 
-from
-   web_sales
-  ,warehouse
-  ,ship_mode
-  ,web_site
-  ,date_dim
-WHERE
-    d_month_seq BETWEEN 1220 AND 1220 + 11
-AND ws_ship_date_sk   = d_date_sk
-AND ws_warehouse_sk   = w_warehouse_sk
-AND ws_ship_mode_sk   = sm_ship_mode_sk
-AND ws_web_site_sk    = web_site_sk
-GROUP BY
-   substr(w_warehouse_name,1,20)
-  ,sm_type
-  ,web_name
-ORDER BY substr(w_warehouse_name,1,20)
-        ,sm_type
-       ,web_name
-LIMIT 100;
+WITH ssales AS
+(SELECT c_last_name
+      ,c_first_name
+      ,s_store_name
+      ,ca_state
+      ,s_state
+      ,i_color
+      ,i_current_price
+      ,i_manager_id
+      ,i_units
+      ,i_size
+      ,SUM(ss_sales_price) netpaid
+FROM store_sales
+    ,store_returns
+    ,store
+    ,item
+    ,customer
+    ,customer_address
+WHERE ss_ticket_number = sr_ticket_number
+  AND ss_item_sk = sr_item_sk
+  AND ss_customer_sk = c_customer_sk
+  AND ss_item_sk = i_item_sk
+  AND ss_store_sk = s_store_sk
+  AND c_birth_country = upper(ca_country)
+  AND s_zip = ca_zip
+AND s_market_id=7
+GROUP BY c_last_name
+        ,c_first_name
+        ,s_store_name
+        ,ca_state
+        ,s_state
+        ,i_color
+        ,i_current_price
+        ,i_manager_id
+        ,i_units
+        ,i_size)
+SELECT c_last_name
+      ,c_first_name
+      ,s_store_name
+      ,SUM(netpaid) paid
+FROM ssales
+WHERE i_colOR = 'orchid'
+GROUP BY c_last_name
+        ,c_first_name
+        ,s_store_name
+HAVING SUM(netpaid) > (SELECT 0.05*AVG(netpaid)
+                                 FROM ssales)
+;
+WITH ssales AS
+(SELECT c_last_name
+      ,c_first_name
+      ,s_store_name
+      ,ca_state
+      ,s_state
+      ,i_color
+      ,i_current_price
+      ,i_manager_id
+      ,i_units
+      ,i_size
+      ,SUM(ss_sales_price) netpaid
+FROM store_sales
+    ,store_returns
+    ,store
+    ,item
+    ,customer
+    ,customer_address
+WHERE ss_ticket_number = sr_ticket_number
+  AND ss_item_sk = sr_item_sk
+  AND ss_customer_sk = c_customer_sk
+  AND ss_item_sk = i_item_sk
+  AND ss_store_sk = s_store_sk
+  AND c_birth_country = upper(ca_country)
+  AND s_zip = ca_zip
+  AND s_market_id = 7
+GROUP BY c_last_name
+        ,c_first_name
+        ,s_store_name
+        ,ca_state
+        ,s_state
+        ,i_color
+        ,i_current_price
+        ,i_manager_id
+        ,i_units
+        ,i_size)
+SELECT c_last_name
+      ,c_first_name
+      ,s_store_name
+      ,SUM(netpaid) paid
+FROM ssales
+WHERE i_colOR = 'chiffon'
+GROUP BY c_last_name
+        ,c_first_name
+        ,s_store_name
+HAVING SUM(netpaid) > (SELECT 0.05*AVG(netpaid)
+                           FROM ssales)
+;
+
+

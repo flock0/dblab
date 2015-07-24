@@ -1,50 +1,35 @@
 
-SELECT  distinct(i_product_name)
- FROM item i1
- WHERE i_manufact_id BETWEEN 682 AND 682+40 
-   AND (SELECT COUNT(*) AS item_cnt
-        FROM item
-        WHERE (i_manufact = i1.i_manufact AND
-        ((i_category = 'Women' AND 
-        (i_color = 'mint' or i_color = 'gainsboro') AND 
-        (i_units = 'Lb' or i_units = 'Dram') AND
-        (i_size = 'large' or i_size = 'petite')
-        ) or
-        (i_category = 'Women' AND
-        (i_color = 'olive' or i_color = 'steel') AND
-        (i_units = 'Unknown' or i_units = 'Cup') AND
-        (i_size = 'extra large' or i_size = 'N/A')
-        ) or
-        (i_category = 'Men' AND
-        (i_color = 'hot' or i_color = 'black') AND
-        (i_units = 'Box' or i_units = 'Case') AND
-        (i_size = 'medium' or i_size = 'economy')
-        ) or
-        (i_category = 'Men' AND
-        (i_color = 'chiffon' or i_color = 'yellow') AND
-        (i_units = 'Dozen' or i_units = 'Pallet') AND
-        (i_size = 'large' or i_size = 'petite')
-        ))) or
-       (i_manufact = i1.i_manufact AND
-        ((i_category = 'Women' AND 
-        (i_color = 'cornflower' or i_color = 'peach') AND 
-        (i_units = 'Bundle' or i_units = 'Tsp') AND
-        (i_size = 'large' or i_size = 'petite')
-        ) or
-        (i_category = 'Women' AND
-        (i_color = 'dark' or i_color = 'lime') AND
-        (i_units = 'Tbl' or i_units = 'Bunch') AND
-        (i_size = 'extra large' or i_size = 'N/A')
-        ) or
-        (i_category = 'Men' AND
-        (i_color = 'cyan' or i_color = 'ivory') AND
-        (i_units = 'Ounce' or i_units = 'Pound') AND
-        (i_size = 'medium' or i_size = 'economy')
-        ) or
-        (i_category = 'Men' AND
-        (i_color = 'snow' or i_color = 'sandy') AND
-        (i_units = 'Oz' or i_units = 'Ton') AND
-        (i_size = 'large' or i_size = 'petite')
-        )))) > 0
- ORDER BY i_product_name
- LIMIT 100;
+SELECT  
+   SUBSTR(w_warehouse_name,1,20)
+  ,sm_type
+  ,web_name
+  ,SUM(CASE WHEN (ws_ship_date_sk - ws_sold_date_sk <= 30 ) THEN 1 ELSE 0 END)  AS "30 days" 
+  ,SUM(CASE WHEN (ws_ship_date_sk - ws_sold_date_sk > 30) AND 
+                 (ws_ship_date_sk - ws_sold_date_sk <= 60) THEN 1 ELSE 0 END )  AS "31-60 days" 
+  ,SUM(CASE WHEN (ws_ship_date_sk - ws_sold_date_sk > 60) AND 
+                 (ws_ship_date_sk - ws_sold_date_sk <= 90) THEN 1 ELSE 0 END)  AS "61-90 days" 
+  ,SUM(CASE WHEN (ws_ship_date_sk - ws_sold_date_sk > 90) AND
+                 (ws_ship_date_sk - ws_sold_date_sk <= 120) THEN 1 ELSE 0 END)  AS "91-120 days" 
+  ,SUM(CASE WHEN (ws_ship_date_sk - ws_sold_date_sk  > 120) THEN 1 ELSE 0 END)  AS ">120 days" 
+FROM
+   web_sales
+  ,warehouse
+  ,ship_mode
+  ,web_site
+  ,date_dim
+WHERE
+    d_month_seq BETWEEN 1212 AND 1212 + 11
+AND ws_ship_date_sk   = d_date_sk
+AND ws_warehouse_sk   = w_warehouse_sk
+AND ws_ship_mode_sk   = sm_ship_mode_sk
+AND ws_web_site_sk    = web_site_sk
+GROUP BY
+   SUBSTR(w_warehouse_name,1,20)
+  ,sm_type
+  ,web_name
+ORDER BY SUBSTR(w_warehouse_name,1,20)
+        ,sm_type
+       ,web_name
+LIMIT 100;
+
+
