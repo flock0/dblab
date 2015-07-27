@@ -31,8 +31,8 @@ object SQLParser extends StandardTokenParsers {
       case Join(left, right, _, _) =>
         extractRelationsFromJoinTree(left) ++ extractRelationsFromJoinTree(right)
       case tbl: SQLTable => Seq(tbl)
-      case sq: Subquery => sq.subquery.joinTree match {
-        case Some(tr) => extractRelationsFromJoinTree(tr)
+      case sq: Subquery => sq.subquery.joinTrees match {
+        case Some(tr) => tr.flatMap(extractRelationsFromJoinTree(_))
         case None     => sq.subquery.relations
       }
     }
@@ -46,18 +46,7 @@ object SQLParser extends StandardTokenParsers {
           case ep: ExpressionProjections => ep.lst.zipWithIndex.filter(p => p._1._2.isDefined).map(al => (al._1._1, al._1._2.get, al._2))
           case ac: AllColumns            => Seq()
         })
-        val hasJoin = tab(0).isInstanceOf[Join]
-        //System.out.println(tab)
-        hasJoin match {
-          case true => tab.size match {
-            case 1 => SelectStatement(pro, rel, Some(tab(0)), whe, grp, hav, ord, lim, aliases)
-            case _ => throw new Exception("BUG: Invalid number of join trees detected!")
-          }
-          case false => tab.size match {
-            case 1 => SelectStatement(pro, rel, Some(tab(0)), whe, grp, hav, ord, lim, aliases)
-            case _ => throw new Exception("Error in query: There are multiple input relations but no join! Cannot process such query statement!")
-          }
-        }
+        SelectStatement(pro, rel, Some(tab), whe, grp, hav, ord, lim, aliases)
       }
     })
 

@@ -169,8 +169,8 @@ class SQLSemanticCheckerAndTypeInference(schema: Schema) {
       case Some(OrderBy(listExpr)) => listExpr.foreach(expr => checkAndInferExpr(expr._1))
       case None                    =>
     }
-    sqlTree.joinTree match {
-      case Some(tr) => checkAndInferJoinTree(tr)
+    sqlTree.joinTrees match {
+      case Some(tr) => tr.foreach(checkAndInferJoinTree(_))
       case None     =>
     }
     sqlTree.having match {

@@ -13,7 +13,7 @@ import ru._
 trait Node
 case class SelectStatement(projections: Projections,
                            relations: Seq[Relation],
-                           joinTree: Option[Relation],
+                           joinTrees: Option[Seq[Relation]],
                            where: Option[Expression],
                            groupBy: Option[GroupBy],
                            having: Option[Having],
@@ -24,7 +24,7 @@ case class SelectStatement(projections: Projections,
     "      SQL TREE\n====================" +
       "\n\tPROJECTIONS      :" + projections.toString +
       "\n\tRELATIONS        :" + relations.mkString(",") +
-      "\n\tJOINTREE         :" + joinTree.getOrElse("").toString +
+      "\n\tJOINTREES        :" + joinTrees.getOrElse("").toString +
       "\n\tWHERE CLAUSES    :" + where.getOrElse("").toString +
       "\n\tGROUP BY CLAUSES :" + groupBy.getOrElse("").toString +
       "\n\tHAVING           :" + having.getOrElse("").toString +

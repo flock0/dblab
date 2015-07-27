@@ -35,7 +35,7 @@ class SQLTreeToOperatorTreeConverter(schema: Schema) {
   def parseJoinTree(e: Option[Relation], scanOps: Seq[ScanOpNode]): OperatorNode = e match {
     case None =>
       if (scanOps.size != 1)
-        throw new Exception("Error in query: There are multiple input relations but no join! Cannot process such query statement!")
+        throw new Exception("LegoBase Frontend BUG: We encountered multiple Scan operators but no joinTree! Has the query been normalized?")
       else scanOps(0)
     case Some(joinTree) => joinTree match {
       case j: Join =>
@@ -177,7 +177,11 @@ class SQLTreeToOperatorTreeConverter(schema: Schema) {
 
   def createMainOperatorTree(sqlTree: SelectStatement): OperatorNode = {
     val scanOps = createScanOperators(sqlTree)
-    val hashJoinOp = parseJoinTree(sqlTree.joinTree, scanOps.toSeq)
+    /* We assume that a normalizer has created a single joinTree
+     * from all the input relations specified in the select statement.
+     * Thus we can just get the first element in this sequence.
+     */
+    val hashJoinOp = parseJoinTree(Some(sqlTree.joinTrees.get(0)), scanOps.toSeq)
     val selectOp = parseWhereClauses(sqlTree.where, hashJoinOp)
     val aggOp = parseAggregations(sqlTree.projections, sqlTree.groupBy, selectOp)
     val orderByOp = parseOrderBy(sqlTree.orderBy, aggOp)
