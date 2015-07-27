@@ -5,6 +5,7 @@ package dblab.legobase
 import schema._
 import frontend._
 import frontend.optimizer._
+import frontend.normalizer.EquiJoinNormalizer
 import benchmarks._
 import utils.Utilities._
 import java.io.PrintStream
@@ -75,7 +76,8 @@ trait LegoRunner {
       currQuery = q
       Console.withOut(new PrintStream(getOutputName)) {
         //executeQuery(currQuery, schema)
-        val qStmt = SQLParser.parse(scala.io.Source.fromFile(queryConf.queryFolder + currQuery + ".sql").mkString)
+        val origStmt = SQLParser.parse(scala.io.Source.fromFile(queryConf.queryFolder + currQuery + ".sql").mkString)
+        val qStmt = EquiJoinNormalizer.normalize(origStmt)
         System.out.println(qStmt + "\n\n")
         new SQLSemanticCheckerAndTypeInference(schema).checkAndInfer(qStmt)
         val operatorTree = new SQLTreeToOperatorTreeConverter(schema).convert(qStmt)
