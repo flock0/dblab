@@ -4,7 +4,7 @@ package frontend
 package normalizer
 
 import frontend.SelectStatement
-
+import scala.collection.mutable.ListBuffer
 /**
  * Takes a select statement an pushes equijoin predicates in the WHERE
  * clause to the tables in the FROM clause. Also reorders the predicates
@@ -14,16 +14,12 @@ object EquiJoinNormalizer extends Normalizer {
   //TODO Move stuff out here!
   override def normalize(stmt: SelectStatement): SelectStatement = {
 
-    var equiPreds: Seq[Expression] = Seq.empty
-    var otherPreds: Seq[Expression] = Seq.empty
-    var usedPreds: Seq[Expression] = Seq.empty
-
     /**
      * Separates equality predicates between two fields
      * on the top level of the predicate operator tree
      * from all the other predicates.
      */
-    def separateEquiJoinPredicates(wh: Expression]): (Seq[Equals], Seq[Expression]) = ex match {
+    def separateEquiJoinPredicates(wh: Expression): (Seq[Equals], Seq[Expression]) = wh match {
       case And(left, right) => {
         val (e1, o1) = separateEquiJoinPredicates(left)
         val (e2, o2) = separateEquiJoinPredicates(right)
@@ -39,7 +35,7 @@ object EquiJoinNormalizer extends Normalizer {
      * Joins two relations by searching for predicate to match.
      * Throws an exception if no suitable predicate can be found.
      */
-    def joinRelations(left: Relation, right: Relation, predicates: Seq[Equals]): Relation = {
+    def joinRelations(left: Relation, right: Relation, predicates: Seq[Equals], usedPreds: ListBuffer[Equals]): Relation = {
 
       /* Could this be a predicate for the join? */
       val candidates = predicates.filter { eq =>
@@ -54,7 +50,7 @@ object EquiJoinNormalizer extends Normalizer {
       // Now we have a suitable join predicate
       // Find the correct order of the the fields in the predicate
       val pred = candidates(0)
-      usedPreds :+= pred
+      usedPreds += pred
       if (containsField(left, pred.left))
         Join(left, right, InnerJoin, pred)
       else
@@ -62,27 +58,40 @@ object EquiJoinNormalizer extends Normalizer {
     }
 
     /** Removes predicates that have been used up by the joins */
-    def purgePredicates =
+    def purgePredicates(equiPreds: Seq[Equals], usedPreds: Seq[Equals]) =
       equiPreds.filter(!usedPreds.contains(_))
 
     /** Connects the remaining predicates using AND */
-    def connectPredicates(eq: Seq[Equals], other: Seq[Expression]): Expression =
-      (eq ++ other).reduce(And(_, _))
+    def connectPredicates(eq: Seq[Equals], other: Seq[Expression]): Option[Expression] =
+      if (eq.size + other.size == 0)
+        None
+      else
+        Some((eq ++ other).reduce(And(_, _)))
 
-    val newJoinTree = stmt.joinTrees match {
+    stmt.joinTrees match {
       case None => throw new Exception("LegoBase Frontend BUG: Couldn't find any joinTree in the select statement!")
-      case Some(jts) => {
-        val (e, o) = separateEquiJoinPredicates(stmt.where) //TODO Handle Option correctly
-        equiPreds = e
-        otherPreds = o
-        jts.reduceLeft((acc, right) => joinRelations(acc, right, equiPreds))
-      }
-    }
-    val purgedPredicates = purgePredicates(equiPreds)
-    val connectedPredicates = connectPredicates(purgedPredicates, otherPreds)
-    //TODO Search through all relations and expressions to find all subqueries and recursively call this method
+      case Some(jts) =>
+        if (jts.size == 1) {
+          stmt //Nothing to normalize
+        } else {
+          // Try to normalize to a single join tree
+          var usedPreds = new ListBuffer[Equals]()
+          val (equiPreds, otherPreds) = stmt.where match {
+            case None =>
+              throw new Exception("LegoBase limitation: Joins without a join condition are currently not supported.")
+            case Some(wh) => separateEquiJoinPredicates(wh)
+          }
 
-    SelectStatement(stmt.projections, stmt.relations, newJoinTree, connectedPredicates,
-      stmt.groupBy, stmt.having, stmt.orderBy, stmt.limit, stmt.aliases)
+          val newJoinTree = jts.reduceLeft((acc, right) => joinRelations(acc, right, equiPreds, usedPreds))
+          val purgedPredicates = purgePredicates(equiPreds, usedPreds)
+          val connectedPredicates = connectPredicates(purgedPredicates, otherPreds)
+          //TODO Search through all relations and expressions to find all subqueries and recursively call this method
+
+          SelectStatement(stmt.projections, stmt.relations, Some(Seq(newJoinTree)), connectedPredicates,
+            stmt.groupBy, stmt.having, stmt.orderBy, stmt.limit, stmt.aliases)
+        }
+
+    }
+
   }
 }
