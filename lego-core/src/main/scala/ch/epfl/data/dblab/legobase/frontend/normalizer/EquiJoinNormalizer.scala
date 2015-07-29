@@ -30,6 +30,7 @@ class EquiJoinNormalizer(schema: Schema) extends Normalizer {
       case o @ _ => (Seq.empty, Seq(o))
     }
 
+    /** Checks if an expression (must be a FieldIdent) is a valid field in the relation */
     def containsField(rel: Relation, field: Expression): Boolean = field match {
       case FieldIdent(quali, fName, _) => rel match { /* Look only at FieldIdents */
         case SQLTable(tName, alias) => quali match {
@@ -54,7 +55,7 @@ class EquiJoinNormalizer(schema: Schema) extends Normalizer {
                 }
           }
         }
-        case Subquery(subquery, alias) => ???
+        case Subquery(subquery, alias) => ??? //TODO Check the projections for a matching attribute
         case Join(left, right, tpe, _) => tpe match {
           /* For LeftSemi- and AntiJoin ignore the right relation, 
            * otherwise check both relations of the join */
