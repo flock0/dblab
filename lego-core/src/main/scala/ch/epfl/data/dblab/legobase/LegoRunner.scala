@@ -66,7 +66,7 @@ trait LegoRunner {
     queryConf.addStats(schema)
 
     System.out.println(schema.stats.mkString("\n"))
-
+    val ejNorm = new EquiJoinNormalizer(schema)
     val queries: scala.collection.immutable.List[String] =
       if (args.length >= 4 && args(3) == "testsuite-scala") (for (i <- 1 to 22 if !excludedQueries.contains(i)) yield "Q" + i).toList
       else if (args.length >= 4 && args(3) == "testsuite-scala-ds") (for (i <- 1 to 99 if !excludedQueries.contains(i)) yield "Q" + i).toList
@@ -77,7 +77,7 @@ trait LegoRunner {
       Console.withOut(new PrintStream(getOutputName)) {
         //executeQuery(currQuery, schema)
         val origStmt = SQLParser.parse(scala.io.Source.fromFile(queryConf.queryFolder + currQuery + ".sql").mkString)
-        val qStmt = EquiJoinNormalizer.normalize(origStmt)
+        val qStmt = ejNorm.normalize(origStmt)
         System.out.println(qStmt + "\n\n")
         new SQLSemanticCheckerAndTypeInference(schema).checkAndInfer(qStmt)
         val operatorTree = new SQLTreeToOperatorTreeConverter(schema).convert(qStmt)

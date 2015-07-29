@@ -4,13 +4,14 @@ package frontend
 package normalizer
 
 import frontend.SelectStatement
+import schema.Schema
 import scala.collection.mutable.ListBuffer
 /**
  * Takes a select statement an pushes equijoin predicates in the WHERE
  * clause to the tables in the FROM clause. Also reorders the predicates
  * to match the order of the tables.
  */
-object EquiJoinNormalizer extends Normalizer {
+class EquiJoinNormalizer(schema: Schema) extends Normalizer {
   //TODO Move stuff out here!
   override def normalize(stmt: SelectStatement): SelectStatement = {
 
@@ -29,7 +30,40 @@ object EquiJoinNormalizer extends Normalizer {
       case o @ _ => (Seq.empty, Seq(o))
     }
 
-    def containsField(rel: Relation, field: Expression): Boolean = ??? //TODO Implement me!
+    def containsField(rel: Relation, field: Expression): Boolean = field match {
+      case FieldIdent(quali, fName, _) => rel match { /* Look only at FieldIdents */
+        case SQLTable(tName, alias) => quali match {
+          case None =>
+            /* Just check if attribute exists in table */
+            schema.findTable(tName).findAttribute(fName) match {
+              case None    => false
+              case Some(_) => true
+            }
+          case Some(q) => alias match {
+            case None => schema.findTable(tName).findAttribute(fName) match {
+              case None    => false
+              case Some(_) => true
+            }
+            case Some(ali) => /* Check that the qualifier matches the alias */
+              if (q != ali)
+                false
+              else
+                schema.findTable(tName).findAttribute(fName) match {
+                  case None    => false
+                  case Some(_) => true
+                }
+          }
+        }
+        case Subquery(subquery, alias) => ???
+        case Join(left, right, tpe, _) => tpe match {
+          /* For LeftSemi- and AntiJoin ignore the right relation, 
+           * otherwise check both relations of the join */
+          case LeftSemiJoin | AntiJoin => containsField(left, field)
+          case _                       => containsField(left, field) || containsField(right, field)
+        }
+      }
+      case _ => false
+    }
 
     /**
      * Joins two relations by searching for predicate to match.
