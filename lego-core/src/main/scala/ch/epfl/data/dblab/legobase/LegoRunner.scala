@@ -77,8 +77,10 @@ trait LegoRunner {
       Console.withOut(new PrintStream(getOutputName)) {
         //executeQuery(currQuery, schema)
         val origStmt = SQLParser.parse(scala.io.Source.fromFile(queryConf.queryFolder + currQuery + ".sql").mkString)
+
         val qStmt = ejNorm.normalize(origStmt)
-        System.out.println(qStmt + "\n\n")
+        System.out.println("BEFORE NORMALIZATION\n\n" + origStmt + "\n\n")
+        System.out.println("AFTER NORMALIZATION\n\n" + qStmt + "\n\n")
         new SQLSemanticCheckerAndTypeInference(schema).checkAndInfer(qStmt)
         val operatorTree = new SQLTreeToOperatorTreeConverter(schema).convert(qStmt)
         val optimizerTree = if ((args(1) == "TPCH") && (q != "Q19" && q != "Q16" && q != "Q22")) new NaiveOptimizer(schema).optimize(operatorTree) else operatorTree // TODO -- FIX OPTIMIZER FOR Q19
