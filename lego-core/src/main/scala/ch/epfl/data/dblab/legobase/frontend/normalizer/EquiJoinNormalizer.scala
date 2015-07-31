@@ -12,11 +12,12 @@ import scala.collection.mutable.ListBuffer
  * to match the order of the tables.
  */
 class EquiJoinNormalizer(schema: Schema) extends Normalizer {
-  //TODO Move stuff out here!
+
   override def normalize(stmt: SelectStatement): SelectStatement = {
     val stmtWithNewJoinTree = pushPredicatesToJoins(stmt)
     reorderJoinPredicates(stmtWithNewJoinTree)
   }
+
   def pushPredicatesToJoins(stmt: SelectStatement): SelectStatement = {
 
     stmt.joinTrees match {
@@ -36,7 +37,7 @@ class EquiJoinNormalizer(schema: Schema) extends Normalizer {
           val newJoinTree = jts.reduceLeft((acc, right) => joinRelations(acc, right, equiPreds, usedPreds))
           val purgedPredicates = purgePredicates(equiPreds, usedPreds)
           val connectedPredicates = connectPredicates(purgedPredicates, otherPreds)
-          //TODO Search through all relations and expressions to find all subqueries and recursively call this method
+          //TODO BOTTOM UP: Search through all relations and expressions to find all subqueries and recursively call this method
 
           SelectStatement(stmt.projections, stmt.relations, Some(Seq(newJoinTree)), connectedPredicates,
             stmt.groupBy, stmt.having, stmt.orderBy, stmt.limit, stmt.aliases)
@@ -67,7 +68,7 @@ class EquiJoinNormalizer(schema: Schema) extends Normalizer {
       case SQLTable(tName, alias) => quali match {
         case None =>
           /* Just check if attribute exists in table */
-          schema.findTable(tName).findAttribute(fName) match {
+          schema.findTable(tName).findAttribute(fName) match { //TODO Remove redundancy
             case None    => false
             case Some(_) => true
           }
@@ -86,7 +87,25 @@ class EquiJoinNormalizer(schema: Schema) extends Normalizer {
               }
         }
       }
-      case Subquery(subquery, alias) => ??? //TODO Check the projections for a matching attribute
+      case Subquery(stmt, alias) => {
+        quali match {
+          case Some(q) => if (q != alias) return false
+          case _ =>
+        }
+        stmt.projections match {
+          case AllColumns() => containsField(stmt.joinTrees.get(0), field)
+          case ExpressionProjections(lst) => lst.exists {
+            case (subExp, subAli) =>
+              subExp match {
+                case FieldIdent(subQuali, subName, _) => subAli match {
+                  case Some(subA) => fName == subA
+                  case None       => fName == subName
+                }
+                case _ => false
+              }
+          }
+        }
+      }
       case Join(left, right, tpe, _) => tpe match {
         /* For LeftSemi- and AntiJoin ignore the right relation, 
          * otherwise check both relations of the join */
