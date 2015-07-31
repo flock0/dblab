@@ -20,10 +20,10 @@ object LegoInterpreter extends LegoRunner {
   def main(args: Array[String]) {
     // Some checks to avoid silly exceptions
     if (args.length < 4) {
-      System.out.println("ERROR: Invalid number (" + args.length + ") of command line arguments!")
-      System.out.println("USAGE: run <data_folder> <test_suite> <scaling_factor_number> <list of queries to run>")
-      System.out.println("     : test_suite should be \"TPCH\" or \"TPCDS\"")
-      System.out.println("     : data_folder should contain folders named sf0.1 sf1 sf2 sf4 etc")
+      println("ERROR: Invalid number (" + args.length + ") of command line arguments!")
+      println("USAGE: run <data_folder> <test_suite> <scaling_factor_number> <list of queries to run>")
+      println("     : test_suite should be \"TPCH\" or \"TPCDS\"")
+      println("     : data_folder should contain folders named sf0.1 sf1 sf2 sf4 etc")
       System.exit(0)
     }
 

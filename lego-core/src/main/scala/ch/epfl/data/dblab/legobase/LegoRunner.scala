@@ -56,7 +56,7 @@ trait LegoRunner {
     val constraintsDDL = DDLParser.parse(constraintsDefStr)
     val schemaWithConstraints = schemaDDL ++ constraintsDDL
     val schema = DDLInterpreter.interpret(schemaWithConstraints)
-    System.out.println(schema)
+    println(schema)
 
     //val dropDefStr = scala.io.Source.fromFile("/home/klonatos/Work/dblab/tpch/drop.sql").mkString
     //val dropDDL = DDLParser.parse(dropDefStr)
@@ -65,7 +65,7 @@ trait LegoRunner {
 
     queryConf.addStats(schema)
 
-    System.out.println(schema.stats.mkString("\n"))
+    println(schema.stats.mkString("\n"))
     val ejNorm = new EquiJoinNormalizer(schema)
     val queries: scala.collection.immutable.List[String] =
       if (args.length >= 4 && args(3) == "testsuite-scala") (for (i <- 1 to 22 if !excludedQueries.contains(i)) yield "Q" + i).toList
@@ -79,13 +79,13 @@ trait LegoRunner {
         val origStmt = SQLParser.parse(scala.io.Source.fromFile(queryConf.queryFolder + currQuery + ".sql").mkString)
 
         val qStmt = ejNorm.normalize(origStmt)
-        System.out.println("BEFORE NORMALIZATION\n\n" + origStmt + "\n\n")
-        System.out.println("AFTER NORMALIZATION\n\n" + qStmt + "\n\n")
+        println("BEFORE NORMALIZATION\n\n" + origStmt + "\n\n")
+        println("AFTER NORMALIZATION\n\n" + qStmt + "\n\n")
         new SQLSemanticCheckerAndTypeInference(schema).checkAndInfer(qStmt)
         val operatorTree = new SQLTreeToOperatorTreeConverter(schema).convert(qStmt)
         val optimizerTree = if ((args(1) == "TPCH") && (q != "Q19" && q != "Q16" && q != "Q22")) new NaiveOptimizer(schema).optimize(operatorTree) else operatorTree // TODO -- FIX OPTIMIZER FOR Q19
         //System.out.println(optimizezr.registeredPushedUpSelections.map({ case (k, v) => (k.name, v) }).mkString(","))
-        System.out.println(optimizerTree + "\n\n")
+        println(optimizerTree + "\n\n")
 
         executeQuery(optimizerTree, schema)
 
@@ -99,19 +99,19 @@ trait LegoRunner {
               str * Config.numRuns
             }
             if (resq != resc) {
-              System.out.println("-----------------------------------------")
-              System.out.println(args(1) + " QUERY" + q + " DID NOT RETURN CORRECT RESULT!!!")
-              System.out.println("Correct result:")
-              System.out.println(resc)
-              System.out.println("Result obtained from execution:")
-              System.out.println(resq)
-              System.out.println("-----------------------------------------")
+              println("-----------------------------------------")
+              println(args(1) + " QUERY" + q + " DID NOT RETURN CORRECT RESULT!!!")
+              println("Correct result:")
+              println(resc)
+              println("Result obtained from execution:")
+              println(resq)
+              println("-----------------------------------------")
               System.exit(0)
-            } else System.out.println("CHECK RESULT FOR " + args(1) + " QUERY " + q + ": [OK]")
+            } else println("CHECK RESULT FOR " + args(1) + " QUERY " + q + ": [OK]")
           } else {
-            System.out.println("Reference result file not found. Skipping checking of result")
-            System.out.println("Execution results:")
-            System.out.println(resq)
+            println("Reference result file not found. Skipping checking of result")
+            println("Execution results:")
+            println(resq)
           }
         }
       }
