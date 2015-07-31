@@ -18,11 +18,23 @@ class EquiJoinNormalizer(schema: Schema) extends Normalizer {
     reorderJoinPredicates(stmtWithNewJoinTree)
   }
 
+
+  def normalizeJoinTree(rel: Relation): Relation = rel match {
+    case Subquery(sq, al) => Subquery(normalize(sq), al)
+    case Join(l, r, t, c) => Join(normalizeJoinTree(l), normalizeJoinTree(r), t, c)
+    case a => a
+  }
+
   def pushPredicatesToJoins(stmt: SelectStatement): SelectStatement = {
 
     stmt.joinTrees match {
       case None => throw new Exception("LegoBase Frontend BUG: Couldn't find any joinTree in the select statement!")
-      case Some(jts) =>
+      case Some(oldJts) => {
+        val jts = oldJts.map(normalizeJoinTree)
+        val newRelations = SQLParser.extractAllRelationsFromJoinTrees(jts)
+        //TODO Search recursively through all projections to find subqueries in exists operators to normalize
+        //TODO Reextract aliases with the SQLParser.extractAllAliasesFromProjections method
+
         if (jts.size == 1) {
           stmt //Nothing to normalize
         } else {
@@ -37,11 +49,12 @@ class EquiJoinNormalizer(schema: Schema) extends Normalizer {
           val newJoinTree = jts.reduceLeft((acc, right) => joinRelations(acc, right, equiPreds, usedPreds))
           val purgedPredicates = purgePredicates(equiPreds, usedPreds)
           val connectedPredicates = connectPredicates(purgedPredicates, otherPreds)
-          //TODO BOTTOM UP: Search through all relations and expressions to find all subqueries and recursively call this method
+          
 
-          SelectStatement(stmt.projections, stmt.relations, Some(Seq(newJoinTree)), connectedPredicates,
+          SelectStatement(stmt.projections, newRelations, Some(Seq(newJoinTree)), connectedPredicates,
             stmt.groupBy, stmt.having, stmt.orderBy, stmt.limit, stmt.aliases)
         }
+      }
 
     }
 

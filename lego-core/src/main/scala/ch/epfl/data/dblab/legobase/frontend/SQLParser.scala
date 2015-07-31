@@ -26,6 +26,13 @@ object SQLParser extends StandardTokenParsers {
     }
   }
 
+  def extractAllAliasesFromProjections(pro: Projections) = pro match {
+    case ep: ExpressionProjections => ep.lst.zipWithIndex.filter(p => p._1._2.isDefined).map(al => (al._1._1, al._1._2.get, al._2))
+    case ac: AllColumns            => Seq()
+  }
+  def extractAllRelationsFromJoinTrees(tables: Seq[Relation]) = 
+    tables.foldLeft(Seq[Relation]())((list, tb) => list ++ extractRelationsFromJoinTree(tb))
+
   def extractRelationsFromJoinTree(joinTree: Relation): Seq[Relation] = {
     joinTree match {
       case Join(left, right, _, _) =>
@@ -41,11 +48,8 @@ object SQLParser extends StandardTokenParsers {
   def parseSelectStatement: Parser[SelectStatement] = (
     "SELECT" ~> parseProjections ~ "FROM" ~ parseRelations ~ parseWhere.? ~ parseGroupBy.? ~ parseHaving.? ~ parseOrderBy.? ~ parseLimit.? <~ ";".? ^^ {
       case pro ~ _ ~ tab ~ whe ~ grp ~ hav ~ ord ~ lim => {
-        val rel = tab.foldLeft(Seq[Relation]())((list, tb) => list ++ extractRelationsFromJoinTree(tb))
-        val aliases = (pro match {
-          case ep: ExpressionProjections => ep.lst.zipWithIndex.filter(p => p._1._2.isDefined).map(al => (al._1._1, al._1._2.get, al._2))
-          case ac: AllColumns            => Seq()
-        })
+        val rel = extractAllRelationsFromJoinTrees(tab)
+        val aliases = extractAllAliasesFromProjections(pro)
         SelectStatement(pro, rel, Some(tab), whe, grp, hav, ord, lim, aliases)
       }
     })
