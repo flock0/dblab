@@ -26,25 +26,6 @@ object SQLParser extends StandardTokenParsers {
     }
   }
 
-  def extractAllAliasesFromProjections(pro: Projections) = pro match {
-    case ep: ExpressionProjections => ep.lst.zipWithIndex.filter(p => p._1._2.isDefined).map(al => (al._1._1, al._1._2.get, al._2))
-    case ac: AllColumns            => Seq()
-  }
-  def extractAllRelationsFromJoinTrees(tables: Seq[Relation]) = 
-    tables.foldLeft(Seq[Relation]())((list, tb) => list ++ extractRelationsFromJoinTree(tb))
-
-  def extractRelationsFromJoinTree(joinTree: Relation): Seq[Relation] = {
-    joinTree match {
-      case Join(left, right, _, _) =>
-        extractRelationsFromJoinTree(left) ++ extractRelationsFromJoinTree(right)
-      case tbl: SQLTable => Seq(tbl)
-      case sq: Subquery => sq.subquery.joinTrees match {
-        case Some(tr) => tr.flatMap(extractRelationsFromJoinTree(_))
-        case None     => sq.subquery.relations
-      }
-    }
-  }
-
   def parseSelectStatement: Parser[SelectStatement] = (
     "SELECT" ~> parseProjections ~ "FROM" ~ parseRelations ~ parseWhere.? ~ parseGroupBy.? ~ parseHaving.? ~ parseOrderBy.? ~ parseLimit.? <~ ";".? ^^ {
       case pro ~ _ ~ tab ~ whe ~ grp ~ hav ~ ord ~ lim => {
@@ -201,6 +182,26 @@ object SQLParser extends StandardTokenParsers {
   def parseLimit: Parser[Limit] = (
     "LIMIT" ~> numericLit ^^ { case lim => Limit(lim.toInt) })
 
+
+  def extractAllAliasesFromProjections(pro: Projections) = pro match {
+    case ep: ExpressionProjections => ep.lst.zipWithIndex.filter(p => p._1._2.isDefined).map(al => (al._1._1, al._1._2.get, al._2))
+    case ac: AllColumns            => Seq()
+  }
+  def extractAllRelationsFromJoinTrees(tables: Seq[Relation]) = 
+    tables.foldLeft(Seq[Relation]())((list, tb) => list ++ extractRelationsFromJoinTree(tb))
+
+  def extractRelationsFromJoinTree(joinTree: Relation): Seq[Relation] = {
+    joinTree match {
+      case Join(left, right, _, _) =>
+        extractRelationsFromJoinTree(left) ++ extractRelationsFromJoinTree(right)
+      case tbl: SQLTable => Seq(tbl)
+      case sq: Subquery => sq.subquery.joinTrees match {
+        case Some(tr) => tr.flatMap(extractRelationsFromJoinTree(_))
+        case None     => sq.subquery.relations
+      }
+    }
+  }
+  
   class SqlLexical extends StdLexical {
     case class FloatLit(chars: String) extends Token {
       override def toString = chars

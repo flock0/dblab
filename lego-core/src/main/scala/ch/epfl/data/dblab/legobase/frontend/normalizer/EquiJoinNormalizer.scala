@@ -6,6 +6,7 @@ package normalizer
 import frontend.SelectStatement
 import schema.Schema
 import scala.collection.mutable.ListBuffer
+
 /**
  * Takes a select statement an pushes equijoin predicates in the WHERE
  * clause to the tables in the FROM clause. Also reorders the predicates
@@ -18,46 +19,45 @@ class EquiJoinNormalizer(schema: Schema) extends Normalizer {
     reorderJoinPredicates(stmtWithNewJoinTree)
   }
 
-
-  def normalizeJoinTree(rel: Relation): Relation = rel match {
-    case Subquery(sq, al) => Subquery(normalize(sq), al)
-    case Join(l, r, t, c) => Join(normalizeJoinTree(l), normalizeJoinTree(r), t, c)
-    case a => a
-  }
-
-  def pushPredicatesToJoins(stmt: SelectStatement): SelectStatement = {
-
+  private def pushPredicatesToJoins(stmt: SelectStatement): SelectStatement = {
     stmt.joinTrees match {
       case None => throw new Exception("LegoBase Frontend BUG: Couldn't find any joinTree in the select statement!")
       case Some(oldJts) => {
+        /* Normalize all subqueries in the JoinTrees of this query */
         val jts = oldJts.map(normalizeJoinTree)
         val newRelations = SQLParser.extractAllRelationsFromJoinTrees(jts)
+
         //TODO Search recursively through all projections to find subqueries in exists operators to normalize
         //TODO Reextract aliases with the SQLParser.extractAllAliasesFromProjections method
 
         if (jts.size == 1) {
-          stmt //Nothing to normalize
+          stmt /* Nothing to normalize */
         } else {
-          // Try to normalize to a single join tree
+          /* Try to normalize to a single join tree */
           var usedPreds = new ListBuffer[Equals]()
-          val (equiPreds, otherPreds) = stmt.where match {
+          val (equiPreds, otherPreds) = stmt.where match { /* There should be at least one predicate in the query */
             case None =>
               throw new Exception("LegoBase limitation: Joins without a join condition are currently not supported.")
             case Some(wh) => separateEquiJoinPredicates(wh)
           }
 
+          /* Join the relations, purge any predicates used in the process and
+           * reconnect them to a single WHERE clause in the end */
           val newJoinTree = jts.reduceLeft((acc, right) => joinRelations(acc, right, equiPreds, usedPreds))
           val purgedPredicates = purgePredicates(equiPreds, usedPreds)
           val connectedPredicates = connectPredicates(purgedPredicates, otherPreds)
           
-
           SelectStatement(stmt.projections, newRelations, Some(Seq(newJoinTree)), connectedPredicates,
             stmt.groupBy, stmt.having, stmt.orderBy, stmt.limit, stmt.aliases)
         }
       }
-
     }
+  }
 
+  private def normalizeJoinTree(rel: Relation): Relation = rel match {
+    case Subquery(sq, al) => Subquery(normalize(sq), al)
+    case Join(l, r, t, c) => Join(normalizeJoinTree(l), normalizeJoinTree(r), t, c)
+    case a => a
   }
 
   /**
@@ -73,60 +73,6 @@ class EquiJoinNormalizer(schema: Schema) extends Normalizer {
     }
     case eq @ Equals(FieldIdent(_, _, _), FieldIdent(_, _, _)) => (Seq(eq), Seq.empty)
     case o @ _ => (Seq.empty, Seq(o))
-  }
-
-  /** Checks if an expression (must be a FieldIdent) is a valid field in the relation */
-  private def containsField(rel: Relation, field: Expression): Boolean = field match {
-    case FieldIdent(quali, fName, _) => rel match { /* Look only at FieldIdents */
-      case SQLTable(tName, alias) => quali match {
-        case None =>
-          /* Just check if attribute exists in table */
-          schema.findTable(tName).findAttribute(fName) match { //TODO Remove redundancy
-            case None    => false
-            case Some(_) => true
-          }
-        case Some(q) => alias match {
-          case None => schema.findTable(tName).findAttribute(fName) match {
-            case None    => false
-            case Some(_) => true
-          }
-          case Some(ali) => /* Check that the qualifier matches the alias */
-            if (q != ali)
-              false
-            else
-              schema.findTable(tName).findAttribute(fName) match {
-                case None    => false
-                case Some(_) => true
-              }
-        }
-      }
-      case Subquery(stmt, alias) => {
-        quali match {
-          case Some(q) => if (q != alias) return false
-          case _ =>
-        }
-        stmt.projections match {
-          case AllColumns() => containsField(stmt.joinTrees.get(0), field)
-          case ExpressionProjections(lst) => lst.exists {
-            case (subExp, subAli) =>
-              subExp match {
-                case FieldIdent(subQuali, subName, _) => subAli match {
-                  case Some(subA) => fName == subA
-                  case None       => fName == subName
-                }
-                case _ => false
-              }
-          }
-        }
-      }
-      case Join(left, right, tpe, _) => tpe match {
-        /* For LeftSemi- and AntiJoin ignore the right relation, 
-         * otherwise check both relations of the join */
-        case LeftSemiJoin | AntiJoin => containsField(left, field)
-        case _                       => containsField(left, field) || containsField(right, field)
-      }
-    }
-    case _ => false
   }
 
   /**
@@ -146,7 +92,7 @@ class EquiJoinNormalizer(schema: Schema) extends Normalizer {
     if (candidates.size > 1)
       throw new Exception(s"LegoBase Frontend BUG: Found more than one candidate predicate for joining $left and $right! Please make the query unambiguous. ($candidates)")
 
-    /* Now we have found a suitable join predicate */
+    /* We have found a single suitable join predicate */
     val pred = candidates(0)
     usedPreds += pred
     Join(left, right, InnerJoin, pred)
@@ -163,7 +109,9 @@ class EquiJoinNormalizer(schema: Schema) extends Normalizer {
     else
       Some((eq ++ other).reduce(And(_, _)))
 
-  def reorderJoinPredicates(stmt: SelectStatement): SelectStatement = {
+  /** Reorders join predicates to adhere to the order of the relations in the join tree */
+  private def reorderJoinPredicates(stmt: SelectStatement): SelectStatement = {
+
     def reorderPreds(rel: Relation): Relation = rel match {
       case Join(left, right, tpe, eq @ Equals(leftExpr, rightExpr)) => {
         Join(reorderPreds(left), reorderPreds(right), tpe,
@@ -177,5 +125,57 @@ class EquiJoinNormalizer(schema: Schema) extends Normalizer {
 
     SelectStatement(stmt.projections, stmt.relations, Some(Seq(reorderPreds(stmt.joinTrees.get(0)))), stmt.where,
       stmt.groupBy, stmt.having, stmt.orderBy, stmt.limit, stmt.aliases)
+  }
+
+  /** Checks if an expression (must be a FieldIdent) is a valid field in the relation */
+  private def containsField(rel: Relation, field: Expression): Boolean = field match {
+    case FieldIdent(quali, fName, _) => rel match { /* Look only at FieldIdents */
+      case SQLTable(tName, alias) => quali match {
+        case None =>
+          /* Just check if attribute exists in table */
+          schema.findTable(tName).findAttribute(fName) match { 
+            case None    => false
+            case Some(_) => true
+          }
+        case Some(q) => {
+          alias match {
+            case Some(a) => if (quali != a) return false
+            case _ =>
+          }
+          schema.findTable(tName).findAttribute(fName) match {
+            case None    => false
+            case Some(_) => true
+          }
+        }
+      }
+      case Subquery(stmt, alias) => {
+        quali match {
+          case Some(q) => if (q != alias) return false
+          case _ =>
+        }
+        stmt.projections match {
+          case AllColumns() => containsField(stmt.joinTrees.get(0), field) /* Suppose that only one join tree is left */
+          case ExpressionProjections(lst) => lst.exists {
+            case (subExp, subAli) =>
+              subExp match {
+                /* Check if there exists a field in the projections of the subquery
+                 * (either identified by field name or alias) */
+                case FieldIdent(subQuali, subName, _) => subAli match {
+                  case Some(subA) => fName == subA
+                  case None       => fName == subName
+                }
+                case _ => false
+              }
+          }
+        }
+      }
+      case Join(left, right, tpe, _) => tpe match {
+        /* For LeftSemi- and AntiJoin we ignore the right relation, 
+         * otherwise check both relations of the join */
+        case LeftSemiJoin | AntiJoin => containsField(left, field)
+        case _                       => containsField(left, field) || containsField(right, field)
+      }
+    }
+    case _ => false
   }
 }
