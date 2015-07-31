@@ -18,7 +18,7 @@ class TPCDSTest extends FlatSpec {
       }
     }
   } else {
-    println("Tests could not run because the environment variable `LEGO_DATA_FOLDER` does not exist.")
+    info("Tests could not run because the environment variable `LEGO_DATA_FOLDER` or `LEGO_SF` does not exist.")
   }
 
 }
