@@ -116,7 +116,7 @@ object SQLParser extends StandardTokenParsers {
     | "SUM" ~> "(" ~> parseExpression <~ ")" ^^ (Sum(_))
     | "AVG" ~> "(" ~> parseExpression <~ ")" ^^ (Avg(_))
     | "YEAR" ~> "(" ~> parseExpression <~ ")" ^^ (Year(_))
-    | "SUBSTRING" ~> "(" ~> parseExpression ~ "," ~ parseExpression ~ "," ~ parseExpression <~ ")" ^^ {
+    | ("SUBSTRING" | "SUBSTR") ~> "(" ~> parseExpression ~ "," ~ parseExpression ~ "," ~ parseExpression <~ ")" ^^ {
       case str ~ _ ~ idx1 ~ _ ~ idx2 => Substring(str, idx1, idx2)
     })
 
@@ -243,7 +243,7 @@ object SQLParser extends StandardTokenParsers {
     "JOIN", "ASC", "DESC", "FROM", "ON", "NOT", "HAVING",
     "EXISTS", "BETWEEN", "LIKE", "IN", "NULL", "LEFT", "RIGHT",
     "FULL", "OUTER", "SEMI", "INNER", "ANTI", "COUNT", "SUM", "AVG", "MIN", "MAX", "YEAR",
-    "DATE", "TOP", "LIMIT", "CASE", "WHEN", "THEN", "ELSE", "END", "SUBSTRING")
+    "DATE", "TOP", "LIMIT", "CASE", "WHEN", "THEN", "ELSE", "END", "SUBSTRING", "SUBSTR")
 
   lexical.delimiters += (
     "*", "+", "-", "<", "=", "<>", "!=", "<=", ">=", ">", "/", "(", ")", ",", ".", ";")
