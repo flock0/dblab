@@ -136,10 +136,10 @@ class SQLSemanticCheckerAndTypeInference(schema: Schema) {
       checkAndInferExpr(fld)
       listExpr.foreach(e => checkAndInferExpr(e))
       in.setTp(typeTag[Boolean])
-    case substr @ Substring(fld, idx1, idx2) =>
+    case substr @ Substring(fld, idx, len) =>
       checkAndInferExpr(fld)
-      checkAndInferExpr(idx1)
-      checkAndInferExpr(idx2)
+      checkAndInferExpr(idx)
+      checkAndInferExpr(len)
       substr.setTp(fld.tp)
     case e: SelectStatement => // Nested subquery
       checkAndInfer(e)

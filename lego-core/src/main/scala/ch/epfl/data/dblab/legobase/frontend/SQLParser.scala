@@ -182,12 +182,11 @@ object SQLParser extends StandardTokenParsers {
   def parseLimit: Parser[Limit] = (
     "LIMIT" ~> numericLit ^^ { case lim => Limit(lim.toInt) })
 
-
   def extractAllAliasesFromProjections(pro: Projections) = pro match {
     case ep: ExpressionProjections => ep.lst.zipWithIndex.filter(p => p._1._2.isDefined).map(al => (al._1._1, al._1._2.get, al._2))
     case ac: AllColumns            => Seq()
   }
-  def extractAllRelationsFromJoinTrees(tables: Seq[Relation]) = 
+  def extractAllRelationsFromJoinTrees(tables: Seq[Relation]) =
     tables.foldLeft(Seq[Relation]())((list, tb) => list ++ extractRelationsFromJoinTree(tb))
 
   def extractRelationsFromJoinTree(joinTree: Relation): Seq[Relation] = {
@@ -201,7 +200,7 @@ object SQLParser extends StandardTokenParsers {
       }
     }
   }
-  
+
   class SqlLexical extends StdLexical {
     case class FloatLit(chars: String) extends Token {
       override def toString = chars

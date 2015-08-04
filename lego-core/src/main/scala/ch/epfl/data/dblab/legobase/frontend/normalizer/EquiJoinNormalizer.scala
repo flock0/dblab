@@ -46,7 +46,7 @@ class EquiJoinNormalizer(schema: Schema) extends Normalizer {
           val newJoinTree = jts.reduceLeft((acc, right) => joinRelations(acc, right, equiPreds, usedPreds))
           val purgedPredicates = purgePredicates(equiPreds, usedPreds)
           val connectedPredicates = connectPredicates(purgedPredicates, otherPreds)
-          
+
           SelectStatement(stmt.projections, newRelations, Some(Seq(newJoinTree)), connectedPredicates,
             stmt.groupBy, stmt.having, stmt.orderBy, stmt.limit, stmt.aliases)
         }
@@ -57,7 +57,7 @@ class EquiJoinNormalizer(schema: Schema) extends Normalizer {
   private def normalizeJoinTree(rel: Relation): Relation = rel match {
     case Subquery(sq, al) => Subquery(normalize(sq), al)
     case Join(l, r, t, c) => Join(normalizeJoinTree(l), normalizeJoinTree(r), t, c)
-    case a => a
+    case a                => a
   }
 
   /**
@@ -133,14 +133,14 @@ class EquiJoinNormalizer(schema: Schema) extends Normalizer {
       case SQLTable(tName, alias) => quali match {
         case None =>
           /* Just check if attribute exists in table */
-          schema.findTable(tName).findAttribute(fName) match { 
+          schema.findTable(tName).findAttribute(fName) match {
             case None    => false
             case Some(_) => true
           }
         case Some(q) => {
           alias match {
             case Some(a) => if (quali != a) return false
-            case _ =>
+            case _       =>
           }
           schema.findTable(tName).findAttribute(fName) match {
             case None    => false
@@ -151,7 +151,7 @@ class EquiJoinNormalizer(schema: Schema) extends Normalizer {
       case Subquery(stmt, alias) => {
         quali match {
           case Some(q) => if (q != alias) return false
-          case _ =>
+          case _       =>
         }
         stmt.projections match {
           case AllColumns() => containsField(stmt.joinTrees.get(0), field) /* Suppose that only one join tree is left */

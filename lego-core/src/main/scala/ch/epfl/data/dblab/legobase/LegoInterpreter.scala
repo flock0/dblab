@@ -208,11 +208,11 @@ object LegoInterpreter extends LegoRunner {
     case Year(date) =>
       val d = parseExpression(date, t, t2)
       d.asInstanceOf[Int] / 10000;
-    case Substring(field, idx1, idx2) =>
+    case Substring(field, idx, len) =>
       val f = parseExpression(field, t, t2).asInstanceOf[OptimalString]
-      val index1 = parseExpression(idx1, t, t2).asInstanceOf[Int] - 1
-      val index2 = parseExpression(idx2, t, t2).asInstanceOf[Int]
-      f.slice(index1, index2)
+      val from = parseExpression(idx, t, t2).asInstanceOf[Int] - 1
+      val until = from + parseExpression(len, t, t2).asInstanceOf[Int]
+      f.slice(from, until)
     case Like(field, value, negate) =>
       val f = parseExpression(field, t, t2).asInstanceOf[OptimalString]
       val s = parseExpression(value, t, t2).asInstanceOf[OptimalString]

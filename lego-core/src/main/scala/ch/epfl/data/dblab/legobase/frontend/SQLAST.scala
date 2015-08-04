@@ -101,7 +101,7 @@ case class Max(expr: Expression) extends Aggregation
 case class Year(expr: Expression) extends Expression {
   override val isAggregateOpExpr = false
 }
-case class Substring(expr: Expression, idx1: Expression, idx2: Expression) extends Expression {
+case class Substring(expr: Expression, idx: Expression, len: Expression) extends Expression {
   override val isAggregateOpExpr = false
 }
 
