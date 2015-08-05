@@ -1,6 +1,6 @@
 
 SELECT  ca_zip
-       ,SUM(cs_sales_price)
+       ,SUM(cs_sales_price) AS sum_sales_price
  FROM catalog_sales
      ,customer
      ,customer_address
