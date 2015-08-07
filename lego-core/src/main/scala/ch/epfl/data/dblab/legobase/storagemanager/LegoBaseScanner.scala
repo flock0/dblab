@@ -61,10 +61,14 @@ class LegobaseScanner(filename: String) {
 
   def next_char() = {
     byteRead = br.read()
-    val del = br.read() //delimiter
-    //if ((del != delimiter) && (del != '\n'))
-    //throw new RuntimeException("Expected delimiter after char. Not found. Sorry!")
-    byteRead.asInstanceOf[Char]
+    if ((byteRead != delimiter) && (byteRead != '\n')) {
+      val del = br.read() //delimiter
+      if ((del != delimiter) && (del != '\n'))
+        throw new RuntimeException("Expected delimiter after char. Not found. Sorry!")
+      byteRead.asInstanceOf[Char]
+    } else {
+      '\u0000' //TODO implement support for proper NULL values
+    }
   }
 
   def next(buf: Array[Byte]): Int = {
