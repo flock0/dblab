@@ -4,7 +4,7 @@ WITH year_total AS (
        ,c_first_name customer_first_name
        ,c_last_name customer_last_name
        ,d_year AS year
-       ,max(ss_net_paid) year_total
+       ,MAX(ss_net_paid) year_total
        ,'s' sale_type
  FROM customer
      ,store_sales
@@ -21,7 +21,7 @@ WITH year_total AS (
        ,c_first_name customer_first_name
        ,c_last_name customer_last_name
        ,d_year AS year
-       ,max(ws_net_paid) year_total
+       ,MAX(ws_net_paid) year_total
        ,'w' sale_type
  FROM customer
      ,web_sales

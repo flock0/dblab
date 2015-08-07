@@ -26,9 +26,9 @@ FROM (SELECT item_sk
      ,d_date
      ,web_sales
      ,store_sales
-     ,max(web_sales)
+     ,MAX(web_sales)
          over (partition by item_sk ORDER BY d_date rows BETWEEN unbounded preceding AND current row) web_cumulative
-     ,max(store_sales)
+     ,MAX(store_sales)
          over (partition by item_sk ORDER BY d_date rows BETWEEN unbounded preceding AND current row) store_cumulative
      FROM (SELECT CASE WHEN web.item_sk is not null THEN web.item_sk ELSE store.item_sk END item_sk
                  ,CASE WHEN web.d_date is not null THEN web.d_date ELSE store.d_date END d_date

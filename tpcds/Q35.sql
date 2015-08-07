@@ -6,17 +6,17 @@ SELECT
   c_dep_count,
   COUNT(*) cnt1,
   AVG(cd_dep_count),
-  max(cd_dep_count),
+  MAX(cd_dep_count),
   SUM(cd_dep_count),
   cd_dep_employed_count,
   COUNT(*) cnt2,
   AVG(cd_dep_employed_count),
-  max(cd_dep_employed_count),
+  MAX(cd_dep_employed_count),
   SUM(cd_dep_employed_count),
   cd_dep_college_count,
   COUNT(*) cnt3,
   AVG(cd_dep_college_count),
-  max(cd_dep_college_count),
+  MAX(cd_dep_college_count),
   SUM(cd_dep_college_count)
  FROM
   customer c,customer_address ca,customer_demographics
