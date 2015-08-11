@@ -139,7 +139,7 @@ class EquiJoinNormalizer(schema: Schema) extends Normalizer {
           }
         case Some(q) => {
           alias match {
-            case Some(a) => if (quali != a) return false
+            case Some(a) => if (q != a) return false
             case _       =>
           }
           schema.findTable(tName).findAttribute(fName) match {
