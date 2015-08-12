@@ -7,7 +7,7 @@ SELECT
    ,rank() over (
  	partition by grouping(i_category)+grouping(i_class),
  	CASE WHEN grouping(i_class) = 0 THEN i_category END 
- 	ORDER BY SUM(ws_net_paid) DESC) AS rank_WITHin_parent
+ 	ORDER BY SUM(ws_net_paid) DESC) AS rank_within_parent
  FROM
     web_sales
    ,date_dim       d1
@@ -20,7 +20,7 @@ SELECT
  ORDER BY
    lochierarchy DESC,
    CASE WHEN lochierarchy = 0 THEN i_category END,
-   rank_WITHin_parent
+   rank_within_parent
  LIMIT 100;
 
 

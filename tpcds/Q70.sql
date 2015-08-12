@@ -7,7 +7,7 @@ SELECT
    ,rank() over (
  	partition by grouping(s_state)+grouping(s_county),
  	CASE WHEN grouping(s_county) = 0 THEN s_state END 
- 	ORDER BY SUM(ss_net_profit) DESC) AS rank_WITHin_parent
+ 	ORDER BY SUM(ss_net_profit) DESC) AS rank_within_parent
  FROM
     store_sales
    ,date_dim       d1
@@ -32,7 +32,7 @@ SELECT
  ORDER BY
    lochierarchy DESC
   ,CASE WHEN lochierarchy = 0 THEN s_state END
-  ,rank_WITHin_parent
+  ,rank_within_parent
  LIMIT 100;
 
 
