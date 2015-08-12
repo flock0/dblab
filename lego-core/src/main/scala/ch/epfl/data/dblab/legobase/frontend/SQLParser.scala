@@ -27,13 +27,17 @@ object SQLParser extends StandardTokenParsers {
   }
 
   def parseSelectStatement: Parser[SelectStatement] = (
-    "SELECT" ~> parseProjections ~ "FROM" ~ parseRelations ~ parseWhere.? ~ parseGroupBy.? ~ parseHaving.? ~ parseOrderBy.? ~ parseLimit.? <~ ";".? ^^ {
-      case pro ~ _ ~ tab ~ whe ~ grp ~ hav ~ ord ~ lim => {
+    rep(parseWith) ~ "SELECT" ~ parseProjections ~ "FROM" ~ parseRelations ~ parseWhere.? ~ parseGroupBy.? ~ parseHaving.? ~ parseOrderBy.? ~ parseLimit.? <~ ";".? ^^ {
+      case withs ~ _ ~ pro ~ _ ~ tab ~ whe ~ grp ~ hav ~ ord ~ lim => {
         val rel = extractAllRelationsFromJoinTrees(tab)
         val aliases = extractAllAliasesFromProjections(pro)
-        SelectStatement(pro, rel, Some(tab), whe, grp, hav, ord, lim, aliases)
+        SelectStatement(withs, pro, rel, Some(tab), whe, grp, hav, ord, lim, aliases)
       }
     })
+
+  def parseWith: Parser[Subquery] =
+    "WITH" ~> ident ~ "AS" ~ "(" ~ parseSelectStatement <~ ")" ^^
+      { case name ~ _ ~ _ ~ stmt => Subquery(stmt, name) }
 
   def parseProjections: Parser[Projections] = (
     "*" ^^^ AllColumns()
@@ -239,7 +243,7 @@ object SQLParser extends StandardTokenParsers {
     elem("decimal", _.isInstanceOf[lexical.FloatLit]) ^^ (_.chars)
 
   lexical.reserved += (
-    "SELECT", "AS", "OR", "AND", "GROUP", "ORDER", "BY", "WHERE",
+    "SELECT", "AS", "OR", "AND", "GROUP", "ORDER", "BY", "WHERE", "WITH",
     "JOIN", "ASC", "DESC", "FROM", "ON", "NOT", "HAVING",
     "EXISTS", "BETWEEN", "LIKE", "IN", "NULL", "LEFT", "RIGHT",
     "FULL", "OUTER", "SEMI", "INNER", "ANTI", "COUNT", "SUM", "AVG", "MIN", "MAX", "YEAR",

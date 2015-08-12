@@ -47,7 +47,7 @@ class EquiJoinNormalizer(schema: Schema) extends Normalizer {
           val purgedPredicates = purgePredicates(equiPreds, usedPreds)
           val connectedPredicates = connectPredicates(purgedPredicates, otherPreds)
 
-          SelectStatement(stmt.projections, newRelations, Some(Seq(newJoinTree)), connectedPredicates,
+          SelectStatement(stmt.withs, stmt.projections, newRelations, Some(Seq(newJoinTree)), connectedPredicates,
             stmt.groupBy, stmt.having, stmt.orderBy, stmt.limit, stmt.aliases)
         }
       }
@@ -123,7 +123,7 @@ class EquiJoinNormalizer(schema: Schema) extends Normalizer {
       case _ => rel
     }
 
-    SelectStatement(stmt.projections, stmt.relations, Some(Seq(reorderPreds(stmt.joinTrees.get(0)))), stmt.where,
+    SelectStatement(stmt.withs, stmt.projections, stmt.relations, Some(Seq(reorderPreds(stmt.joinTrees.get(0)))), stmt.where,
       stmt.groupBy, stmt.having, stmt.orderBy, stmt.limit, stmt.aliases)
   }
 
