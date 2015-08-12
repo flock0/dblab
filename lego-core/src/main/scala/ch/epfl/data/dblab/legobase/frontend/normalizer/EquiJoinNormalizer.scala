@@ -28,6 +28,7 @@ class EquiJoinNormalizer(schema: Schema) extends Normalizer {
         val newRelations = SQLParser.extractAllRelationsFromJoinTrees(jts)
 
         //TODO Search recursively through all projections to find subqueries in exists operators to normalize
+        //     Take a look at SQLTreeToOperatorTreeConverter.analyzeExprForSubquery method
         //TODO Reextract aliases with the SQLParser.extractAllAliasesFromProjections method
 
         if (jts.size == 1) {
