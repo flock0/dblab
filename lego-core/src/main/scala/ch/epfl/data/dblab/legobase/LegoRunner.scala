@@ -5,7 +5,7 @@ package dblab.legobase
 import schema._
 import frontend._
 import frontend.optimizer._
-import frontend.normalizer.EquiJoinNormalizer
+import frontend.normalizer.{ EquiJoinNormalizer, CTENormalizer }
 import benchmarks._
 import utils.Utilities._
 import java.io.PrintStream
@@ -78,7 +78,7 @@ trait LegoRunner {
         //executeQuery(currQuery, schema)
         val origStmt = SQLParser.parse(scala.io.Source.fromFile(queryConf.queryFolder + currQuery + ".sql").mkString)
 
-        val qStmt = ejNorm.normalize(origStmt)
+        val qStmt = ejNorm.normalize(CTENormalizer.normalize(origStmt))
         println("====== BEFORE NORMALIZATION ======\n" + origStmt + "\n")
         println("====== AFTER NORMALIZATION ======\n" + qStmt + "\n")
         new SQLSemanticCheckerAndTypeInference(schema).checkAndInfer(qStmt)
