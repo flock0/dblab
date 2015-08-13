@@ -23,13 +23,13 @@ WITH wscs AS
  WHERE d_date_sk = sold_date_sk
  GROUP BY d_week_seq)
  SELECT d_week_seq1
-       ,round(sun_sales1/sun_sales2,2)
-       ,round(mon_sales1/mon_sales2,2)
-       ,round(tue_sales1/tue_sales2,2)
-       ,round(wed_sales1/wed_sales2,2)
-       ,round(thu_sales1/thu_sales2,2)
-       ,round(fri_sales1/fri_sales2,2)
-       ,round(sat_sales1/sat_sales2,2)
+       ,ROUND(sun_sales1/sun_sales2,2)
+       ,ROUND(mon_sales1/mon_sales2,2)
+       ,ROUND(tue_sales1/tue_sales2,2)
+       ,ROUND(wed_sales1/wed_sales2,2)
+       ,ROUND(thu_sales1/thu_sales2,2)
+       ,ROUND(fri_sales1/fri_sales2,2)
+       ,ROUND(sat_sales1/sat_sales2,2)
  FROM
  (SELECT wswscs.d_week_seq d_week_seq1
         ,sun_sales sun_sales1

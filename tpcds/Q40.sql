@@ -3,9 +3,9 @@ SELECT
    w_state
   ,i_item_id
   ,SUM(CASE WHEN (cast(d_date AS date) < cast ('1998-04-08' AS date)) 
- 		then cs_sales_price - coalesce(cr_refunded_cash,0) ELSE 0 END) AS sales_before
+ 		then cs_sales_price - COALESCE(cr_refunded_cash,0) ELSE 0 END) AS sales_before
   ,SUM(CASE WHEN (cast(d_date AS date) >= cast ('1998-04-08' AS date)) 
- 		then cs_sales_price - coalesce(cr_refunded_cash,0) ELSE 0 END) AS sales_after
+ 		then cs_sales_price - COALESCE(cr_refunded_cash,0) ELSE 0 END) AS sales_after
  FROM
    catalog_sales left outer join catalog_returns on
        (cs_order_number = cr_order_number 

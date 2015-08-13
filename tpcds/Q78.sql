@@ -37,22 +37,22 @@ ss AS
    )
  SELECT 
 ss_sold_year, ss_item_sk, ss_customer_sk,
-round(ss_qty/(coalesce(ws_qty+cs_qty,1)),2) ratio,
+ROUND(ss_qty/(COALESCE(ws_qty+cs_qty,1)),2) ratio,
 ss_qty store_qty, ss_wc store_wholesale_cost, ss_sp store_sales_price,
-coalesce(ws_qty,0)+coalesce(cs_qty,0) other_chan_qty,
-coalesce(ws_wc,0)+coalesce(cs_wc,0) other_chan_wholesale_cost,
-coalesce(ws_sp,0)+coalesce(cs_sp,0) other_chan_sales_price
+COALESCE(ws_qty,0)+COALESCE(cs_qty,0) other_chan_qty,
+COALESCE(ws_wc,0)+COALESCE(cs_wc,0) other_chan_wholesale_cost,
+COALESCE(ws_sp,0)+COALESCE(cs_sp,0) other_chan_sales_price
 FROM ss
 left join ws on (ws_sold_year=ss_sold_year AND ws_item_sk=ss_item_sk AND ws_customer_sk=ss_customer_sk)
 left join cs on (cs_sold_year=ss_sold_year AND cs_item_sk=cs_item_sk AND cs_customer_sk=ss_customer_sk)
-WHERE coalesce(ws_qty,0)>0 AND coalesce(cs_qty, 0)>0 AND ss_sold_year=2000
+WHERE COALESCE(ws_qty,0)>0 AND COALESCE(cs_qty, 0)>0 AND ss_sold_year=2000
 ORDER BY 
   ss_sold_year, ss_item_sk, ss_customer_sk,
   ss_qty DESC, ss_wc DESC, ss_sp DESC,
   other_chan_qty,
   other_chan_wholesale_cost,
   other_chan_sales_price,
-  round(ss_qty/(coalesce(ws_qty+cs_qty,1)),2)
+  ROUND(ss_qty/(COALESCE(ws_qty+cs_qty,1)),2)
 LIMIT 100;
 
 

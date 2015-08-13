@@ -79,8 +79,8 @@ WITH ss AS
  (SELECT 'store channel' AS channel
         , ss.s_store_sk AS id
         , sales
-        , coalesce(returns, 0) AS returns
-        , (profit - coalesce(profit_loss,0)) AS profit
+        , COALESCE(returns, 0) AS returns
+        , (profit - COALESCE(profit_loss,0)) AS profit
  FROM   ss left join sr
         on  ss.s_store_sk = sr.s_store_sk
  UNION ALL
@@ -95,8 +95,8 @@ WITH ss AS
  SELECT 'web channel' AS channel
         , ws.wp_web_page_sk AS id
         , sales
-        , coalesce(returns, 0) returns
-        , (profit - coalesce(profit_loss,0)) AS profit
+        , COALESCE(returns, 0) returns
+        , (profit - COALESCE(profit_loss,0)) AS profit
  FROM   ws left join wr
         on  ws.wp_web_page_sk = wr.wp_web_page_sk
  ) x

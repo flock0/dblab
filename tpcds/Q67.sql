@@ -18,7 +18,7 @@ FROM (SELECT i_category
                   ,d_qoy
                   ,d_moy
                   ,s_store_id
-                  ,SUM(coalesce(ss_sales_price*ss_quantity,0)) sumsales
+                  ,SUM(COALESCE(ss_sales_price*ss_quantity,0)) sumsales
             FROM store_sales
                 ,date_dim
                 ,store

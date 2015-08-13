@@ -2,8 +2,8 @@
 WITH ssr AS
  (SELECT  s_store_id AS store_id,
           SUM(ss_ext_sales_price) AS sales,
-          SUM(coalesce(sr_return_amt, 0)) AS returns,
-          SUM(ss_net_profit - coalesce(sr_net_loss, 0)) AS profit
+          SUM(COALESCE(sr_return_amt, 0)) AS returns,
+          SUM(ss_net_profit - COALESCE(sr_net_loss, 0)) AS profit
   FROM store_sales left outer join store_returns on
          (ss_item_sk = sr_item_sk AND ss_ticket_number = sr_ticket_number),
      date_dim,
@@ -23,8 +23,8 @@ WITH ssr AS
  csr AS
  (SELECT  cp_catalog_page_id AS catalog_page_id,
           SUM(cs_ext_sales_price) AS sales,
-          SUM(coalesce(cr_return_amount, 0)) AS returns,
-          SUM(cs_net_profit - coalesce(cr_net_loss, 0)) AS profit
+          SUM(COALESCE(cr_return_amount, 0)) AS returns,
+          SUM(cs_net_profit - COALESCE(cr_net_loss, 0)) AS profit
   FROM catalog_sales left outer join catalog_returns on
          (cs_item_sk = cr_item_sk AND cs_order_number = cr_order_number),
      date_dim,
@@ -44,8 +44,8 @@ GROUP BY cp_catalog_page_id)
  wsr AS
  (SELECT  web_site_id,
           SUM(ws_ext_sales_price) AS sales,
-          SUM(coalesce(wr_return_amt, 0)) AS returns,
-          SUM(ws_net_profit - coalesce(wr_net_loss, 0)) AS profit
+          SUM(COALESCE(wr_return_amt, 0)) AS returns,
+          SUM(ws_net_profit - COALESCE(wr_net_loss, 0)) AS profit
   FROM web_sales left outer join web_returns on
          (ws_item_sk = wr_item_sk AND ws_order_number = wr_order_number),
      date_dim,
