@@ -18,11 +18,11 @@ AND cs1.cs_call_center_sk = cc_call_center_sk
 AND cc_county IN ('Williamson County','Williamson County','Williamson County','Williamson County',
                   'Williamson County'
 )
-AND exists (SELECT *
+AND EXISTS (SELECT *
             FROM catalog_sales cs2
             WHERE cs1.cs_order_number = cs2.cs_order_number
               AND cs1.cs_warehouse_sk <> cs2.cs_warehouse_sk)
-AND not exists(SELECT *
+AND NOT EXISTS(SELECT *
                FROM catalog_returns cr1
                WHERE cs1.cs_order_number = cr1.cr_order_number)
 ORDER BY COUNT(distinct cs_order_number)

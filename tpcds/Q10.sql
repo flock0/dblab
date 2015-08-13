@@ -18,21 +18,21 @@ SELECT
   customer c,customer_address ca,customer_demographics
  WHERE
   c.c_current_addr_sk = ca.ca_address_sk AND
-  ca_county IN ('Walker County','RichlAND County','Gaines County','Douglas County','Dona Ana County') AND
+  ca_county IN ('Walker County','Richland County','Gaines County','Douglas County','Dona Ana County') AND
   cd_demo_sk = c.c_current_cdemo_sk AND 
-  exists (SELECT *
+  EXISTS (SELECT *
           FROM store_sales,date_dim
           WHERE c.c_customer_sk = ss_customer_sk AND
                 ss_sold_date_sk = d_date_sk AND
                 d_year = 2002 AND
                 d_moy BETWEEN 4 AND 4+3) AND
-   (exists (SELECT *
+   (EXISTS (SELECT *
             FROM web_sales,date_dim
             WHERE c.c_customer_sk = ws_bill_customer_sk AND
                   ws_sold_date_sk = d_date_sk AND
                   d_year = 2002 AND
-                  d_moy BETWEEN 4 ANd 4+3) OR 
-    exists (SELECT * 
+                  d_moy BETWEEN 4 AND 4+3) OR 
+    EXISTS (SELECT * 
             FROM catalog_sales,date_dim
             WHERE c.c_customer_sk = cs_ship_customer_sk AND
                   cs_sold_date_sk = d_date_sk AND

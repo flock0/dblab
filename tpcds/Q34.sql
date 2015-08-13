@@ -17,9 +17,9 @@ SELECT c_last_name
          household_demographics.hd_buy_potential = 'unknown')
     AND household_demographics.hd_vehicle_count > 0
     AND (CASE WHEN household_demographics.hd_vehicle_count > 0 
-	then household_demographics.hd_dep_count/ household_demographics.hd_vehicle_count 
-	else null 
-	end)  > 1.2
+	THEN household_demographics.hd_dep_count/ household_demographics.hd_vehicle_count 
+	ELSE null 
+	END)  > 1.2
     AND date_dim.d_year IN (1998,1998+1,1998+2)
     AND store.s_county IN ('Williamson County','Williamson County','Williamson County','Williamson County',
                            'Williamson County','Williamson County','Williamson County','Williamson County')

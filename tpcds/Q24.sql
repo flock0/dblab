@@ -22,7 +22,7 @@ WHERE ss_ticket_number = sr_ticket_number
   AND ss_customer_sk = c_customer_sk
   AND ss_item_sk = i_item_sk
   AND ss_store_sk = s_store_sk
-  AND c_birth_country = upper(ca_country)
+  AND c_birth_country = UPPER(ca_country)
   AND s_zip = ca_zip
 AND s_market_id=7
 GROUP BY c_last_name
@@ -40,7 +40,7 @@ SELECT c_last_name
       ,s_store_name
       ,SUM(netpaid) paid
 FROM ssales
-WHERE i_colOR = 'orchid'
+WHERE i_color = 'orchid'
 GROUP BY c_last_name
         ,c_first_name
         ,s_store_name

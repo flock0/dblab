@@ -11,18 +11,7 @@ AND d_date BETWEEN '1998-03-18' AND
         (cast('1998-03-18' AS date) + 90 days)
 AND d_date_sk = cs_sold_date_sk 
 AND cs_ext_discount_amt  
-     > ( 
-         SELECT 
-            1.3 * AVG(cs_ext_discount_amt) 
-         FROM 
-            catalog_sales 
-           ,date_dim
-         WHERE 
-              cs_item_sk = i_item_sk 
-          AND d_date BETWEEN '1998-03-18' AND
-                             (cast('1998-03-18' AS date) + 90 days)
-          AND d_date_sk = cs_sold_date_sk 
-      ) 
+     > 5
 LIMIT 100;
 
 
