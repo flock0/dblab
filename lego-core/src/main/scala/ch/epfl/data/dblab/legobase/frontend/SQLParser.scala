@@ -190,8 +190,8 @@ object SQLParser extends StandardTokenParsers {
     case ep: ExpressionProjections => ep.lst.zipWithIndex.filter(p => p._1._2.isDefined).map(al => (al._1._1, al._1._2.get, al._2))
     case ac: AllColumns            => Seq()
   }
-  def extractAllRelationsFromJoinTrees(tables: Seq[Relation]) =
-    tables.foldLeft(Seq[Relation]())((list, tb) => list ++ extractRelationsFromJoinTree(tb))
+  def extractAllRelationsFromJoinTrees(joinTrees: Seq[Relation]) =
+    joinTrees.foldLeft(Seq[Relation]())((list, tb) => list ++ extractRelationsFromJoinTree(tb))
 
   def extractRelationsFromJoinTree(joinTree: Relation): Seq[Relation] = {
     joinTree match {
