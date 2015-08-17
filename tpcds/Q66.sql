@@ -55,53 +55,53 @@ SELECT
  	,'DIAMOND' || ',' || 'AIRBORNE' AS ship_carriers
        ,d_year AS year
  	,SUM(CASE WHEN d_moy = 1 
- 		then ws_sales_price* ws_quantity ELSE 0 END) AS jan_sales
+ 		THEN ws_sales_price* ws_quantity ELSE 0 END) AS jan_sales
  	,SUM(CASE WHEN d_moy = 2 
- 		then ws_sales_price* ws_quantity ELSE 0 END) AS feb_sales
+ 		THEN ws_sales_price* ws_quantity ELSE 0 END) AS feb_sales
  	,SUM(CASE WHEN d_moy = 3 
- 		then ws_sales_price* ws_quantity ELSE 0 END) AS mar_sales
+ 		THEN ws_sales_price* ws_quantity ELSE 0 END) AS mar_sales
  	,SUM(CASE WHEN d_moy = 4 
- 		then ws_sales_price* ws_quantity ELSE 0 END) AS apr_sales
+ 		THEN ws_sales_price* ws_quantity ELSE 0 END) AS apr_sales
  	,SUM(CASE WHEN d_moy = 5 
- 		then ws_sales_price* ws_quantity ELSE 0 END) AS may_sales
+ 		THEN ws_sales_price* ws_quantity ELSE 0 END) AS may_sales
  	,SUM(CASE WHEN d_moy = 6 
- 		then ws_sales_price* ws_quantity ELSE 0 END) AS jun_sales
+ 		THEN ws_sales_price* ws_quantity ELSE 0 END) AS jun_sales
  	,SUM(CASE WHEN d_moy = 7 
- 		then ws_sales_price* ws_quantity ELSE 0 END) AS jul_sales
+ 		THEN ws_sales_price* ws_quantity ELSE 0 END) AS jul_sales
  	,SUM(CASE WHEN d_moy = 8 
- 		then ws_sales_price* ws_quantity ELSE 0 END) AS aug_sales
+ 		THEN ws_sales_price* ws_quantity ELSE 0 END) AS aug_sales
  	,SUM(CASE WHEN d_moy = 9 
- 		then ws_sales_price* ws_quantity ELSE 0 END) AS sep_sales
+ 		THEN ws_sales_price* ws_quantity ELSE 0 END) AS sep_sales
  	,SUM(CASE WHEN d_moy = 10 
- 		then ws_sales_price* ws_quantity ELSE 0 END) AS oct_sales
+ 		THEN ws_sales_price* ws_quantity ELSE 0 END) AS oct_sales
  	,SUM(CASE WHEN d_moy = 11
- 		then ws_sales_price* ws_quantity ELSE 0 END) AS nov_sales
+ 		THEN ws_sales_price* ws_quantity ELSE 0 END) AS nov_sales
  	,SUM(CASE WHEN d_moy = 12
- 		then ws_sales_price* ws_quantity ELSE 0 END) AS dec_sales
+ 		THEN ws_sales_price* ws_quantity ELSE 0 END) AS dec_sales
  	,SUM(CASE WHEN d_moy = 1 
- 		then ws_net_paid_inc_tax * ws_quantity ELSE 0 END) AS jan_net
+ 		THEN ws_net_paid_inc_tax * ws_quantity ELSE 0 END) AS jan_net
  	,SUM(CASE WHEN d_moy = 2
- 		then ws_net_paid_inc_tax * ws_quantity ELSE 0 END) AS feb_net
+ 		THEN ws_net_paid_inc_tax * ws_quantity ELSE 0 END) AS feb_net
  	,SUM(CASE WHEN d_moy = 3 
- 		then ws_net_paid_inc_tax * ws_quantity ELSE 0 END) AS mar_net
+ 		THEN ws_net_paid_inc_tax * ws_quantity ELSE 0 END) AS mar_net
  	,SUM(CASE WHEN d_moy = 4 
- 		then ws_net_paid_inc_tax * ws_quantity ELSE 0 END) AS apr_net
+ 		THEN ws_net_paid_inc_tax * ws_quantity ELSE 0 END) AS apr_net
  	,SUM(CASE WHEN d_moy = 5 
- 		then ws_net_paid_inc_tax * ws_quantity ELSE 0 END) AS may_net
+ 		THEN ws_net_paid_inc_tax * ws_quantity ELSE 0 END) AS may_net
  	,SUM(CASE WHEN d_moy = 6 
- 		then ws_net_paid_inc_tax * ws_quantity ELSE 0 END) AS jun_net
+ 		THEN ws_net_paid_inc_tax * ws_quantity ELSE 0 END) AS jun_net
  	,SUM(CASE WHEN d_moy = 7 
- 		then ws_net_paid_inc_tax * ws_quantity ELSE 0 END) AS jul_net
+ 		THEN ws_net_paid_inc_tax * ws_quantity ELSE 0 END) AS jul_net
  	,SUM(CASE WHEN d_moy = 8 
- 		then ws_net_paid_inc_tax * ws_quantity ELSE 0 END) AS aug_net
+ 		THEN ws_net_paid_inc_tax * ws_quantity ELSE 0 END) AS aug_net
  	,SUM(CASE WHEN d_moy = 9 
- 		then ws_net_paid_inc_tax * ws_quantity ELSE 0 END) AS sep_net
+ 		THEN ws_net_paid_inc_tax * ws_quantity ELSE 0 END) AS sep_net
  	,SUM(CASE WHEN d_moy = 10 
- 		then ws_net_paid_inc_tax * ws_quantity ELSE 0 END) AS oct_net
+ 		THEN ws_net_paid_inc_tax * ws_quantity ELSE 0 END) AS oct_net
  	,SUM(CASE WHEN d_moy = 11
- 		then ws_net_paid_inc_tax * ws_quantity ELSE 0 END) AS nov_net
+ 		THEN ws_net_paid_inc_tax * ws_quantity ELSE 0 END) AS nov_net
  	,SUM(CASE WHEN d_moy = 12
- 		then ws_net_paid_inc_tax * ws_quantity ELSE 0 END) AS dec_net
+ 		THEN ws_net_paid_inc_tax * ws_quantity ELSE 0 END) AS dec_net
      FROM
           web_sales
          ,warehouse
@@ -135,53 +135,53 @@ SELECT
  	,'DIAMOND' || ',' || 'AIRBORNE' AS ship_carriers
        ,d_year AS year
  	,SUM(CASE WHEN d_moy = 1 
- 		then cs_ext_sales_price* cs_quantity ELSE 0 END) AS jan_sales
+ 		THEN cs_ext_sales_price* cs_quantity ELSE 0 END) AS jan_sales
  	,SUM(CASE WHEN d_moy = 2 
- 		then cs_ext_sales_price* cs_quantity ELSE 0 END) AS feb_sales
+ 		THEN cs_ext_sales_price* cs_quantity ELSE 0 END) AS feb_sales
  	,SUM(CASE WHEN d_moy = 3 
- 		then cs_ext_sales_price* cs_quantity ELSE 0 END) AS mar_sales
+ 		THEN cs_ext_sales_price* cs_quantity ELSE 0 END) AS mar_sales
  	,SUM(CASE WHEN d_moy = 4 
- 		then cs_ext_sales_price* cs_quantity ELSE 0 END) AS apr_sales
+ 		THEN cs_ext_sales_price* cs_quantity ELSE 0 END) AS apr_sales
  	,SUM(CASE WHEN d_moy = 5 
- 		then cs_ext_sales_price* cs_quantity ELSE 0 END) AS may_sales
+ 		THEN cs_ext_sales_price* cs_quantity ELSE 0 END) AS may_sales
  	,SUM(CASE WHEN d_moy = 6 
- 		then cs_ext_sales_price* cs_quantity ELSE 0 END) AS jun_sales
+ 		THEN cs_ext_sales_price* cs_quantity ELSE 0 END) AS jun_sales
  	,SUM(CASE WHEN d_moy = 7 
- 		then cs_ext_sales_price* cs_quantity ELSE 0 END) AS jul_sales
+ 		THEN cs_ext_sales_price* cs_quantity ELSE 0 END) AS jul_sales
  	,SUM(CASE WHEN d_moy = 8 
- 		then cs_ext_sales_price* cs_quantity ELSE 0 END) AS aug_sales
+ 		THEN cs_ext_sales_price* cs_quantity ELSE 0 END) AS aug_sales
  	,SUM(CASE WHEN d_moy = 9 
- 		then cs_ext_sales_price* cs_quantity ELSE 0 END) AS sep_sales
+ 		THEN cs_ext_sales_price* cs_quantity ELSE 0 END) AS sep_sales
  	,SUM(CASE WHEN d_moy = 10 
- 		then cs_ext_sales_price* cs_quantity ELSE 0 END) AS oct_sales
+ 		THEN cs_ext_sales_price* cs_quantity ELSE 0 END) AS oct_sales
  	,SUM(CASE WHEN d_moy = 11
- 		then cs_ext_sales_price* cs_quantity ELSE 0 END) AS nov_sales
+ 		THEN cs_ext_sales_price* cs_quantity ELSE 0 END) AS nov_sales
  	,SUM(CASE WHEN d_moy = 12
- 		then cs_ext_sales_price* cs_quantity ELSE 0 END) AS dec_sales
+ 		THEN cs_ext_sales_price* cs_quantity ELSE 0 END) AS dec_sales
  	,SUM(CASE WHEN d_moy = 1 
- 		then cs_net_paid_inc_ship_tax * cs_quantity ELSE 0 END) AS jan_net
+ 		THEN cs_net_paid_inc_ship_tax * cs_quantity ELSE 0 END) AS jan_net
  	,SUM(CASE WHEN d_moy = 2 
- 		then cs_net_paid_inc_ship_tax * cs_quantity ELSE 0 END) AS feb_net
+ 		THEN cs_net_paid_inc_ship_tax * cs_quantity ELSE 0 END) AS feb_net
  	,SUM(CASE WHEN d_moy = 3 
- 		then cs_net_paid_inc_ship_tax * cs_quantity ELSE 0 END) AS mar_net
+ 		THEN cs_net_paid_inc_ship_tax * cs_quantity ELSE 0 END) AS mar_net
  	,SUM(CASE WHEN d_moy = 4 
- 		then cs_net_paid_inc_ship_tax * cs_quantity ELSE 0 END) AS apr_net
+ 		THEN cs_net_paid_inc_ship_tax * cs_quantity ELSE 0 END) AS apr_net
  	,SUM(CASE WHEN d_moy = 5 
- 		then cs_net_paid_inc_ship_tax * cs_quantity ELSE 0 END) AS may_net
+ 		THEN cs_net_paid_inc_ship_tax * cs_quantity ELSE 0 END) AS may_net
  	,SUM(CASE WHEN d_moy = 6 
- 		then cs_net_paid_inc_ship_tax * cs_quantity ELSE 0 END) AS jun_net
+ 		THEN cs_net_paid_inc_ship_tax * cs_quantity ELSE 0 END) AS jun_net
  	,SUM(CASE WHEN d_moy = 7 
- 		then cs_net_paid_inc_ship_tax * cs_quantity ELSE 0 END) AS jul_net
+ 		THEN cs_net_paid_inc_ship_tax * cs_quantity ELSE 0 END) AS jul_net
  	,SUM(CASE WHEN d_moy = 8 
- 		then cs_net_paid_inc_ship_tax * cs_quantity ELSE 0 END) AS aug_net
+ 		THEN cs_net_paid_inc_ship_tax * cs_quantity ELSE 0 END) AS aug_net
  	,SUM(CASE WHEN d_moy = 9 
- 		then cs_net_paid_inc_ship_tax * cs_quantity ELSE 0 END) AS sep_net
+ 		THEN cs_net_paid_inc_ship_tax * cs_quantity ELSE 0 END) AS sep_net
  	,SUM(CASE WHEN d_moy = 10 
- 		then cs_net_paid_inc_ship_tax * cs_quantity ELSE 0 END) AS oct_net
+ 		THEN cs_net_paid_inc_ship_tax * cs_quantity ELSE 0 END) AS oct_net
  	,SUM(CASE WHEN d_moy = 11
- 		then cs_net_paid_inc_ship_tax * cs_quantity ELSE 0 END) AS nov_net
+ 		THEN cs_net_paid_inc_ship_tax * cs_quantity ELSE 0 END) AS nov_net
  	,SUM(CASE WHEN d_moy = 12
- 		then cs_net_paid_inc_ship_tax * cs_quantity ELSE 0 END) AS dec_net
+ 		THEN cs_net_paid_inc_ship_tax * cs_quantity ELSE 0 END) AS dec_net
      FROM
           catalog_sales
          ,warehouse

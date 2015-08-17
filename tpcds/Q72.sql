@@ -2,20 +2,20 @@
 SELECT  i_item_desc
       ,w_warehouse_name
       ,d1.d_week_seq
-      ,SUM(CASE WHEN p_promo_sk is null THEN 1 ELSE 0 END) no_promo
-      ,SUM(CASE WHEN p_promo_sk is not null THEN 1 ELSE 0 END) promo
+      ,SUM(CASE WHEN p_promo_sk is NULL THEN 1 ELSE 0 END) no_promo
+      ,SUM(CASE WHEN p_promo_sk IS NOT NULL THEN 1 ELSE 0 END) promo
       ,COUNT(*) total_cnt
 FROM catalog_sales
-join inventory on (cs_item_sk = inv_item_sk)
-join warehouse on (w_warehouse_sk=inv_warehouse_sk)
-join item on (i_item_sk = cs_item_sk)
-join customer_demographics on (cs_bill_cdemo_sk = cd_demo_sk)
-join household_demographics on (cs_bill_hdemo_sk = hd_demo_sk)
-join date_dim d1 on (cs_sold_date_sk = d1.d_date_sk)
-join date_dim d2 on (inv_date_sk = d2.d_date_sk)
-join date_dim d3 on (cs_ship_date_sk = d3.d_date_sk)
-left outer join promotion on (cs_promo_sk=p_promo_sk)
-left outer join catalog_returns on (cr_item_sk = cs_item_sk AND cr_order_number = cs_order_number)
+JOIN inventory ON (cs_item_sk = inv_item_sk)
+JOIN warehouse ON (w_warehouse_sk=inv_warehouse_sk)
+JOIN item ON (i_item_sk = cs_item_sk)
+JOIN customer_demographics ON (cs_bill_cdemo_sk = cd_demo_sk)
+JOIN household_demographics ON (cs_bill_hdemo_sk = hd_demo_sk)
+JOIN date_dim d1 ON (cs_sold_date_sk = d1.d_date_sk)
+JOIN date_dim d2 ON (inv_date_sk = d2.d_date_sk)
+JOIN date_dim d3 ON (cs_ship_date_sk = d3.d_date_sk)
+LEFT OUTER JOIN promotion ON (cs_promo_sk=p_promo_sk)
+LEFT OUTER JOIN catalog_returns ON (cr_item_sk = cs_item_sk AND cr_order_number = cs_order_number)
 WHERE d1.d_week_seq = d2.d_week_seq
   AND inv_quantity_on_hAND < cs_quantity 
   AND d3.d_date > d1.d_date + 5
