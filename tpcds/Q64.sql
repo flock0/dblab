@@ -43,8 +43,8 @@ cross_sales AS
         ,household_demographics hd2
         ,customer_address ad1
         ,customer_address ad2
-        ,income_bAND ib1
-        ,income_bAND ib2
+        ,income_band ib1
+        ,income_band ib2
         ,item
   WHERE  ss_store_sk = s_store_sk AND
          ss_sold_date_sk = d1.d_date_sk AND
@@ -65,7 +65,7 @@ cross_sales AS
          hd1.hd_income_band_sk = ib1.ib_income_band_sk AND
          hd2.hd_income_band_sk = ib2.ib_income_band_sk AND
          cd1.cd_marital_status <> cd2.cd_marital_status AND
-         i_colOR IN ('maroon','burnished','dim','steel','navajo','chocolate') AND
+         i_color IN ('maroon','burnished','dim','steel','navajo','chocolate') AND
          i_current_price BETWEEN 35 AND 35 + 10 AND
          i_current_price BETWEEN 35 + 1 AND 35 + 15
 GROUP BY i_product_name
