@@ -27,7 +27,7 @@ object SQLParser extends StandardTokenParsers {
   }
 
   def parseSelectStatement: Parser[SelectStatement] = (
-    rep(parseWith) ~ "SELECT" ~ parseProjections ~ "FROM" ~ parseRelations ~ parseWhere.? ~ parseGroupBy.? ~ parseHaving.? ~ parseOrderBy.? ~ parseLimit.? <~ ";".? ^^ {
+    parseAllCTEs ~ "SELECT" ~ parseProjections ~ "FROM" ~ parseRelations ~ parseWhere.? ~ parseGroupBy.? ~ parseHaving.? ~ parseOrderBy.? ~ parseLimit.? <~ ";".? ^^ {
       case withs ~ _ ~ pro ~ _ ~ tab ~ whe ~ grp ~ hav ~ ord ~ lim => {
         val rel = extractAllRelationsFromJoinTrees(tab)
         val aliases = extractAllAliasesFromProjections(pro)
@@ -35,8 +35,13 @@ object SQLParser extends StandardTokenParsers {
       }
     })
 
-  def parseWith: Parser[Subquery] =
-    "WITH" ~> ident ~ "AS" ~ "(" ~ parseSelectStatement <~ ")" ^^
+  def parseAllCTEs: Parser[List[Subquery]] =
+    opt("WITH" ~> rep1sep(parseCTE, ",")) ^^ {
+      case Some(ctes) => ctes
+      case None       => List[Subquery]()
+    }
+  def parseCTE: Parser[Subquery] =
+    ident ~ "AS" ~ "(" ~ parseSelectStatement <~ ")" ^^
       { case name ~ _ ~ _ ~ stmt => Subquery(stmt, name) }
 
   def parseProjections: Parser[Projections] = (
