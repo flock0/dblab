@@ -47,8 +47,15 @@ object CTENormalizer extends Normalizer {
     case Join(l, r, t, c) => Join(replaceCTEsInJoinTree(existingCTEs, l), replaceCTEsInJoinTree(existingCTEs, r), t, c)
     case tbl @ SQLTable(tblName, tblAlias) =>
       existingCTEs.find(cte => cte.alias == tblName) match {
-        case Some(cte) => Subquery(cte.subquery, tblAlias.get)
-        case None      => tbl
+        case Some(cte) =>
+          /* Use the cte alias as the subquery alias as a fallback. We do this
+           * because currently, LegoBase expects subqueries to be aliased. */
+          val newSubqueryAlias = tblAlias match {
+            case Some(tblAl) => tblAl
+            case None        => cte.alias
+          }
+          Subquery(cte.subquery, newSubqueryAlias)
+        case None => tbl
       }
   }
 }
