@@ -23,6 +23,6 @@ SELECT c_last_name
     GROUP BY ss_ticket_number,ss_customer_sk) dj,customer
     WHERE ss_customer_sk = c_customer_sk
       AND cnt BETWEEN 1 AND 5
-    ORDER BY cnt DESC, c_last_name ASc;
+    ORDER BY cnt DESC, c_last_name ASC;
 
 

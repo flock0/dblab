@@ -6,9 +6,9 @@ WITH ws AS
     SUM(ws_wholesale_cost) ws_wc,
     SUM(ws_sales_price) ws_sp
    FROM web_sales
-   left join web_returns on wr_order_number=ws_order_number AND ws_item_sk=wr_item_sk
-   join date_dim on ws_sold_date_sk = d_date_sk
-   WHERE wr_order_number is null
+   LEFT JOIN web_returns ON wr_order_number=ws_order_number AND ws_item_sk=wr_item_sk
+   join date_dim ON ws_sold_date_sk = d_date_sk
+   WHERE wr_order_number IS NULL
    GROUP BY d_year, ws_item_sk, ws_bill_customer_sk
    ),
 cs AS
@@ -18,9 +18,9 @@ cs AS
     SUM(cs_wholesale_cost) cs_wc,
     SUM(cs_sales_price) cs_sp
    FROM catalog_sales
-   left join catalog_returns on cr_order_number=cs_order_number AND cs_item_sk=cr_item_sk
-   join date_dim on cs_sold_date_sk = d_date_sk
-   WHERE cr_order_number is null
+   LEFT JOIN catalog_returns ON cr_order_number=cs_order_number AND cs_item_sk=cr_item_sk
+   join date_dim ON cs_sold_date_sk = d_date_sk
+   WHERE cr_order_number IS NULL
    GROUP BY d_year, cs_item_sk, cs_bill_customer_sk
    ),
 ss AS
@@ -30,9 +30,9 @@ ss AS
     SUM(ss_wholesale_cost) ss_wc,
     SUM(ss_sales_price) ss_sp
    FROM store_sales
-   left join store_returns on sr_ticket_number=ss_ticket_number AND ss_item_sk=sr_item_sk
-   join date_dim on ss_sold_date_sk = d_date_sk
-   WHERE sr_ticket_number is null
+   LEFT JOIN store_returns ON sr_ticket_number=ss_ticket_number AND ss_item_sk=sr_item_sk
+   join date_dim ON ss_sold_date_sk = d_date_sk
+   WHERE sr_ticket_number IS NULL
    GROUP BY d_year, ss_item_sk, ss_customer_sk
    )
  SELECT 
@@ -43,8 +43,8 @@ COALESCE(ws_qty,0)+COALESCE(cs_qty,0) other_chan_qty,
 COALESCE(ws_wc,0)+COALESCE(cs_wc,0) other_chan_wholesale_cost,
 COALESCE(ws_sp,0)+COALESCE(cs_sp,0) other_chan_sales_price
 FROM ss
-left join ws on (ws_sold_year=ss_sold_year AND ws_item_sk=ss_item_sk AND ws_customer_sk=ss_customer_sk)
-left join cs on (cs_sold_year=ss_sold_year AND cs_item_sk=cs_item_sk AND cs_customer_sk=ss_customer_sk)
+LEFT JOIN ws ON (ws_sold_year=ss_sold_year AND ws_item_sk=ss_item_sk AND ws_customer_sk=ss_customer_sk)
+LEFT JOIN cs ON (cs_sold_year=ss_sold_year AND cs_item_sk=cs_item_sk AND cs_customer_sk=ss_customer_sk)
 WHERE COALESCE(ws_qty,0)>0 AND COALESCE(cs_qty, 0)>0 AND ss_sold_year=2000
 ORDER BY 
   ss_sold_year, ss_item_sk, ss_customer_sk,

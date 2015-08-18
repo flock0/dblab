@@ -81,8 +81,8 @@ WITH ss AS
         , sales
         , COALESCE(returns, 0) AS returns
         , (profit - COALESCE(profit_loss,0)) AS profit
- FROM   ss left join sr
-        on  ss.s_store_sk = sr.s_store_sk
+ FROM   ss LEFT JOIN sr
+        ON  ss.s_store_sk = sr.s_store_sk
  UNION ALL
  SELECT 'catalog channel' AS channel
         , cs_call_center_sk AS id
@@ -97,8 +97,8 @@ WITH ss AS
         , sales
         , COALESCE(returns, 0) returns
         , (profit - COALESCE(profit_loss,0)) AS profit
- FROM   ws left join wr
-        on  ws.wp_web_page_sk = wr.wp_web_page_sk
+ FROM   ws LEFT JOIN wr
+        ON  ws.wp_web_page_sk = wr.wp_web_page_sk
  ) x
  GROUP BY rollup (channel, id)
  ORDER BY channel
