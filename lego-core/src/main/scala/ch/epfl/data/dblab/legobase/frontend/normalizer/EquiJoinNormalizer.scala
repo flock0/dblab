@@ -77,26 +77,25 @@ class EquiJoinNormalizer(schema: Schema) extends Normalizer {
   }
 
   /**
-   * Joins two relations by searching for predicate to match.
+   * Joins two relations by searching for predicates to match.
    * Throws an exception if no suitable predicate can be found.
    */
   private def joinRelations(left: Relation, right: Relation, predicates: Seq[Equals], usedPreds: ListBuffer[Equals]): Relation = {
 
     /* Could this be a predicate for the join? */
-    val candidates = predicates.filter { eq =>
+    val joinPreds = predicates.filter { eq =>
       (containsField(left, eq.left) && containsField(right, eq.right)) ||
         (containsField(left, eq.right) && containsField(right, eq.left))
     }
 
-    if (candidates.size == 0)
-      throw new Exception(s"LegoBase Frontend BUG: Couldn't find a candidate predicate for joining $left and $right!")
-    if (candidates.size > 1)
-      throw new Exception(s"LegoBase Frontend BUG: Found more than one candidate predicate for joining $left and $right! Please make the query unambiguous. ($candidates)")
+    if (joinPreds.size == 0)
+      throw new Exception(s"LegoBase Frontend BUG: Couldn't find a suitable predicate for joining $left and $right!")
 
-    /* We have found a single suitable join predicate */
-    val pred = candidates(0)
-    usedPreds += pred
-    Join(left, right, InnerJoin, pred)
+    /* We have found (possibly multiple) suitable join predicates */
+    usedPreds ++= joinPreds
+    val jp: Seq[Expression] = joinPreds
+    val concat = jp.reduceLeft(And(_, _))
+    Join(left, right, InnerJoin, concat)
   }
 
   /** Removes predicates that have been used up by the joins */
